@@ -25,6 +25,8 @@ for i in range(0, 10):
 # Testing...1...2...3. Testing. This is a test.
 plt.plot(xPosStorage, yPosStorage)
 for xy in zip(xPosStorage, yPosStorage):
+    plt.axhline(0, color='red')
+    plt.axvline(0, color='red')
     plt.annotate('(%s, %s)' % xy, xy=xy, textcoords='data')
 plt.show()
 
