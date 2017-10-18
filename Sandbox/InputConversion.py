@@ -30,6 +30,8 @@ cur_pos = A_ORIGIN
 plt.axhline(0, color='red')
 plt.axvline(0, color='red')
 plt.ion()
+# plt.autoscale(False)
+# plt.axis([0.0, 64.0, 0.0, 100.0])
 
 while True:
     # for iteration in range(TEST_ITERATIONS):
