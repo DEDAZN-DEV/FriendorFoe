@@ -8,10 +8,6 @@ def printf(format, *args):
     sys.stdout.write(format % args)
 
 
-# Initial setup for mapping
-plt.axhline(0, color='red')
-plt.axvline(0, color='red')
-
 # TODO: Get current GPS, speed, and heading for car
 # STATIC DECLARATIONS
 ORIGIN = [0, 0]
@@ -19,16 +15,30 @@ ACCELERATION = 10  # m/s
 UPDATE_INTERVAL = 0.003  # 0.003 s between vector update
 TEST_ITERATIONS = 25
 
+# Initialization of variables
+counter = 0
+
 # STORAGE LISTS
 xPosStorage = []
 yPosStorage = []
 
 cur_pos = ORIGIN
 
-# while(True):
-for iteration in range(TEST_ITERATIONS):
+# Initial setup for mapping
+plt.axhline(0, color='red')
+plt.axvline(0, color='red')
+plt.ion()
+
+while True:
+    # for iteration in range(TEST_ITERATIONS):
     xPosStorage.append(cur_pos[0])
     yPosStorage.append(cur_pos[1])
+
+    # Map plot
+    plt.plot(xPosStorage, yPosStorage, ':')
+    # plt.annotate(counter, (xPosStorage[counter], yPosStorage[counter]))  # label section
+    counter = counter + 1
+    plt.pause(0.003)
 
     # TODO: Get output vector from simulation
 
@@ -41,15 +51,7 @@ for iteration in range(TEST_ITERATIONS):
 
     cur_pos = [cur_pos[0] + xDelta, cur_pos[1] + yDelta]
 
-    print(cur_pos)
-
-# Map plot
-plt.plot(xPosStorage, yPosStorage, ':')
-
-for i in range(len(xPosStorage)):
-    plt.annotate(i, (xPosStorage[i], yPosStorage[i]))
-
-plt.show()
+    # print(cur_pos)
 
 # TODO: Calculate current location in reference to new target location
 
