@@ -7,31 +7,49 @@ import matplotlib.pyplot as plt
 def printf(format, *args):
     sys.stdout.write(format % args)
 
-# TODO: Get current GPS, speed, and heading for car
-ORIGIN = [0, 0]
-xPosStorage = []
-yPosStorage = []
 
-init_pos = ORIGIN
-
-# while(True):
-cur_pos = init_pos
-
-for i in range(0, 25):
-    xPosStorage.append(cur_pos[0])
-    yPosStorage.append(cur_pos[1])
-    cur_pos = [cur_pos[0] + random.randint(-5, 5), cur_pos[1] + random.randint(-5, 5)]
-
-# Testing...1...2...3. Testing. This is a test.
-plt.plot(xPosStorage, yPosStorage, ':')
+# Initial setup for mapping
 plt.axhline(0, color='red')
 plt.axvline(0, color='red')
 
-for xy in zip(xPosStorage, yPosStorage):
-    plt.annotate('(%s, %s)' % xy, xy=xy, textcoords='data')
-plt.show()
+# TODO: Get current GPS, speed, and heading for car
+# STATIC DECLARATIONS
+ORIGIN = [0, 0]
+ACCELERATION = 10  # m/s
+UPDATE_INTERVAL = 0.003  # 0.003 s between vector update
+TEST_ITERATIONS = 25
 
-# TODO: Get output vector from simulation
+# STORAGE LISTS
+xPosStorage = []
+yPosStorage = []
+
+cur_pos = ORIGIN
+
+# while(True):
+for iteration in range(TEST_ITERATIONS):
+    xPosStorage.append(cur_pos[0])
+    yPosStorage.append(cur_pos[1])
+
+    # TODO: Get output vector from simulation
+
+    # Simulate output vector from the simulator
+    newVector = [random.uniform(-13.4, 13.4), random.uniform(-13.4, 13.4)]
+
+    # Calculate new x and y coordinate based on last position
+    xDelta = (newVector[0] * UPDATE_INTERVAL) + ((1 / 2) * ACCELERATION * (UPDATE_INTERVAL ** 2))
+    yDelta = (newVector[1] * UPDATE_INTERVAL) + ((1 / 2) * ACCELERATION * (UPDATE_INTERVAL ** 2))
+
+    cur_pos = [cur_pos[0] + xDelta, cur_pos[1] + yDelta]
+
+    print(cur_pos)
+
+# Map plot
+plt.plot(xPosStorage, yPosStorage, ':')
+
+for i in range(len(xPosStorage)):
+    plt.annotate(i, (xPosStorage[i], yPosStorage[i]))
+
+plt.show()
 
 # TODO: Calculate current location in reference to new target location
 
