@@ -14,6 +14,7 @@ ORIGIN = [0, 0]
 ACCELERATION = 10  # m/s
 UPDATE_INTERVAL = 0.003  # 0.003 s between vector update
 TEST_ITERATIONS = 25
+POSMAPBUFFERSIZE = 2
 
 # Initialization of variables
 counter = 0
@@ -33,6 +34,13 @@ while True:
     # for iteration in range(TEST_ITERATIONS):
     xPosStorage.append(cur_pos[0])
     yPosStorage.append(cur_pos[1])
+
+    # Remove oldest data
+    if len(xPosStorage) > POSMAPBUFFERSIZE:
+        xPosStorage.pop(0)
+        yPosStorage.pop(0)
+
+    print(xPosStorage)
 
     # Map plot
     plt.plot(xPosStorage, yPosStorage, ':')
