@@ -17,16 +17,17 @@ init_pos = ORIGIN
 # while(True):
 cur_pos = init_pos
 
-for i in range(0, 10):
+for i in range(0, 25):
     xPosStorage.append(cur_pos[0])
     yPosStorage.append(cur_pos[1])
     cur_pos = [cur_pos[0] + random.randint(-5, 5), cur_pos[1] + random.randint(-5, 5)]
 
 # Testing...1...2...3. Testing. This is a test.
-plt.plot(xPosStorage, yPosStorage)
+plt.plot(xPosStorage, yPosStorage, ':')
+plt.axhline(0, color='red')
+plt.axvline(0, color='red')
+
 for xy in zip(xPosStorage, yPosStorage):
-    plt.axhline(0, color='red')
-    plt.axvline(0, color='red')
     plt.annotate('(%s, %s)' % xy, xy=xy, textcoords='data')
 plt.show()
 
