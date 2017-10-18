@@ -29,6 +29,8 @@ cur_pos = ORIGIN
 plt.axhline(0, color='red')
 plt.axvline(0, color='red')
 plt.ion()
+# plt.autoscale(False)
+# plt.axis([0.0, 64.0, 0.0, 100.0])
 
 while True:
     # for iteration in range(TEST_ITERATIONS):
@@ -40,7 +42,7 @@ while True:
         xPosStorage.pop(0)
         yPosStorage.pop(0)
 
-    print(xPosStorage)
+    # print(xPosStorage)
 
     # Map plot
     plt.plot(xPosStorage, yPosStorage, ':')
