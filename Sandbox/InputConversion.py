@@ -14,7 +14,7 @@ def printf(format, *args):
 
 A_ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
 A_ACCELERATION = 10  # m/s
-A_UPDATE_INTERVAL = 0.003  # 3ms between vector update
+A_UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 A_TEST_ITERATIONS = 25
 A_POSMAPBUFFERSIZE = 250
 A_DIRCHANGEFACTOR = 0.75  # % chance of changing direction
