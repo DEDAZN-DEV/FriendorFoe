@@ -1,5 +1,6 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
+import math
 import random
 import sys
 import threading
@@ -15,7 +16,7 @@ A_POSMAPBUFFERSIZE = 250
 A_DIRCHANGEFACTOR = 0.75  # % chance of changing direction
 
 cur_pos = A_ORIGIN
-
+angle = 0.0
 
 def main():
     A = threading.Thread(target=run, args=("Drone A",))
@@ -57,7 +58,7 @@ def run(droneName):
             F_INIT = False
 
         updatePos(vector)
-        print(droneName, vector, cur_pos)
+        printf("%10s%45s%45s%10.2f\n", droneName, vector.__str__(), cur_pos.__str__(), angle)
 
         time.sleep(A_UPDATE_INTERVAL)
 
@@ -68,7 +69,7 @@ def genRandomVector():
 
 
 def updatePos(vector):
-    global cur_pos
+    global cur_pos, angle
 
     # TODO: Calculate current location in reference to new target location
     """Calculate new x and y coordinate based on last position"""
@@ -81,8 +82,8 @@ def updatePos(vector):
     if cur_pos[0] < 0.0 or cur_pos[1] < 0.0:
         cur_pos = temp_pos
         updatePos(genRandomVector())
-    else:
-        return cur_pos
+
+    angle = math.atan(xDelta / yDelta)
 
 
 def printf(format, *args):
@@ -93,7 +94,7 @@ def getGPSCoords():
     """Poll and obtain data from GPS unit on vehicle"""
 
 
-def genSignal():
+def genSignal(angleValue):
     """Craft signal based on new coordinates"""
 
     # TODO: Determine what signals are needed to direct car SERVO
@@ -105,5 +106,6 @@ def txSignal():
     """Poll and transmit across wifi something something darkside..."""
 
     # TODO: Transmit signals to car through WiFi
+
 
 main()  # Invoke main()
