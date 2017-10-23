@@ -5,11 +5,6 @@ import sys
 import threading
 import time
 
-
-def printf(format, *args):
-    sys.stdout.write(format % args)
-
-
 # TODO: Get current GPS, speed, and heading for car
 
 A_ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
@@ -89,6 +84,21 @@ def updatePos(vector):
     else:
         return cur_pos
 
+
+def printf(format, *args):
+    sys.stdout.write(format % args)
+
+
+def getGPSCoords():
+    """Poll and obtain data from GPS unit on vehicle"""
+
+
+def genSignal():
+    """Craft signal based on new coordinates"""
+
+
+def txSignal():
+    """Poll and transmit across wifi something something darkside..."""
 
 # TODO: Determine what signals are needed to direct car SERVO
 
