@@ -96,14 +96,14 @@ def getGPSCoords():
 def genSignal():
     """Craft signal based on new coordinates"""
 
+    # TODO: Determine what signals are needed to direct car SERVO
+
+    # TODO: Determine what signals are needed to direct car ESC
+
 
 def txSignal():
     """Poll and transmit across wifi something something darkside..."""
 
-# TODO: Determine what signals are needed to direct car SERVO
-
-# TODO: Determine what signals are needed to direct car ESC
-
-# TODO: Transmit signals to car through WiFi
+    # TODO: Transmit signals to car through WiFi
 
 main()  # Invoke main()
