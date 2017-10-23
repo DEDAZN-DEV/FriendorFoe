@@ -5,8 +5,6 @@ import sys
 import threading
 import time
 
-# TODO: Get current GPS, speed, and heading for car
-
 A_ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
 A_ACCELERATION = 10  # m/s
 A_UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
@@ -92,6 +90,8 @@ def printf(format, *args):
 def getGPSCoords():
     """Poll and obtain data from GPS unit on vehicle"""
 
+    # TODO: Get current GPS, speed, and heading for car
+
 
 def genSignal():
     """Craft signal based on new coordinates"""
@@ -105,5 +105,6 @@ def txSignal():
     """Poll and transmit across wifi something something darkside..."""
 
     # TODO: Transmit signals to car through WiFi
+
 
 main()  # Invoke main()
