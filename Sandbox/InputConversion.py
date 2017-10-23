@@ -24,10 +24,10 @@ angle = 0.0
 def main():
     A = threading.Thread(target=run, args=("Drone A",))
     A.start()
-    # B = threading.Thread(target=run, args=("Drone B",))
-    # B.start()
-    # C = threading.Thread(target=run, args=("Drone C",))
-    # C.start()
+    B = threading.Thread(target=run, args=("Drone B",))
+    B.start()
+    C = threading.Thread(target=run, args=("Drone C",))
+    C.start()
 
 
 def run(droneName):
@@ -64,7 +64,8 @@ def run(droneName):
 
         hexAngle = genSignal(angle)
 
-        printf("%10s%45s%45s%10.5f%12s\n", droneName, vector.__str__(), cur_pos.__str__(), angle, hexAngle)
+        printf("%10s%45s%45s%10.5f%12s%10s\n", droneName, vector.__str__(), cur_pos.__str__(), angle, hexAngle,
+               droneName)
 
         time.sleep(A_UPDATE_INTERVAL)
 
@@ -85,7 +86,7 @@ def updatePos(vector):
     temp_pos = cur_pos
     cur_pos = [cur_pos[0] + xDelta, cur_pos[1] + yDelta]
 
-    if cur_pos[0] < 0.0 or cur_pos[1] < 0.0:
+    if cur_pos[0] < 0.0 or cur_pos[1] < 0.0 or cur_pos[0] > 100 or cur_pos[1] > 64:
         cur_pos = temp_pos
         updatePos(genRandomVector())
 
@@ -116,7 +117,7 @@ def txSignal():
     # TODO: Transmit signals to car through WiFi
 
 
-def float_to_hex(f):
+def float_to_hex(f):  # IEEE 32-bit standard for float representation
     return hex(struct.unpack('<I', struct.pack('<f', f))[0])
 
 
