@@ -1,20 +1,22 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
+import math
 import random
 import sys
 import threading
 import time
 
-# TODO: Get current GPS, speed, and heading for car
-
+# ----------------------------------------------------------
 A_ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
 A_ACCELERATION = 10  # m/s
 A_UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 A_TEST_ITERATIONS = 25
 A_POSMAPBUFFERSIZE = 250
-A_DIRCHANGEFACTOR = 0.75  # % chance of changing direction
-
-cur_pos = A_ORIGIN
+A_DIRCHANGEFACTOR = 0.50  # % chance of changing direction
+A_MAXSPEED = 13.4  # 30mph to m/s
+# ----------------------------------------------------------
+cur_pos = A_ORIGIN  # GLOBAL
+angle = 0
 
 
 def main():
@@ -57,18 +59,18 @@ def run(droneName):
             F_INIT = False
 
         updatePos(vector)
-        print(droneName, vector, cur_pos)
+        printf("%10s%45s%45s%10.2f\n", droneName, vector.__str__(), cur_pos.__str__(), angle)
 
         time.sleep(A_UPDATE_INTERVAL)
 
 
 def genRandomVector():
-    newVector = [random.uniform(-13.4, 13.4), random.uniform(-13.4, 13.4)]
+    newVector = [random.uniform(-A_MAXSPEED, A_MAXSPEED), random.uniform(-A_MAXSPEED, A_MAXSPEED)]
     return newVector
 
 
 def updatePos(vector):
-    global cur_pos
+    global cur_pos, angle
 
     # TODO: Calculate current location in reference to new target location
     """Calculate new x and y coordinate based on last position"""
@@ -78,11 +80,11 @@ def updatePos(vector):
     temp_pos = cur_pos
     cur_pos = [cur_pos[0] + xDelta, cur_pos[1] + yDelta]
 
-    if cur_pos[0] < 0.0 or cur_pos[1] < 0.0:
+    if cur_pos[0] < 0.0 or cur_pos[1] < 0.0 or cur_pos[0] > 100 or cur_pos[1] > 64:
         cur_pos = temp_pos
         updatePos(genRandomVector())
-    else:
-        return cur_pos
+
+    angle = math.atan(xDelta / yDelta)
 
 
 def printf(format, *args):
@@ -91,6 +93,8 @@ def printf(format, *args):
 
 def getGPSCoords():
     """Poll and obtain data from GPS unit on vehicle"""
+
+    # TODO: Get current GPS, speed, and heading for car
 
 
 def genSignal():
@@ -105,5 +109,6 @@ def txSignal():
     """Poll and transmit across wifi something something darkside..."""
 
     # TODO: Transmit signals to car through WiFi
+
 
 main()  # Invoke main()
