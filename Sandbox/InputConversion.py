@@ -135,9 +135,9 @@ def updatePos(vector, flag, data):
     else:
         newData[2] = 0.00
 
-    if newData[2] < -180:
+    if newData[2] < 0:
         newData[2] = newData[2] + 360
-    elif newData[2] > 180:
+    elif newData[2] > 360:
         newData[2] = newData[2] - 360
 
     if newData[3] < 0:
