@@ -84,7 +84,7 @@ def run(droneName):
 
         counter = counter + 1
 
-        printf(bcolors.OKBLUE + "%10s [CONSOLE]%7.5d%10s%43s%15.10f%15.10f%10.5f%12s%10.5f%10s\n" + bcolors.ENDC,
+        printf(bcolors.OKBLUE + "%10s [CONSOLE]%7.5d%10s%45s%15.10f%15.10f%10.5f%12s%10.5f%10s\n" + bcolors.ENDC,
                str(datetime.now()), counter, droneName,
                vector.__str__(), carData[0], carData[1], carData[2],
                hexAngle, carData[3], droneName)
@@ -128,7 +128,7 @@ def updatePos(vector, flag, data):
         if vector[1] >= 0:
             newData[3] = math.atan(vector[1] / vector[0]) * 180 / math.pi  # heading
         else:
-            newData[3] = (math.atan(vector[1] / vector[0]) * 180 / math.pi) + 90
+            newData[3] = (math.atan(vector[1] / vector[0]) * 180 / math.pi) - 180
     else:
         newData[2] = 0.00
 
