@@ -16,8 +16,8 @@ A_ACCELERATION = 10  # m/s
 A_UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 A_TEST_ITERATIONS = 25
 A_POSMAPBUFFERSIZE = 250
-A_DIRCHANGEFACTOR = 0.1  # % chance of changing velocity input
-A_MAXVELOCITY = 10  # m/s
+A_DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
+A_MAXVELOCITY = 13.4  # m/s
 
 
 def main():
@@ -84,7 +84,7 @@ def run(droneName):
 
         counter = counter + 1
 
-        printf(bcolors.OKBLUE + "%10s [CONSOLE]%7.5d%10s%45s%15.10f%15.10f%10.5f%12s%10.5f%10s\n" + bcolors.ENDC,
+        printf(bcolors.OKBLUE + "%10s [CONSOLE]%7.5d%10s%45s%15.10f%15.10f%12.5f%12s%11.5f%10s\n" + bcolors.ENDC,
                str(datetime.now()), counter, droneName,
                vector.__str__(), carData[0], carData[1], carData[2],
                hexAngle, carData[3], droneName)
@@ -124,13 +124,21 @@ def updatePos(vector, flag, data):
     newData[1] = newData[1] + yDelta  # ypos
 
     if flag:
-        newData[2] = math.atan(xDelta / yDelta)  # angle
+        if yDelta >= 0:
+            newData[2] = math.atan(xDelta / yDelta) * 180 / math.pi  # angle
+        else:
+            newData[2] = (math.atan(xDelta / yDelta) * 180 / math.pi) - 180
         if vector[1] >= 0:
             newData[3] = math.atan(vector[1] / vector[0]) * 180 / math.pi  # heading
         else:
             newData[3] = (math.atan(vector[1] / vector[0]) * 180 / math.pi) - 180
     else:
         newData[2] = 0.00
+
+    if newData[2] < -180:
+        newData[2] = newData[2] + 360
+    elif newData[2] > 180:
+        newData[2] = newData[2] - 360
 
     if newData[3] < 0:
         newData[3] = newData[3] + 360
