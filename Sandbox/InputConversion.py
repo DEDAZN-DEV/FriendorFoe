@@ -1,25 +1,24 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
+import math
 import random
+import struct
 import sys
 import threading
 import time
-
-
-def printf(format, *args):
-    sys.stdout.write(format % args)
-
 
 # TODO: Get current GPS, speed, and heading for car
 
 A_ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
 A_ACCELERATION = 10  # m/s
-A_UPDATE_INTERVAL = 0.003  # 3ms between vector update
+A_UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 A_TEST_ITERATIONS = 25
 A_POSMAPBUFFERSIZE = 250
 A_DIRCHANGEFACTOR = 0.75  # % chance of changing direction
+A_MAXVELOCITY = 13.4  # m/s to mph
 
 cur_pos = A_ORIGIN
+angle = 0.0
 
 
 def main():
@@ -63,18 +62,23 @@ def run(droneName):
             F_INIT = False
 
         updatePos(vector)
-        print(counter, droneName, vector, cur_pos)
+        hexAngle = genSignal(angle)
+        
         counter = counter + 1
+        
+        printf("%10d%10s%45s%45s%10.5f%12s%10s\n", counter, droneName, vector.__str__(), cur_pos.__str__(), angle, hexAngle,
+               droneName)
+        
         time.sleep(A_UPDATE_INTERVAL)
 
 
 def genRandomVector():
-    newVector = [random.uniform(-13.4, 13.4), random.uniform(-13.4, 13.4)]
+    newVector = [random.uniform(-A_MAXVELOCITY, A_MAXVELOCITY), random.uniform(-A_MAXVELOCITY, A_MAXVELOCITY)]
     return newVector
 
 
 def updatePos(vector):
-    global cur_pos
+    global cur_pos, angle
 
     # TODO: Calculate current location in reference to new target location
     """Calculate new x and y coordinate based on last position"""
@@ -84,17 +88,39 @@ def updatePos(vector):
     temp_pos = cur_pos
     cur_pos = [cur_pos[0] + xDelta, cur_pos[1] + yDelta]
 
-    if cur_pos[0] < 0.0 or cur_pos[1] < 0.0:
+    if cur_pos[0] < 0.0 or cur_pos[1] < 0.0 or cur_pos[0] > 100 or cur_pos[1] > 64:
         cur_pos = temp_pos
         updatePos(genRandomVector())
-    else:
-        return cur_pos
+
+    angle = math.atan(xDelta / yDelta)
 
 
-# TODO: Determine what signals are needed to direct car SERVO
+def printf(format, *args):
+    sys.stdout.write(format % args)
 
-# TODO: Determine what signals are needed to direct car ESC
 
-# TODO: Transmit signals to car through WiFi
+def getGPSCoords():
+    """Poll and obtain data from GPS unit on vehicle"""
+
+
+def genSignal(angleValue):
+    """Craft signal based on new coordinates"""
+
+    # TODO: Determine what signals are needed to direct car SERVO
+
+    return float_to_hex(angleValue)
+
+    # TODO: Determine what signals are needed to direct car ESC
+
+
+def txSignal():
+    """Poll and transmit across wifi something something darkside..."""
+
+    # TODO: Transmit signals to car through WiFi
+
+
+def float_to_hex(f):  # IEEE 32-bit standard for float representation
+    return hex(struct.unpack('<I', struct.pack('<f', f))[0])
+
 
 main()  # Invoke main()
