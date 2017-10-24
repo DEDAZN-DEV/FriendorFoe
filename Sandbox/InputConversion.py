@@ -29,6 +29,7 @@ def main():
     C = threading.Thread(target=run, args=("Drone C",))
     C.start()
 
+
 def run(droneName):
     F_INIT = True  # FLAGS
 
@@ -63,12 +64,12 @@ def run(droneName):
 
         updatePos(vector)
         hexAngle = genSignal(angle)
-        
+
         counter = counter + 1
-        
-        printf("%10d%10s%45s%45s%10.5f%12s%10s\n", counter, droneName, vector.__str__(), cur_pos.__str__(), angle, hexAngle,
-               droneName)
-        
+
+        printf("%10d%10s%45s%45s%10.5f%12s%10s\n", counter, droneName, vector.__str__(), cur_pos.__str__(), angle,
+               hexAngle, droneName)
+
         time.sleep(A_UPDATE_INTERVAL)
 
 
