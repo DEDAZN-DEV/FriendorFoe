@@ -19,13 +19,14 @@ A_POSMAPBUFFERSIZE = 250
 A_DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
 A_MAXVELOCITY = 13.4  # m/s to mph
 
+
 def main():
     A = threading.Thread(target=run, args=("Drone A",))
     A.start()
-    B = threading.Thread(target=run, args=("Drone B",))
-    B.start()
-    C = threading.Thread(target=run, args=("Drone C",))
-    C.start()
+    # B = threading.Thread(target=run, args=("Drone B",))
+    # B.start()
+    # C = threading.Thread(target=run, args=("Drone C",))
+    # C.start()
 
 
 def run(droneName):
@@ -63,9 +64,9 @@ def run(droneName):
         if random.uniform(0, 1) < A_DIRCHANGEFACTOR or F_INIT is True:  # Simulate output vector from the simulator
             vector = genRandomVector()
             F_INIT = False
-            carData = updatePos(vector, True)
+            carData = updatePos(vector, True, carData)
         else:
-            carData = updatePos(vector, False)
+            carData = updatePos(vector, False, carData)
 
         while carData[0] < 0.0 or carData[1] < 0.0 or carData[1] > 100 or carData[0] > 64:
             print(bcolors.WARNING + str(
@@ -73,7 +74,7 @@ def run(droneName):
             carData[0] = temp_xpos
             carData[1] = temp_ypos
             vector = genRandomVector()
-            carData = updatePos(vector, True)
+            carData = updatePos(vector, True, carData)
 
         hexAngle = genSignal(carData[2])
 
@@ -96,15 +97,12 @@ def genTargetedVector():
     """Create vector that is pointing drone towards target"""
 
 
-def updatePos(vector, flag):
+def updatePos(vector, flag, carData):
     global A_ORIGIN
 
     # Car Variables
     cur_xpos = A_ORIGIN[0]
     cur_ypos = A_ORIGIN[1]
-    heading = 0.00  # degrees (True North)
-    angle = 0.00
-    carData = [cur_xpos, cur_ypos, angle, heading]
 
     # TODO: Calculate current location in reference to new target location
     """Calculate new x and y coordinate based on last position"""
@@ -116,7 +114,7 @@ def updatePos(vector, flag):
 
     if flag:
         carData[2] = math.atan(xDelta / yDelta)
-        carData[3] = (heading + angle) % 360
+        carData[3] = (carData[3] + carData[2]) % 360
     else:
         carData[2] = 0.00
 
