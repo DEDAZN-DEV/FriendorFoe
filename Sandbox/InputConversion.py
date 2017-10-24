@@ -23,10 +23,10 @@ A_MAXVELOCITY = 13.4  # m/s
 def main():
     A = threading.Thread(target=run, args=("Drone A",))
     A.start()
-    # B = threading.Thread(target=run, args=("Drone B",))
-    # B.start()
-    # C = threading.Thread(target=run, args=("Drone C",))
-    # C.start()
+    B = threading.Thread(target=run, args=("Drone B",))
+    B.start()
+    C = threading.Thread(target=run, args=("Drone C",))
+    C.start()
 
 
 def run(droneName):
@@ -135,9 +135,9 @@ def updatePos(vector, flag, data):
     else:
         newData[2] = 0.00
 
-    if newData[2] < 0:
+    if newData[2] < -180:
         newData[2] = newData[2] + 360
-    elif newData[2] > 360:
+    elif newData[2] > 180:
         newData[2] = newData[2] - 360
 
     if newData[3] < 0:
