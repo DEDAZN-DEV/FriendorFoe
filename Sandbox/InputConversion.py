@@ -57,24 +57,28 @@ def run(droneName):
         # plt.draw()
 
         # TODO: Get output vector from simulation
-
-        temp_xpos = carData[0]
-        temp_ypos = carData[1]
+        temp_data = carData[:]
 
         if random.uniform(0, 1) < A_DIRCHANGEFACTOR or F_INIT is True:  # Simulate output vector from the simulator
             vector = genRandomVector()
             F_INIT = False
-            carData = updatePos(vector, True, carData)
+            carData = updatePos(vector, True, temp_data)
         else:
-            carData = updatePos(vector, False, carData)
+            carData = updatePos(vector, False, temp_data)
 
-        while carData[0] < 0.0 or carData[1] < 0.0 or carData[1] > 100 or carData[0] > 64:
+        while carData[0] < 0.0 or carData[1] < 0.0 or carData[0] > 100.0 or carData[1] > 64.0:
             print(bcolors.WARNING + str(
                 datetime.now()) + " [WARNING] " + droneName + ": Current heading will hit or exceed boundary edge! Recalculating..." + bcolors.ENDC)
-            carData[0] = temp_xpos
-            carData[1] = temp_ypos
+            # if carData[0] < 0.0:
+            #     newVector = fixVector(vector, 'west')
+            # elif carData[1] < 0.0:
+            #     newVector = fixVector(vector, 'south')
+            # elif carData[0] > 100:
+            #     newVector = fixVector(vector, 'east')
+            # elif carData[1] > 100:
+            #     newVector = fixVector(vector, 'north')
             vector = genRandomVector()
-            carData = updatePos(vector, True, carData)
+            carData = updatePos(vector, True, temp_data)
 
         hexAngle = genSignal(carData[2])
 
@@ -93,38 +97,47 @@ def genRandomVector():
     return newVector
 
 
+def fixVector(vector, error):
+    fixedVector = vector
+
+    if error == "north" or error == "south":
+        fixedVector[1] = fixedVector[1] * -1
+    else:
+        fixedVector[0] = fixedVector[0] * -1
+
+    return fixedVector
+
+
 def genTargetedVector():
     """Create vector that is pointing drone towards target"""
 
 
-def updatePos(vector, flag, carData):
-    global A_ORIGIN
-
-    # Car Variables
-    cur_xpos = A_ORIGIN[0]
-    cur_ypos = A_ORIGIN[1]
-
+def updatePos(vector, flag, data):
     # TODO: Calculate current location in reference to new target location
     """Calculate new x and y coordinate based on last position"""
     xDelta = (vector[0] * A_UPDATE_INTERVAL) + ((1 / 2) * A_ACCELERATION * (A_UPDATE_INTERVAL ** 2))
     yDelta = (vector[1] * A_UPDATE_INTERVAL) + ((1 / 2) * A_ACCELERATION * (A_UPDATE_INTERVAL ** 2))
 
-    carData[0] = carData[0] + xDelta
-    carData[1] = carData[1] + yDelta
+    newData = data[:]
+
+    newData[0] = newData[0] + xDelta  # xpos
+    newData[1] = newData[1] + yDelta  # ypos
 
     if flag:
-        carData[2] = math.atan(xDelta / yDelta)
-        carData[3] = carData[3] + carData[2]
-
-        if carData[3] < 0:
-            carData[3] = carData[3] + 360
-        elif carData[3] > 360:
-            carData[3] = carData[3] - 360
-
+        newData[2] = math.atan(xDelta / yDelta)  # angle
+        if vector[1] >= 0:
+            newData[3] = math.atan(vector[1] / vector[0]) * 180 / math.pi  # heading
+        else:
+            newData[3] = (math.atan(vector[1] / vector[0]) * 180 / math.pi) + 90
     else:
-        carData[2] = 0.00
+        newData[2] = 0.00
 
-    return carData
+    if newData[3] < 0:
+        newData[3] = newData[3] + 360
+    elif newData[3] > 360:
+        newData[3] = newData[3] - 360
+
+    return newData
 
 
 def printf(format, *args):
