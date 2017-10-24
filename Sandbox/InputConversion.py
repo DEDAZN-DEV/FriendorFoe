@@ -26,10 +26,10 @@ angle = 0.00
 def main():
     A = threading.Thread(target=run, args=("Drone A",))
     A.start()
-    # B = threading.Thread(target=run, args=("Drone B",))
-    # B.start()
-    # C = threading.Thread(target=run, args=("Drone C",))
-    # C.start()
+    B = threading.Thread(target=run, args=("Drone B",))
+    B.start()
+    C = threading.Thread(target=run, args=("Drone C",))
+    C.start()
 
 
 def run(droneName):
@@ -72,7 +72,7 @@ def run(droneName):
             updatePos(vector, False)
 
         while cur_pos[0] < 0.0 or cur_pos[1] < 0.0 or cur_pos[0] > 100 or cur_pos[1] > 64:
-            print()
+            print("[CONSOLE] " + droneName + ": Current heading will hit or exceed boundary edge! Recalculating...")
             cur_pos = temp_pos
             vector = genRandomVector()
             updatePos(vector, True)
