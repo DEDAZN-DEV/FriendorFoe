@@ -7,6 +7,8 @@ import sys
 import threading
 import time
 
+from datetime import datetime
+
 # TODO: Get current GPS, speed, and heading for car
 
 A_ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
@@ -14,14 +16,8 @@ A_ACCELERATION = 10  # m/s
 A_UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 A_TEST_ITERATIONS = 25
 A_POSMAPBUFFERSIZE = 250
-A_DIRCHANGEFACTOR = 0.0  # % chance of changing velocity input
+A_DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
 A_MAXVELOCITY = 13.4  # m/s to mph
-
-# Car Variables
-cur_pos = A_ORIGIN
-heading = 0.00  # degrees (True North)
-angle = 0.00
-
 
 def main():
     A = threading.Thread(target=run, args=("Drone A",))
@@ -33,22 +29,21 @@ def main():
 
 
 def run(droneName):
-    global cur_pos
-
     F_INIT = True  # FLAGS
 
     xPosStorage = []  # STORAGE LISTS
     yPosStorage = []
 
     counter = 0  # LOCAL VARIABLES
+    carData = [0.0, 0.0, 0.0, 0.0]
 
     # plt.axhline(0, color='red')  # Initial setup for plot
     # plt.axvline(0, color='red')
     # plt.ion()
 
     while True:
-        xPosStorage.append(cur_pos[0])
-        yPosStorage.append(cur_pos[1])
+        xPosStorage.append(carData[0])
+        yPosStorage.append(carData[1])
 
         if len(xPosStorage) > A_POSMAPBUFFERSIZE:  # Remove oldest data from buffer
             xPosStorage.pop(0)
@@ -62,27 +57,32 @@ def run(droneName):
 
         # TODO: Get output vector from simulation
 
-        temp_pos = cur_pos
+        temp_xpos = carData[0]
+        temp_ypos = carData[1]
 
         if random.uniform(0, 1) < A_DIRCHANGEFACTOR or F_INIT is True:  # Simulate output vector from the simulator
             vector = genRandomVector()
             F_INIT = False
-            updatePos(vector, True)
+            carData = updatePos(vector, True)
         else:
-            updatePos(vector, False)
+            carData = updatePos(vector, False)
 
-        while cur_pos[0] < 0.0 or cur_pos[1] < 0.0 or cur_pos[0] > 100 or cur_pos[1] > 64:
-            print("[CONSOLE] " + droneName + ": Current heading will hit or exceed boundary edge! Recalculating...")
-            cur_pos = temp_pos
+        while carData[0] < 0.0 or carData[1] < 0.0 or carData[1] > 100 or carData[0] > 64:
+            print(bcolors.WARNING + str(
+                datetime.now()) + " [WARNING] " + droneName + ": Current heading will hit or exceed boundary edge! Recalculating..." + bcolors.ENDC)
+            carData[0] = temp_xpos
+            carData[1] = temp_ypos
             vector = genRandomVector()
-            updatePos(vector, True)
+            carData = updatePos(vector, True)
 
-        hexAngle = genSignal(angle)
+        hexAngle = genSignal(carData[2])
 
         counter = counter + 1
 
-        printf("%10d%10s%45s%45s%10.5f%12s%10.5f%10s\n", counter, droneName, vector.__str__(), cur_pos.__str__(), angle,
-               hexAngle, heading, droneName)
+        printf(bcolors.OKBLUE + "%10s [CONSOLE]%7.5d%10s%45s%15.10f%15.10f%10.5f%12s%10.5f%10s\n" + bcolors.ENDC,
+               str(datetime.now()), counter, droneName,
+               vector.__str__(), carData[0], carData[1], carData[2],
+               hexAngle, carData[3], droneName)
 
         time.sleep(A_UPDATE_INTERVAL)
 
@@ -97,20 +97,30 @@ def genTargetedVector():
 
 
 def updatePos(vector, flag):
-    global cur_pos, angle, heading
+    global A_ORIGIN
+
+    # Car Variables
+    cur_xpos = A_ORIGIN[0]
+    cur_ypos = A_ORIGIN[1]
+    heading = 0.00  # degrees (True North)
+    angle = 0.00
+    carData = [cur_xpos, cur_ypos, angle, heading]
 
     # TODO: Calculate current location in reference to new target location
     """Calculate new x and y coordinate based on last position"""
     xDelta = (vector[0] * A_UPDATE_INTERVAL) + ((1 / 2) * A_ACCELERATION * (A_UPDATE_INTERVAL ** 2))
     yDelta = (vector[1] * A_UPDATE_INTERVAL) + ((1 / 2) * A_ACCELERATION * (A_UPDATE_INTERVAL ** 2))
 
-    cur_pos = [cur_pos[0] + xDelta, cur_pos[1] + yDelta]
+    carData[0] = carData[0] + xDelta
+    carData[1] = carData[1] + yDelta
 
     if flag:
-        angle = math.atan(xDelta / yDelta)
-        heading = (heading + angle) % 360
+        carData[2] = math.atan(xDelta / yDelta)
+        carData[3] = (heading + angle) % 360
     else:
-        angle = 0.00
+        carData[2] = 0.00
+
+    return carData
 
 
 def printf(format, *args):
@@ -139,6 +149,24 @@ def txSignal():
 
 def float_to_hex(f):  # IEEE 32-bit standard for float representation
     return hex(struct.unpack('<I', struct.pack('<f', f))[0])
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+
+
+def disable(self):
+    self.HEADER = ''
+    self.OKBLUE = ''
+    self.OKGREEN = ''
+    self.WARNING = ''
+    self.FAIL = ''
+    self.ENDC = ''
 
 
 main()  # Invoke main()
