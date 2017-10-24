@@ -30,12 +30,13 @@ def main():
     C = threading.Thread(target=run, args=("Drone C",))
     C.start()
 
-
 def run(droneName):
     F_INIT = True  # FLAGS
 
     xPosStorage = []  # STORAGE LISTS
     yPosStorage = []
+
+    counter = 0  # LOCAL VARIABLES
 
     # plt.axhline(0, color='red')  # Initial setup for plot
     # plt.axvline(0, color='red')
@@ -62,8 +63,8 @@ def run(droneName):
             F_INIT = False
 
         updatePos(vector)
-        print(droneName, vector, cur_pos)
-
+        print(counter, droneName, vector, cur_pos)
+        counter = counter + 1
         time.sleep(A_UPDATE_INTERVAL)
 
 
