@@ -38,10 +38,6 @@ def run(droneName):
     counter = 0  # LOCAL VARIABLES
     carData = [0.0, 0.0, 0.0, 0.0]
 
-    # plt.axhline(0, color='red')  # Initial setup for plot
-    # plt.axvline(0, color='red')
-    # plt.ion()
-
     while True:
         xPosStorage.append(carData[0])
         yPosStorage.append(carData[1])
@@ -49,12 +45,6 @@ def run(droneName):
         if len(xPosStorage) > A_POSMAPBUFFERSIZE:  # Remove oldest data from buffer
             xPosStorage.pop(0)
             yPosStorage.pop(0)
-
-        # plt.figure(1)
-        # plt.plot(xPosStorage, yPosStorage, color='blue', linewidth=1.25)  # Map plot
-        # plt.pause(A_UPDATE_INTERVAL)
-        # plt.clf()
-        # plt.draw()
 
         # TODO: Get output vector from simulation
         temp_data = carData[:]
@@ -69,14 +59,6 @@ def run(droneName):
         while carData[0] < 0.0 or carData[1] < 0.0 or carData[0] > 100.0 or carData[1] > 64.0:
             print(bcolors.WARNING + str(
                 datetime.now()) + " [WARNING] " + droneName + ": Current heading will hit or exceed boundary edge! Recalculating..." + bcolors.ENDC)
-            # if carData[0] < 0.0:
-            #     newVector = fixVector(vector, 'west')
-            # elif carData[1] < 0.0:
-            #     newVector = fixVector(vector, 'south')
-            # elif carData[0] > 100:
-            #     newVector = fixVector(vector, 'east')
-            # elif carData[1] > 100:
-            #     newVector = fixVector(vector, 'north')
             vector = genRandomVector()
             carData = updatePos(vector, True, temp_data)
 
@@ -95,17 +77,6 @@ def run(droneName):
 def genRandomVector():
     newVector = [random.uniform(-A_MAXVELOCITY, A_MAXVELOCITY), random.uniform(-A_MAXVELOCITY, A_MAXVELOCITY)]
     return newVector
-
-
-def fixVector(vector, error):
-    fixedVector = vector
-
-    if error == "north" or error == "south":
-        fixedVector[1] = fixedVector[1] * -1
-    else:
-        fixedVector[0] = fixedVector[0] * -1
-
-    return fixedVector
 
 
 def genTargetedVector():
