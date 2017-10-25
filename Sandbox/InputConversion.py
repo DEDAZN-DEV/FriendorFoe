@@ -2,11 +2,11 @@
 
 import math
 import random
+import socket
 import struct
 import sys
 import threading
 import time
-
 from datetime import datetime
 
 # TODO: Get current GPS, speed, and heading for car
@@ -18,6 +18,10 @@ A_TEST_ITERATIONS = 25
 A_POSMAPBUFFERSIZE = 250
 A_DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
 A_MAXVELOCITY = 13.4  # m/s
+
+# UDP Settings
+UDP_IP = "127.0.0.1"
+UDP_PORT = 1337
 
 
 def main():
@@ -65,11 +69,13 @@ def run(droneName):
         hexAngle = genSignal(carData[2])
 
         counter = counter + 1
-
+        curTime = datetime.now()
         printf(bcolors.OKBLUE + "%10s [CONSOLE]%7.5d%10s%45s%15.10f%15.10f%12.5f%12s%11.5f%10s\n" + bcolors.ENDC,
-               str(datetime.now()), counter, droneName,
+               str(curTime), counter, droneName,
                vector.__str__(), carData[0], carData[1], carData[2],
                hexAngle, carData[3], droneName)
+
+        socketTx(str(curTime) + "\t" + hexAngle)
 
         time.sleep(A_UPDATE_INTERVAL)
 
@@ -145,6 +151,11 @@ def txSignal():
 
 def float_to_hex(f):  # IEEE 32-bit standard for float representation
     return hex(struct.unpack('<I', struct.pack('<f', f))[0])
+
+
+def socketTx(data):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.sendto(data.encode(), (UDP_IP, UDP_PORT))
 
 
 class bcolors:
