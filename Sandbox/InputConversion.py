@@ -27,10 +27,10 @@ UDP_PORT = 1337
 def main():
     A = threading.Thread(target=run, args=("Drone A",))
     A.start()
-    B = threading.Thread(target=run, args=("Drone B",))
-    B.start()
-    C = threading.Thread(target=run, args=("Drone C",))
-    C.start()
+    # B = threading.Thread(target=run, args=("Drone B",))
+    # B.start()
+    # C = threading.Thread(target=run, args=("Drone C",))
+    # C.start()
 
 
 def run(droneName):
