@@ -151,7 +151,7 @@ def float_to_hex(f):  # IEEE 32-bit standard for float representation
 
 def socketTx(data):
     # Settings
-    SERVER = "10.33.29.232"
+    SERVER = "10.33.29.112"
     PORT = 7777
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

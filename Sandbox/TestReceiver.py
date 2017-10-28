@@ -15,7 +15,7 @@ sock.listen(5)
 
 while True:
     (conn, address) = sock.accept()
-    data = conn.recv(32)
+    data = conn.recv(64)
 
     try:
         print("Received data from: " + conn.getpeername().__str__() + '\t\t' + data.__str__())
