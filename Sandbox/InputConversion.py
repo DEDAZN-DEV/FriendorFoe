@@ -19,10 +19,6 @@ A_POSMAPBUFFERSIZE = 250
 A_DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
 A_MAXVELOCITY = 13.4  # m/s
 
-# UDP Settings
-UDP_IP = "127.0.0.1"
-UDP_PORT = 1337
-
 
 def main():
     A = threading.Thread(target=run, args=("Drone A",))
@@ -154,8 +150,17 @@ def float_to_hex(f):  # IEEE 32-bit standard for float representation
 
 
 def socketTx(data):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.sendto(data.encode(), (UDP_IP, UDP_PORT))
+    # Settings
+    SERVER = "10.33.29.112"
+    PORT = 7777
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.connect((SERVER, PORT))
+        sock.sendall(data.encode())
+        print(bcolors.OKGREEN + "Data Sent..." + bcolors.ENDC)
+    except ConnectionRefusedError:
+        print(bcolors.FAIL + "Connection refused...." + bcolors.ENDC)
 
 
 class bcolors:

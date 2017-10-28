@@ -1,11 +1,23 @@
 import socket
+import sys
 
-UDP_IP = "127.0.0.1"
-UDP_PORT = 1337
+HOST = ''
+PORT = 7777
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind((UDP_IP, UDP_PORT))
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+try:
+    sock.bind((HOST, PORT))
+except socket.error as emsg1:
+    print(emsg1)
+    sys.exit()
+
+sock.listen(5)
 
 while True:
-    data, addr = sock.recvfrom(1024)
-    print("Received data: " + data.decode())
+    (conn, address) = sock.accept()
+    data = conn.recv(64)
+
+    try:
+        print("Received data from: " + conn.getpeername().__str__() + '\t\t' + data.__str__())
+    except TypeError as emsg2:
+        print(emsg2)
