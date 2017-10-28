@@ -1,11 +1,13 @@
 import socket
 
-UDP_IP = "127.0.0.1"
-UDP_PORT = 1337
+PORT = 2222
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind((UDP_IP, UDP_PORT))
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.bind((socket.gethostname(), PORT))
+
+sock.listen(5)
 
 while True:
-    data, addr = sock.recvfrom(1024)
-    print("Received data: " + data.decode())
+    (conn, address) = sock.accept()
+    data = conn.recv(16)
+    print("Received data from: " + str(address) + ' ' + data)
