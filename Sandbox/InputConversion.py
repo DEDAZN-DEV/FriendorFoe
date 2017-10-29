@@ -71,7 +71,7 @@ def run(droneName):
                vector.__str__(), carData[0], carData[1], carData[2],
                hexAngle, carData[3], droneName)
 
-        socketTx(str(curTime) + "\t" + hexAngle)
+        socketTx(str(curTime) + "     " + hexAngle)
 
         time.sleep(A_UPDATE_INTERVAL)
 
@@ -151,17 +151,18 @@ def float_to_hex(f):  # IEEE 32-bit standard for float representation
 
 def socketTx(data):
     # Settings
-    SERVER = "10.33.29.112"
+    SERVER = "192.168.0.118"
     PORT = 7777
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.connect((SERVER, PORT))
         sock.sendall(data.encode())
-        print(bcolors.OKGREEN + "Data Sent..." + bcolors.ENDC)
+        print(bcolors.OKGREEN + "Data Sent Successfully..." + bcolors.ENDC)
     except ConnectionRefusedError:
         print(bcolors.FAIL + "Connection refused...." + bcolors.ENDC)
-
+    except TimeoutError:
+        print(bcolors.FAIL + "Connection timed out...." + bcolors.ENDC)
 
 class bcolors:
     HEADER = '\033[95m'
