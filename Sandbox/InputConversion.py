@@ -23,7 +23,7 @@ A_SERVER_PORT = 7777
 
 def main():
     """
-    Definition of main to run the code.
+    Definition of main to run the code. Testing...
     @return: Nothing
     """
 
