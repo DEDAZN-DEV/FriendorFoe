@@ -23,8 +23,8 @@ A_SERVER_PORT = 7777
 
 def main():
     """
-
-    @return:
+    Definition of main to run the code.
+    @return: Nothing
     """
 
     a = threading.Thread(target=run, args=("Drone A",))
@@ -37,9 +37,9 @@ def main():
 
 def run(dronename):
     """
-
-    @param dronename:
-    @return:
+    Definition wrapper to handle the drones in their individual threads
+    @param dronename: A string that will be used as the name for the drone.
+    @return: Nothing
     """
 
     f_init = True  # FLAGS
@@ -91,8 +91,8 @@ def run(dronename):
 
 def genrandomvector():
     """
-
-    @return:
+    Creates a random velocity vector bounded by the max velocity of the RC car.
+    @return: Returns a two element vector consisting of the x and y component of a velocity.
     """
 
     newvector = [random.uniform(-A_MAXVELOCITY, A_MAXVELOCITY), random.uniform(-A_MAXVELOCITY, A_MAXVELOCITY)]
@@ -101,19 +101,18 @@ def genrandomvector():
 
 def gentargetedvector():
     """
-
-    @return:
+    Creates a targeted vector towards a specific position.
+    @return: Returns a two element vector consisiting of the x and y component of a velocity.
     """
 
 
 def updatepos(vector, flag, data):
-    # TODO: Calculate current location in reference to new target location
     """
-
-    @param vector:
-    @param flag:
-    @param data:
-    @return:
+    Updates the current position of the drone as well as the heading and turn angle.
+    @param vector: The velocity vector (xv, yv).
+    @param flag: Whether or not to update the heading and turn angle.
+    @param data: Temp storage for the car data; 4 elements (xpos, ypos, angle, heading)
+    @return: Returns the updated cardata.
     """
 
     xdelta = (vector[0] * A_UPDATE_INTERVAL) + ((1 / 2) * A_ACCELERATION * (A_UPDATE_INTERVAL ** 2))
@@ -151,9 +150,9 @@ def updatepos(vector, flag, data):
 
 def printf(layout, *args):
     """
-
-    @param layout:
-    @param args:
+    Quality of life improvement (Personal sanity).
+    @param layout: Standard C layout for printf.
+    @param args: Arguments for the placeholders in layout
     @return:
     """
 
@@ -162,16 +161,16 @@ def printf(layout, *args):
 
 def getgpscoords():
     """
-
-    @return:
+    Gets the current GPS coordinates from the RC car.
+    @return: Returns the GPS coordinate vector [x, y]
     """
 
 
 def gensignal(anglevalue):
     """
-
-    @param anglevalue:
-    @return:
+    Crafts a signal based on the input, IEEE floating point single-percision.
+    @param anglevalue: The float value to be converted
+    @return: Returns a 32-byte value in hex format.
     """
 
     # TODO: Determine what signals are needed to direct car SERVO
@@ -183,8 +182,8 @@ def gensignal(anglevalue):
 
 def txsignal():
     """
-
-    @return:
+    Sends signal to remote location.
+    @return: Nothing
     """
 
     # TODO: Transmit signals to car through WiFi
@@ -192,9 +191,9 @@ def txsignal():
 
 def float_to_hex(f):  # IEEE 32-bit standard for float representation
     """
-
-    @param f:
-    @return:
+    Converts float value to hex value.
+    @param f: Float value.
+    @return: The hex value of the target float.
     """
 
     return hex(struct.unpack('<I', struct.pack('<f', f))[0])
@@ -202,11 +201,11 @@ def float_to_hex(f):  # IEEE 32-bit standard for float representation
 
 def sockettx(data, server, port):
     """
-
-    @param data:
-    @param server:
-    @param port:
-    @return:
+    Transmits data over a socket.
+    @param data: Data to be transmitted.
+    @param server: Server IP address.
+    @param port: Server PORT
+    @return: Nothing
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -221,7 +220,7 @@ def sockettx(data, server, port):
 
 class BColors:
     """
-
+    Wrapper class for console output coloring.
     """
 
     HEADER = '\033[95m'
@@ -234,9 +233,9 @@ class BColors:
 
 def disable(self):
     """
-
-    @param self:
-    @return:
+    Terminating color for console output.
+    @param self: Reference to itself.
+    @return: Nothing
     """
 
     self.HEADER = ''
