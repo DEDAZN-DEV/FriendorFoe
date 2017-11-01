@@ -17,8 +17,8 @@ A_TEST_ITERATIONS = 25
 A_POSMAPBUFFERSIZE = 250
 A_DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
 A_MAXVELOCITY = 13.4  # m/s
-A_SERVER_IP = "192.168.0.103"
-A_SERVER_PORT = 7777
+A_SERVER_IP = "127.0.0.1"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
+A_SERVER_PORT = 7777  # <-- DO NOT CHANGE
 
 
 def main():
@@ -161,7 +161,7 @@ def printf(layout, *args):
 
 def getgpscoords():
     """
-    Gets the current GPS coordinates from the RC car.
+    Gets the current GPS coordinates from the RC car. Currently generates a random GPS coordinate +/- error factor
     @return: Returns the GPS coordinate vector [x, y]
     """
 
@@ -207,6 +207,7 @@ def sockettx(data, server, port):
     @param port: Server PORT
     @return: Nothing
     """
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.connect((server, port))
