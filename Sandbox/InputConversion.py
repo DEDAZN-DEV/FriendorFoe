@@ -21,6 +21,19 @@ A_SERVER_IP = "127.0.0.1"  # <-- This is the internal IP on the machine running 
 A_SERVER_PORT = 7777  # <-- DO NOT CHANGE
 
 
+class BColors:
+    """
+    Wrapper class for console output coloring.
+    """
+
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+
+
 def main():
     """
     Definition of main to run the code. Testing...
@@ -162,7 +175,69 @@ def printf(layout, *args):
 def getgpscoords():
     """
     Gets the current GPS coordinates from the RC car. Currently generates a random GPS coordinate +/- error factor
-    @return: Returns the GPS coordinate vector [x, y]
+    @return: Returns the GGA format message
+    """
+
+    # $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.5,M,46.9,M,,*47
+
+    # 123519 = 12:35:19 UTC
+    # 4807.038, N = 48 deg 07.038' N
+    # 01131.000, E = 11 deg 32.000' E
+    # 1 = Fix quality: 0 = invalid, 1 = GPS fix (SPS), 2 = DGPS fix, 3 = PPS fix, 4 = RTK fix, 5 = Float RTK,
+    #       6 = estimated dead reckoning, 7 = manual input mode, 8 = simulation mode
+    # 08 = Number of satellites being used
+    # 0.9 = Horizontal dilution of position
+    # 545.5, M = 545.4 M above mean sea-level
+    # 46.9, M = 46.9 M above WGS84 ellipsoid
+    # (empty) = Time in seconds since last DGPS update
+    # (empty) = DGPS station ID number
+    # *47 = checksum data, always begins with *
+
+    # Test GGA message format from UBlox
+    # $GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65
+    # 74 ASCII characters, 74 byte message length
+
+    # Insert method to poll GPS chips
+    message = "$GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65"
+
+    # bytes 17 - 26
+    print(message)
+    dlat = ''
+    mlat = ''
+
+    dlong = ''
+    mlong = ''
+
+    for i in range(17, 19):
+        dlat = dlat + message[i]
+    for j in range(19, 27):
+        mlat = mlat + message[j]
+
+    dlat = int(dlat)
+    mlat = float(mlat)
+    print(dlat, mlat)
+
+    # bytes 30 - 40
+    for k in range(30, 33):
+        dlong = dlong + message[k]
+    for n in range(33, 41):
+        mlong = mlong + message[n]
+
+    dlong = int(dlong)
+    mlong = float(mlong)
+    print(dlong, mlong)
+
+
+def pollchips():
+    print("Polling car....")
+
+
+def gpstocartesian(lat, long):
+    """
+
+    @param lat:
+    @param long:
+    @return:
     """
 
 
@@ -219,19 +294,6 @@ def sockettx(data, server, port):
         print(BColors.FAIL + "Connection timed out...." + BColors.ENDC)
 
 
-class BColors:
-    """
-    Wrapper class for console output coloring.
-    """
-
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-
-
 def disable(self):
     """
     Terminating color for console output.
@@ -247,4 +309,5 @@ def disable(self):
     self.ENDC = ''
 
 
-main()  # Invoke main()
+getgpscoords()
+# main()  # Invoke main()
