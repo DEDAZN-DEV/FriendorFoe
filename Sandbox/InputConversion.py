@@ -172,7 +172,7 @@ def printf(layout, *args):
     sys.stdout.write(layout % args)
 
 
-def getgpscoords():
+def parsegpsmsg():
     """
     Gets the current GPS coordinates from the RC car. Currently generates a random GPS coordinate +/- error factor
     @return: Returns the GGA format message
@@ -198,7 +198,15 @@ def getgpscoords():
     # 74 ASCII characters, 74 byte message length
 
     # Insert method to poll GPS chips
-    message = "$GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65"
+    # message = "$GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65"
+    message = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.5,M,46.9,M,,*47"
+    separator = []
+
+    for char in range(0, len(message)):
+        if message[char] == ',':
+            separator.append(char)
+
+    print(separator)
 
     # bytes 17 - 26
     print(message)
@@ -207,10 +215,9 @@ def getgpscoords():
 
     dlong = ''
     mlong = ''
-
-    for i in range(17, 19):
+    for i in range(separator[1] + 1, separator[1] + 3):
         dlat = dlat + message[i]
-    for j in range(19, 27):
+    for j in range(separator[1] + 3, separator[2]):
         mlat = mlat + message[j]
 
     dlat = int(dlat)
@@ -220,9 +227,9 @@ def getgpscoords():
     print(latitude)
 
     # bytes 30 - 40
-    for k in range(30, 33):
+    for k in range(separator[3] + 1, separator[3] + 4):
         dlong = dlong + message[k]
-    for n in range(33, 41):
+    for n in range(separator[3] + 4, separator[4]):
         mlong = mlong + message[n]
 
     dlong = int(dlong)
@@ -315,5 +322,5 @@ def disable(self):
     self.ENDC = ''
 
 
-getgpscoords()
+parsegpsmsg()
 # main()  # Invoke main()
