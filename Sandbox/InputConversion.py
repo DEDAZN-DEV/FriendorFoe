@@ -215,7 +215,9 @@ def getgpscoords():
 
     dlat = int(dlat)
     mlat = float(mlat)
-    print(dlat, mlat)
+    mlat = mlat / 60
+    latitude = dlat + mlat
+    print(latitude)
 
     # bytes 30 - 40
     for k in range(30, 33):
@@ -225,7 +227,11 @@ def getgpscoords():
 
     dlong = int(dlong)
     mlong = float(mlong)
-    print(dlong, mlong)
+    mlong = mlong / 60
+    longitude = dlong + mlong
+    print(longitude)
+
+    gpstocartesian(latitude, longitude)
 
 
 def pollchips():
