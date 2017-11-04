@@ -11,12 +11,20 @@ from datetime import datetime
 
 # TODO: Get current GPS, speed, and heading for car
 A_ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
+A_LATITUDE = 29.190100
+A_LONGITUDE = -81.046258
+A_RADIUS_OF_EARTH = 6378137
+A_ASPECT_RADIO = 29.190343  # Latitude closest to center of map
+
 A_ACCELERATION = 10  # m/s
 A_UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
-A_TEST_ITERATIONS = 25
-A_POSMAPBUFFERSIZE = 250
+
 A_DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
 A_MAXVELOCITY = 13.4  # m/s
+
+A_TEST_ITERATIONS = 25
+A_POSMAPBUFFERSIZE = 250
+
 A_SERVER_IP = "127.0.0.1"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
 A_SERVER_PORT = 7777  # <-- DO NOT CHANGE
 
@@ -75,20 +83,20 @@ def run(dronename):
         temp_data = cardata[:]
 
         if random.uniform(0, 1) < A_DIRCHANGEFACTOR or f_init is True:  # Simulate output vector from the simulator
-            vector = genrandomvector()
+            vector = gen_random_vector()
             f_init = False
-            cardata = updatepos(vector, True, temp_data)
+            cardata = update_pos(vector, True, temp_data)
         else:
-            cardata = updatepos(vector, False, temp_data)
+            cardata = update_pos(vector, False, temp_data)
 
         while cardata[0] < 0.0 or cardata[1] < 0.0 or cardata[0] > 100.0 or cardata[1] > 64.0:
             print(BColors.WARNING + str(
                 datetime.now()) + " [WARNING] " + dronename +
                   ": Current heading will hit or exceed boundary edge! Recalculating..." + BColors.ENDC)
-            vector = genrandomvector()
-            cardata = updatepos(vector, True, temp_data)
+            vector = gen_random_vector()
+            cardata = update_pos(vector, True, temp_data)
 
-        hexangle = gensignal(cardata[2])
+        hexangle = gen_signal(cardata[2])
 
         counter = counter + 1
         curtime = datetime.now()
@@ -97,12 +105,12 @@ def run(dronename):
                vector.__str__(), cardata[0], cardata[1], cardata[2],
                hexangle, cardata[3], dronename)
 
-        sockettx(str(curtime) + "     " + hexangle, A_SERVER_IP, A_SERVER_PORT)
+        socket_tx(str(curtime) + "     " + hexangle, A_SERVER_IP, A_SERVER_PORT)
 
         time.sleep(A_UPDATE_INTERVAL)
 
 
-def genrandomvector():
+def gen_random_vector():
     """
     Creates a random velocity vector bounded by the max velocity of the RC car.
     @return: Returns a two element vector consisting of the x and y component of a velocity.
@@ -112,14 +120,14 @@ def genrandomvector():
     return newvector
 
 
-def gentargetedvector():
+def gen_targeted_vector():
     """
     Creates a targeted vector towards a specific position.
     @return: Returns a two element vector consisiting of the x and y component of a velocity.
     """
 
 
-def updatepos(vector, flag, data):
+def update_pos(vector, flag, data):
     """
     Updates the current position of the drone as well as the heading and turn angle.
     @param vector: The velocity vector (xv, yv).
@@ -172,10 +180,10 @@ def printf(layout, *args):
     sys.stdout.write(layout % args)
 
 
-def parsegpsmsg():
+def parse_gps_msg(message):
     """
     Gets the current GPS coordinates from the RC car. Currently generates a random GPS coordinate +/- error factor
-    @return: Returns the GGA format message
+    @return: Returns the lat, long, and altitude.
     """
 
     # $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.5,M,46.9,M,,*47
@@ -198,8 +206,10 @@ def parsegpsmsg():
     # 74 ASCII characters, 74 byte message length
 
     # Insert method to poll GPS chips
-    # message = "$GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65"
-    message = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.5,M,46.9,M,,*47"
+    poll_gps()
+
+    message = "$GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65"
+    # message = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.5,M,46.9,M,,*47"
     separator = []
 
     for char in range(0, len(message)):
@@ -208,13 +218,14 @@ def parsegpsmsg():
 
     print(separator)
 
-    # bytes 17 - 26
-    print(message)
     dlat = ''
     mlat = ''
-
     dlong = ''
     mlong = ''
+    altitude = ''
+
+    # bytes 17 - 26
+    print(message)
     for i in range(separator[1] + 1, separator[1] + 3):
         dlat = dlat + message[i]
     for j in range(separator[1] + 3, separator[2]):
@@ -224,6 +235,10 @@ def parsegpsmsg():
     mlat = float(mlat)
     mlat = mlat / 60
     latitude = dlat + mlat
+
+    if message[separator[2] + 1] == 'S':
+        latitude = -latitude
+
     print(latitude)
 
     # bytes 30 - 40
@@ -236,16 +251,27 @@ def parsegpsmsg():
     mlong = float(mlong)
     mlong = mlong / 60
     longitude = dlong + mlong
+
+    if message[separator[4] + 1] == 'W':
+        longitude = -longitude
+
     print(longitude)
 
-    gpstocartesian(latitude, longitude)
+    for m in range(separator[8] + 1, separator[8] + 6):
+        altitude = altitude + message[m]
+
+    altitude = float(altitude)
+    print(altitude)
+
+    gps_to_xy(latitude, longitude)
+    gps_to_xy(A_LATITUDE, A_LONGITUDE)
 
 
-def pollchips():
+def poll_gps():
     print("Polling car....")
 
 
-def gpstocartesian(lat, long):
+def gps_to_xy(lat, long):
     """
 
     @param lat:
@@ -253,8 +279,17 @@ def gpstocartesian(lat, long):
     @return:
     """
 
+    x = A_RADIUS_OF_EARTH * long * math.cos(deg_to_radians(A_ASPECT_RADIO))
+    y = A_RADIUS_OF_EARTH * deg_to_radians(lat)
 
-def gensignal(anglevalue):
+    print(x, y)
+
+
+def deg_to_radians(val):
+    return val * math.pi / 180
+
+
+def gen_signal(anglevalue):
     """
     Crafts a signal based on the input, IEEE floating point single-percision.
     @param anglevalue: The float value to be converted
@@ -268,7 +303,7 @@ def gensignal(anglevalue):
     # TODO: Determine what signals are needed to direct car ESC
 
 
-def txsignal():
+def tx_signal():
     """
     Sends signal to remote location.
     @return: Nothing
@@ -287,7 +322,7 @@ def float_to_hex(f):  # IEEE 32-bit standard for float representation
     return hex(struct.unpack('<I', struct.pack('<f', f))[0])
 
 
-def sockettx(data, server, port):
+def socket_tx(data, server, port):
     """
     Transmits data over a socket.
     @param data: Data to be transmitted.
@@ -322,5 +357,5 @@ def disable(self):
     self.ENDC = ''
 
 
-parsegpsmsg()
+parse_gps_msg('')
 # main()  # Invoke main()
