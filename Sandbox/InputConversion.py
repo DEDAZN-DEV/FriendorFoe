@@ -11,15 +11,15 @@ from datetime import datetime
 
 # TODO: Get current GPS, speed, and heading for car
 ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
-ORIGIN_LATITUDE = 29.190100
-ORIGIN_LONGITUDE = -81.046254
-CORNER_LAT = 29.190576
-CORNER_LONG = -81.045081
+ORIGIN_LATITUDE = 29.195267
+ORIGIN_LONGITUDE = -81.054341
+CORNER_LAT = 29.196433
+CORNER_LONG = -81.054020
 RADIUS_OF_EARTH = 6378137  # m
-ROTATION_ANGLE = -30  # off x axis rotate clockwise
+ROTATION_ANGLE = 15  # off x axis rotate clockwise
 
-LENGTH_X = 64
-LENGTH_Y = 100
+LENGTH_X = 69
+LENGTH_Y = 117
 BASE_X = 0
 BASE_Y = 0
 X_RATIO = 1
@@ -56,6 +56,9 @@ def main():
     Definition of main to run the code. Testing...
     @return: Nothing
     """
+
+    calc_originxy()
+    set_xy_ratio()
 
     a = threading.Thread(target=run, args=("Drone A",))
     a.start()
@@ -266,12 +269,9 @@ def parse_gps_msg(message):
 
     print(longitude)
 
-    for m in range(separator[8] + 1, separator[8] + 6):
-        altitude = altitude + message[m]
+    data = scale_xy(gps_to_xy(latitude, longitude))
 
-    altitude = float(altitude)
-    print(altitude)
-
+    return data
 
 def poll_gps():
     print("Polling car....")
@@ -310,6 +310,7 @@ def gps_to_xy(lat, long):
     rot_y = -x * math.sin(math.radians(ROTATION_ANGLE)) + y * math.cos(math.radians(ROTATION_ANGLE))
 
     xy = [rot_x - BASE_X, rot_y - BASE_Y]
+    # xy = [x - BASE_X, y - BASE_Y]
 
     return xy
 
@@ -392,10 +393,11 @@ def disable(self):
     self.FAIL = ''
     self.ENDC = ''
 
-
-# parse_gps_msg('')
 calc_originxy()
 set_xy_ratio()
+
+print(parse_gps_msg(''))
+print("----------------")
 
 corner = gps_to_xy(CORNER_LAT, CORNER_LONG)
 print("*** Corner ***")
@@ -413,7 +415,7 @@ print(origin)
 print(scale_xy(origin))
 
 print("\n*** Test ***")
-test = gps_to_xy(29.190536, -81.045528)
+test = gps_to_xy(29.195272, -81.054336)
 print(test)
 print(scale_xy(test))
 
