@@ -12,14 +12,18 @@ from datetime import datetime
 # TODO: Get current GPS, speed, and heading for car
 ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
 ORIGIN_LATITUDE = 29.190100
-ORIGIN_LONGITUDE = -81.046258
+ORIGIN_LONGITUDE = -81.046254
 CORNER_LAT = 29.190576
-CORNER_LONG = -81.045075
+CORNER_LONG = -81.045081
 RADIUS_OF_EARTH = 6378137  # m
-ROTATION_ANGLE = 30  # off x axis
+ROTATION_ANGLE = -30  # off x axis rotate clockwise
 
 LENGTH_X = 64
 LENGTH_Y = 100
+BASE_X = 0
+BASE_Y = 0
+X_RATIO = 1
+Y_RATIO = 1
 
 ACCELERATION = 10  # m/s
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
@@ -273,6 +277,22 @@ def poll_gps():
     print("Polling car....")
 
 
+def calc_originxy():
+    global BASE_X, BASE_Y
+
+    temp = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
+    BASE_X = temp[0]
+    BASE_Y = temp[1]
+
+
+def set_xy_ratio():
+    global X_RATIO, Y_RATIO
+
+    temp = gps_to_xy(CORNER_LAT, CORNER_LONG)
+    Y_RATIO = temp[1] / LENGTH_Y
+    X_RATIO = temp[0] / LENGTH_X
+
+
 def gps_to_xy(lat, long):
     """
 
@@ -280,27 +300,25 @@ def gps_to_xy(lat, long):
     @param long:
     @return:
     """
-    radlat = deg_to_radians(lat)
-    radlong = deg_to_radians(long)
+    radlat = math.radians(lat)
+    radlong = math.radians(long)
 
-    x = (radlong - deg_to_radians(ORIGIN_LONGITUDE))
-    y = (math.log(math.tan((math.pi / 4) + (radlat / 2))))
+    x = radlong - math.radians(ORIGIN_LONGITUDE)
+    y = math.log(math.tan(radlat) + (1 / math.cos(radlat)))
 
-    rot_x = x * math.cos(deg_to_radians(ROTATION_ANGLE)) + y * math.sin(deg_to_radians(ROTATION_ANGLE))
-    rot_y = -x * math.sin(deg_to_radians(ROTATION_ANGLE)) + y * math.cos(deg_to_radians(ROTATION_ANGLE))
+    rot_x = x * math.cos(math.radians(ROTATION_ANGLE)) + y * math.sin(math.radians(ROTATION_ANGLE))
+    rot_y = -x * math.sin(math.radians(ROTATION_ANGLE)) + y * math.cos(math.radians(ROTATION_ANGLE))
 
-    xy = [rot_x, rot_y]
-
-    print("Converted Coordinates:", xy)
-
-    print(xy[0] / LENGTH_X)
-    print(xy[1] / LENGTH_Y)
+    xy = [rot_x - BASE_X, rot_y - BASE_Y]
 
     return xy
 
 
-def deg_to_radians(val):
-    return val * math.pi / 180
+def scale_xy(xy):
+    xy[0] = xy[0] / X_RATIO
+    xy[1] = xy[1] / Y_RATIO
+
+    return xy
 
 
 def deg_to_seconds(val):
@@ -376,5 +394,27 @@ def disable(self):
 
 
 # parse_gps_msg('')
-gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
+calc_originxy()
+set_xy_ratio()
+
+corner = gps_to_xy(CORNER_LAT, CORNER_LONG)
+print("*** Corner ***")
+print(corner)
+print(scale_xy(corner))
+
+print("\n*** Center ***")
+middle = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
+print(middle)
+print(scale_xy(middle))
+
+print("\n*** Origin ***")
+origin = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
+print(origin)
+print(scale_xy(origin))
+
+print("\n*** Test ***")
+test = gps_to_xy(29.190536, -81.045528)
+print(test)
+print(scale_xy(test))
+
 # main()  # Invoke main()
