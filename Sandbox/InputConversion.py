@@ -10,23 +10,28 @@ import time
 from datetime import datetime
 
 # TODO: Get current GPS, speed, and heading for car
-A_ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
-A_LATITUDE = 29.190100
-A_LONGITUDE = -81.046258
-A_RADIUS_OF_EARTH = 6378137
-A_ASPECT_RADIO = 29.190343  # Latitude closest to center of map
+ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
+ORIGIN_LATITUDE = 29.190100
+ORIGIN_LONGITUDE = -81.046258
+CORNER_LAT = 29.190576
+CORNER_LONG = -81.045075
+RADIUS_OF_EARTH = 6378137  # m
+ROTATION_ANGLE = 30  # off x axis
 
-A_ACCELERATION = 10  # m/s
-A_UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
+LENGTH_X = 64
+LENGTH_Y = 100
 
-A_DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
-A_MAXVELOCITY = 13.4  # m/s
+ACCELERATION = 10  # m/s
+UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 
-A_TEST_ITERATIONS = 25
-A_POSMAPBUFFERSIZE = 250
+DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
+MAXVELOCITY = 13.4  # m/s
 
-A_SERVER_IP = "127.0.0.1"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
-A_SERVER_PORT = 7777  # <-- DO NOT CHANGE
+TEST_ITERATIONS = 25
+POSMAPBUFFERSIZE = 250
+
+SERVER_IP = "127.0.0.1"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
+SERVER_PORT = 7777  # <-- DO NOT CHANGE
 
 
 class BColors:
@@ -75,14 +80,14 @@ def run(dronename):
         xpossstorage.append(cardata[0])
         yposstorage.append(cardata[1])
 
-        if len(xpossstorage) > A_POSMAPBUFFERSIZE:  # Remove oldest data from buffer
+        if len(xpossstorage) > POSMAPBUFFERSIZE:  # Remove oldest data from buffer
             xpossstorage.pop(0)
             yposstorage.pop(0)
 
         # TODO: Get output vector from simulation
         temp_data = cardata[:]
 
-        if random.uniform(0, 1) < A_DIRCHANGEFACTOR or f_init is True:  # Simulate output vector from the simulator
+        if random.uniform(0, 1) < DIRCHANGEFACTOR or f_init is True:  # Simulate output vector from the simulator
             vector = gen_random_vector()
             f_init = False
             cardata = update_pos(vector, True, temp_data)
@@ -105,9 +110,9 @@ def run(dronename):
                vector.__str__(), cardata[0], cardata[1], cardata[2],
                hexangle, cardata[3], dronename)
 
-        socket_tx(str(curtime) + "     " + hexangle, A_SERVER_IP, A_SERVER_PORT)
+        socket_tx(str(curtime) + "     " + hexangle, SERVER_IP, SERVER_PORT)
 
-        time.sleep(A_UPDATE_INTERVAL)
+        time.sleep(UPDATE_INTERVAL)
 
 
 def gen_random_vector():
@@ -116,7 +121,7 @@ def gen_random_vector():
     @return: Returns a two element vector consisting of the x and y component of a velocity.
     """
 
-    newvector = [random.uniform(-A_MAXVELOCITY, A_MAXVELOCITY), random.uniform(-A_MAXVELOCITY, A_MAXVELOCITY)]
+    newvector = [random.uniform(-MAXVELOCITY, MAXVELOCITY), random.uniform(-MAXVELOCITY, MAXVELOCITY)]
     return newvector
 
 
@@ -136,8 +141,8 @@ def update_pos(vector, flag, data):
     @return: Returns the updated cardata.
     """
 
-    xdelta = (vector[0] * A_UPDATE_INTERVAL) + ((1 / 2) * A_ACCELERATION * (A_UPDATE_INTERVAL ** 2))
-    ydelta = (vector[1] * A_UPDATE_INTERVAL) + ((1 / 2) * A_ACCELERATION * (A_UPDATE_INTERVAL ** 2))
+    xdelta = (vector[0] * UPDATE_INTERVAL) + ((1 / 2) * ACCELERATION * (UPDATE_INTERVAL ** 2))
+    ydelta = (vector[1] * UPDATE_INTERVAL) + ((1 / 2) * ACCELERATION * (UPDATE_INTERVAL ** 2))
 
     newdata = data[:]
 
@@ -263,9 +268,6 @@ def parse_gps_msg(message):
     altitude = float(altitude)
     print(altitude)
 
-    gps_to_xy(latitude, longitude)
-    gps_to_xy(A_LATITUDE, A_LONGITUDE)
-
 
 def poll_gps():
     print("Polling car....")
@@ -278,15 +280,31 @@ def gps_to_xy(lat, long):
     @param long:
     @return:
     """
+    radlat = deg_to_radians(lat)
+    radlong = deg_to_radians(long)
 
-    x = A_RADIUS_OF_EARTH * long * math.cos(deg_to_radians(A_ASPECT_RADIO))
-    y = A_RADIUS_OF_EARTH * deg_to_radians(lat)
+    x = (radlong - deg_to_radians(ORIGIN_LONGITUDE))
+    y = (math.log(math.tan((math.pi / 4) + (radlat / 2))))
 
-    print(x, y)
+    rot_x = x * math.cos(deg_to_radians(ROTATION_ANGLE)) + y * math.sin(deg_to_radians(ROTATION_ANGLE))
+    rot_y = -x * math.sin(deg_to_radians(ROTATION_ANGLE)) + y * math.cos(deg_to_radians(ROTATION_ANGLE))
+
+    xy = [rot_x, rot_y]
+
+    print("Converted Coordinates:", xy)
+
+    print(xy[0] / LENGTH_X)
+    print(xy[1] / LENGTH_Y)
+
+    return xy
 
 
 def deg_to_radians(val):
     return val * math.pi / 180
+
+
+def deg_to_seconds(val):
+    return val * 60 * 60
 
 
 def gen_signal(anglevalue):
@@ -357,5 +375,6 @@ def disable(self):
     self.ENDC = ''
 
 
-parse_gps_msg('')
+# parse_gps_msg('')
+gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
 # main()  # Invoke main()
