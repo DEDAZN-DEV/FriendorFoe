@@ -13,6 +13,8 @@ except socket.error as emsg1:
 
 sock.listen(5)
 
+print("Server active...")
+
 while True:
     (conn, address) = sock.accept()
     data = conn.recv(64)

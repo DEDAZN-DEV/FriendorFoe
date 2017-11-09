@@ -10,15 +10,45 @@ import time
 from datetime import datetime
 
 # TODO: Get current GPS, speed, and heading for car
-A_ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
-A_ACCELERATION = 10  # m/s
-A_UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
-A_TEST_ITERATIONS = 25
-A_POSMAPBUFFERSIZE = 250
-A_DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
-A_MAXVELOCITY = 13.4  # m/s
-A_SERVER_IP = "127.0.0.1"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
-A_SERVER_PORT = 7777  # <-- DO NOT CHANGE
+ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
+ORIGIN_LATITUDE = 29.195267
+ORIGIN_LONGITUDE = -81.054341
+CORNER_LAT = 29.196433
+CORNER_LONG = -81.054020
+RADIUS_OF_EARTH = 6378137  # m
+ROTATION_ANGLE = 15  # off x axis rotate clockwise
+
+LENGTH_X = 69
+LENGTH_Y = 117
+BASE_X = 0
+BASE_Y = 0
+X_RATIO = 1
+Y_RATIO = 1
+
+ACCELERATION = 10  # m/s
+UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
+
+DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
+MAXVELOCITY = 13.4  # m/s
+
+TEST_ITERATIONS = 25
+POSMAPBUFFERSIZE = 250
+
+SERVER_IP = "127.0.0.1"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
+SERVER_PORT = 7777  # <-- DO NOT CHANGE
+
+
+class BColors:
+    """
+    Wrapper class for console output coloring.
+    """
+
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
 
 
 def main():
@@ -26,6 +56,9 @@ def main():
     Definition of main to run the code. Testing...
     @return: Nothing
     """
+
+    calc_originxy()
+    set_xy_ratio()
 
     a = threading.Thread(target=run, args=("Drone A",))
     a.start()
@@ -54,28 +87,28 @@ def run(dronename):
         xpossstorage.append(cardata[0])
         yposstorage.append(cardata[1])
 
-        if len(xpossstorage) > A_POSMAPBUFFERSIZE:  # Remove oldest data from buffer
+        if len(xpossstorage) > POSMAPBUFFERSIZE:  # Remove oldest data from buffer
             xpossstorage.pop(0)
             yposstorage.pop(0)
 
         # TODO: Get output vector from simulation
         temp_data = cardata[:]
 
-        if random.uniform(0, 1) < A_DIRCHANGEFACTOR or f_init is True:  # Simulate output vector from the simulator
-            vector = genrandomvector()
+        if random.uniform(0, 1) < DIRCHANGEFACTOR or f_init is True:  # Simulate output vector from the simulator
+            vector = gen_random_vector()
             f_init = False
-            cardata = updatepos(vector, True, temp_data)
+            cardata = update_pos(vector, True, temp_data)
         else:
-            cardata = updatepos(vector, False, temp_data)
+            cardata = update_pos(vector, False, temp_data)
 
         while cardata[0] < 0.0 or cardata[1] < 0.0 or cardata[0] > 100.0 or cardata[1] > 64.0:
             print(BColors.WARNING + str(
                 datetime.now()) + " [WARNING] " + dronename +
                   ": Current heading will hit or exceed boundary edge! Recalculating..." + BColors.ENDC)
-            vector = genrandomvector()
-            cardata = updatepos(vector, True, temp_data)
+            vector = gen_random_vector()
+            cardata = update_pos(vector, True, temp_data)
 
-        hexangle = gensignal(cardata[2])
+        hexangle = gen_signal(cardata[2])
 
         counter = counter + 1
         curtime = datetime.now()
@@ -84,29 +117,29 @@ def run(dronename):
                vector.__str__(), cardata[0], cardata[1], cardata[2],
                hexangle, cardata[3], dronename)
 
-        sockettx(str(curtime) + "     " + hexangle, A_SERVER_IP, A_SERVER_PORT)
+        socket_tx(str(curtime) + "     " + hexangle, SERVER_IP, SERVER_PORT)
 
-        time.sleep(A_UPDATE_INTERVAL)
+        time.sleep(UPDATE_INTERVAL)
 
 
-def genrandomvector():
+def gen_random_vector():
     """
     Creates a random velocity vector bounded by the max velocity of the RC car.
     @return: Returns a two element vector consisting of the x and y component of a velocity.
     """
 
-    newvector = [random.uniform(-A_MAXVELOCITY, A_MAXVELOCITY), random.uniform(-A_MAXVELOCITY, A_MAXVELOCITY)]
+    newvector = [random.uniform(-MAXVELOCITY, MAXVELOCITY), random.uniform(-MAXVELOCITY, MAXVELOCITY)]
     return newvector
 
 
-def gentargetedvector():
+def gen_targeted_vector():
     """
     Creates a targeted vector towards a specific position.
     @return: Returns a two element vector consisiting of the x and y component of a velocity.
     """
 
 
-def updatepos(vector, flag, data):
+def update_pos(vector, flag, data):
     """
     Updates the current position of the drone as well as the heading and turn angle.
     @param vector: The velocity vector (xv, yv).
@@ -115,8 +148,8 @@ def updatepos(vector, flag, data):
     @return: Returns the updated cardata.
     """
 
-    xdelta = (vector[0] * A_UPDATE_INTERVAL) + ((1 / 2) * A_ACCELERATION * (A_UPDATE_INTERVAL ** 2))
-    ydelta = (vector[1] * A_UPDATE_INTERVAL) + ((1 / 2) * A_ACCELERATION * (A_UPDATE_INTERVAL ** 2))
+    xdelta = (vector[0] * UPDATE_INTERVAL) + ((1 / 2) * ACCELERATION * (UPDATE_INTERVAL ** 2))
+    ydelta = (vector[1] * UPDATE_INTERVAL) + ((1 / 2) * ACCELERATION * (UPDATE_INTERVAL ** 2))
 
     newdata = data[:]
 
@@ -159,14 +192,141 @@ def printf(layout, *args):
     sys.stdout.write(layout % args)
 
 
-def getgpscoords():
+def parse_gps_msg(message):
     """
     Gets the current GPS coordinates from the RC car. Currently generates a random GPS coordinate +/- error factor
-    @return: Returns the GPS coordinate vector [x, y]
+    @return: Returns the lat, long, and altitude.
     """
 
+    # $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.5,M,46.9,M,,*47
 
-def gensignal(anglevalue):
+    # 123519 = 12:35:19 UTC
+    # 4807.038, N = 48 deg 07.038' N
+    # 01131.000, E = 11 deg 32.000' E
+    # 1 = Fix quality: 0 = invalid, 1 = GPS fix (SPS), 2 = DGPS fix, 3 = PPS fix, 4 = RTK fix, 5 = Float RTK,
+    #       6 = estimated dead reckoning, 7 = manual input mode, 8 = simulation mode
+    # 08 = Number of satellites being used
+    # 0.9 = Horizontal dilution of position
+    # 545.5, M = 545.4 M above mean sea-level
+    # 46.9, M = 46.9 M above WGS84 ellipsoid
+    # (empty) = Time in seconds since last DGPS update
+    # (empty) = DGPS station ID number
+    # *47 = checksum data, always begins with *
+
+    # Test GGA message format from UBlox
+    # $GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65
+    # 74 ASCII characters, 74 byte message length
+
+    # Insert method to poll GPS chips
+    poll_gps()
+
+    message = "$GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65"
+    # message = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.5,M,46.9,M,,*47"
+    separator = []
+
+    for char in range(0, len(message)):
+        if message[char] == ',':
+            separator.append(char)
+
+    print(separator)
+
+    dlat = ''
+    mlat = ''
+    dlong = ''
+    mlong = ''
+    altitude = ''
+
+    # bytes 17 - 26
+    print(message)
+    for i in range(separator[1] + 1, separator[1] + 3):
+        dlat = dlat + message[i]
+    for j in range(separator[1] + 3, separator[2]):
+        mlat = mlat + message[j]
+
+    dlat = int(dlat)
+    mlat = float(mlat)
+    mlat = mlat / 60
+    latitude = dlat + mlat
+
+    if message[separator[2] + 1] == 'S':
+        latitude = -latitude
+
+    print(latitude)
+
+    # bytes 30 - 40
+    for k in range(separator[3] + 1, separator[3] + 4):
+        dlong = dlong + message[k]
+    for n in range(separator[3] + 4, separator[4]):
+        mlong = mlong + message[n]
+
+    dlong = int(dlong)
+    mlong = float(mlong)
+    mlong = mlong / 60
+    longitude = dlong + mlong
+
+    if message[separator[4] + 1] == 'W':
+        longitude = -longitude
+
+    print(longitude)
+
+    data = scale_xy(gps_to_xy(latitude, longitude))
+
+    return data
+
+def poll_gps():
+    print("Polling car....")
+
+
+def calc_originxy():
+    global BASE_X, BASE_Y
+
+    temp = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
+    BASE_X = temp[0]
+    BASE_Y = temp[1]
+
+
+def set_xy_ratio():
+    global X_RATIO, Y_RATIO
+
+    temp = gps_to_xy(CORNER_LAT, CORNER_LONG)
+    Y_RATIO = temp[1] / LENGTH_Y
+    X_RATIO = temp[0] / LENGTH_X
+
+
+def gps_to_xy(lat, long):
+    """
+
+    @param lat:
+    @param long:
+    @return:
+    """
+    radlat = math.radians(lat)
+    radlong = math.radians(long)
+
+    x = radlong - math.radians(ORIGIN_LONGITUDE)
+    y = math.log(math.tan(radlat) + (1 / math.cos(radlat)))
+
+    rot_x = x * math.cos(math.radians(ROTATION_ANGLE)) + y * math.sin(math.radians(ROTATION_ANGLE))
+    rot_y = -x * math.sin(math.radians(ROTATION_ANGLE)) + y * math.cos(math.radians(ROTATION_ANGLE))
+
+    xy = [rot_x - BASE_X, rot_y - BASE_Y]
+    # xy = [x - BASE_X, y - BASE_Y]
+
+    return xy
+
+
+def scale_xy(xy):
+    xy[0] = xy[0] / X_RATIO
+    xy[1] = xy[1] / Y_RATIO
+
+    return xy
+
+
+def deg_to_seconds(val):
+    return val * 60 * 60
+
+
+def gen_signal(anglevalue):
     """
     Crafts a signal based on the input, IEEE floating point single-percision.
     @param anglevalue: The float value to be converted
@@ -180,7 +340,7 @@ def gensignal(anglevalue):
     # TODO: Determine what signals are needed to direct car ESC
 
 
-def txsignal():
+def tx_signal():
     """
     Sends signal to remote location.
     @return: Nothing
@@ -199,7 +359,7 @@ def float_to_hex(f):  # IEEE 32-bit standard for float representation
     return hex(struct.unpack('<I', struct.pack('<f', f))[0])
 
 
-def sockettx(data, server, port):
+def socket_tx(data, server, port):
     """
     Transmits data over a socket.
     @param data: Data to be transmitted.
@@ -219,19 +379,6 @@ def sockettx(data, server, port):
         print(BColors.FAIL + "Connection timed out...." + BColors.ENDC)
 
 
-class BColors:
-    """
-    Wrapper class for console output coloring.
-    """
-
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-
-
 def disable(self):
     """
     Terminating color for console output.
@@ -246,5 +393,30 @@ def disable(self):
     self.FAIL = ''
     self.ENDC = ''
 
+calc_originxy()
+set_xy_ratio()
 
-main()  # Invoke main()
+print(parse_gps_msg(''))
+print("----------------")
+
+corner = gps_to_xy(CORNER_LAT, CORNER_LONG)
+print("*** Corner ***")
+print(corner)
+print(scale_xy(corner))
+
+print("\n*** Center ***")
+middle = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
+print(middle)
+print(scale_xy(middle))
+
+print("\n*** Origin ***")
+origin = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
+print(origin)
+print(scale_xy(origin))
+
+print("\n*** Test ***")
+test = gps_to_xy(29.195272, -81.054336)
+print(test)
+print(scale_xy(test))
+
+# main()  # Invoke main()
