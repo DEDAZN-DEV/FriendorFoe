@@ -34,8 +34,14 @@ MAXVELOCITY = 13.4  # m/s
 TEST_ITERATIONS = 25
 POSMAPBUFFERSIZE = 250
 
-SERVER_IP = "127.0.0.1"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
-SERVER_PORT = 7777  # <-- DO NOT CHANGE
+CLIENT_IP_A = "127.0.0.1"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
+CLIENT_PORT_A = 7777  # <-- DO NOT CHANGE
+
+CLIENT_IP_B = "127.0.0.1"
+CLIENT_PORT_B = 7777
+
+CLIENT_IP_C = "127.0.0.1"
+CLIENT_PORT_C = 7777
 
 
 class BColors:
@@ -60,7 +66,7 @@ def main():
     calc_originxy()
     set_xy_ratio()
 
-    a = threading.Thread(target=run, args=("Drone A",))
+    a = threading.Thread(target=run, args=("Drone A", CLIENT_IP_A, CLIENT_PORT_A,))
     a.start()
     # b = threading.Thread(target=run, args=("Drone B",))
     # b.start()
@@ -68,7 +74,7 @@ def main():
     # c.start()
 
 
-def run(dronename):
+def run(dronename, ip, port):
     """
     Definition wrapper to handle the drones in their individual threads
     @param dronename: A string that will be used as the name for the drone.
@@ -117,7 +123,7 @@ def run(dronename):
                vector.__str__(), cardata[0], cardata[1], cardata[2],
                hexangle, cardata[3], dronename)
 
-        socket_tx(str(curtime) + "     " + hexangle, SERVER_IP, SERVER_PORT)
+        socket_tx(str(curtime) + "     " + hexangle, ip, port)
 
         time.sleep(UPDATE_INTERVAL)
 
@@ -273,6 +279,7 @@ def parse_gps_msg(message):
 
     return data
 
+
 def poll_gps():
     print("Polling car....")
 
@@ -393,6 +400,7 @@ def disable(self):
     self.FAIL = ''
     self.ENDC = ''
 
+
 calc_originxy()
 set_xy_ratio()
 
@@ -419,4 +427,4 @@ test = gps_to_xy(29.195272, -81.054336)
 print(test)
 print(scale_xy(test))
 
-# main()  # Invoke main()
+main()  # Invoke main()
