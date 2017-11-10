@@ -9,6 +9,8 @@ import threading
 import time
 from datetime import datetime
 
+import matplotlib.pyplot as plt
+
 # TODO: Get current GPS, speed, and heading for car
 ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
 ORIGIN_LATITUDE = 29.195267
@@ -43,6 +45,8 @@ CLIENT_PORT_B = 7777
 CLIENT_IP_C = "127.0.0.1"
 CLIENT_PORT_C = 7777
 
+# Plotting things
+plt.ion()
 
 class BColors:
     """
@@ -68,8 +72,8 @@ def main():
 
     a = threading.Thread(target=run, args=("Drone A", CLIENT_IP_A, CLIENT_PORT_A,))
     a.start()
-    # b = threading.Thread(target=run, args=("Drone B",))
-    # b.start()
+    b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
+    b.start()
     # c = threading.Thread(target=run, args=("Drone C",))
     # c.start()
 
@@ -80,21 +84,20 @@ def run(dronename, ip, port):
     @param dronename: A string that will be used as the name for the drone.
     @return: Nothing
     """
+    xposstorage = []
+    yposstorage = []
 
     f_init = True  # FLAGS
-
-    xpossstorage = []  # STORAGE LISTS
-    yposstorage = []
 
     counter = 0  # LOCAL VARIABLES
     cardata = [0.0, 0.0, 0.0, 0.0]
 
     while True:
-        xpossstorage.append(cardata[0])
+        xposstorage.append(cardata[0])
         yposstorage.append(cardata[1])
 
-        if len(xpossstorage) > POSMAPBUFFERSIZE:  # Remove oldest data from buffer
-            xpossstorage.pop(0)
+        if len(xposstorage) > POSMAPBUFFERSIZE:  # Remove oldest data from buffer
+            xposstorage.pop(0)
             yposstorage.pop(0)
 
         # TODO: Get output vector from simulation
