@@ -23,6 +23,7 @@ def main():
     print(serial_debug())
 
     print("TESTING COMPLETE...")
+
     print("SERVER ESTABLISHED...")
 
     while True:
