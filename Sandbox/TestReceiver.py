@@ -1,8 +1,8 @@
-import glob
 import socket
 import sys
 
 import serial
+import serial.tools.list_ports
 
 HOST = ''
 PORT = 7777
@@ -37,23 +37,12 @@ def main():
 
 
 def serial_debug():
-    if sys.platform.startswith('win'):
-        ports = ['COM%s' % (i + 1) for i in range(256)]
-    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-        ports = glob.glob('/dev/tty[A-Za-z]*')
-    elif sys.platform.startswith('darwin'):
-        ports = glob.glob('/dev/tty.*')
-    else:
-        raise EnvironmentError('Unknown Platform')
-
+    list = serial.tools.list_ports.comports()
     available = []
-
-    for port in ports:
-        try:
-            s = serial.Serial(port)
-            s.close()
-            available.append(port)
-        except (OSError, serial.SerialException):
-            pass
+    for port in list:
+        available.append(port.device)
 
     return available
+
+
+main()
