@@ -30,15 +30,15 @@ def main():
 
     sock.listen(5)
 
-    print("SERIAL TESTING...Please Wait.")
+    print("SERIAL TESTING....Please Wait.")
 
     print(serial_debug())
 
     test_controller(COM_PORT)
     
-    print("TESTING COMPLETE...")
+    print("TESTING COMPLETE....")
 
-    print("SERVER ESTABLISHED...")
+    print("SERVER ESTABLISHED....")
 
     while True:
         (conn, address) = sock.accept()
@@ -67,7 +67,7 @@ def serial_debug():
 
 def test_controller(port):
     servo = maestro.Controller(port)
-    print('SERVO CONNECTION')
+    print('SERVO CONNECTION ESTABLISHED....')
 
     # 3 ESC, 5 STEERING
 
@@ -75,7 +75,7 @@ def test_controller(port):
     servo.setAccel(ESC, 0)
     # print(servo.getMin(STEERING), servo.getMax(STEERING))
 
-    print('SENT SIGNAL')
+    print('SENT SIGNAL....')
 
     servo.setTarget(STEERING, MAX_RIGHT)
     print(servo.getPosition(STEERING))
@@ -92,6 +92,7 @@ def test_controller(port):
 
     print(servo.getPosition(ESC))
     servo.setTarget(ESC, 8000)
+    servo.setTarget(ESC, NEUTRAL)
     print(servo.getPosition(ESC))
     time.sleep(1)
     servo.setTarget(ESC, NEUTRAL)
