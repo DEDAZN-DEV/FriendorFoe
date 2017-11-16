@@ -107,15 +107,23 @@ def servoCtl(port, servoNum, val):
 def testRunCircle(arg):
     # arg = arg[2:len(arg)-1]
     print(arg)
-    if arg == 'start':
+        
+    if arg == 'kill':
+        servoCtl(COM_PORT, ESC, NEUTRAL)
+        servoCtl(COM_PORT, STEERING, CENTER)
+        sys.exit()
+    elif arg == 'start':
         servoCtl(COM_PORT, STEERING, MAX_RIGHT)
         servoCtl(COM_PORT, ESC, TEST_SPEED)
     elif arg == 'stop':
         servoCtl(COM_PORT, ESC, NEUTRAL)
         servoCtl(COM_PORT, STEERING, CENTER)
     else:
-        print("Invalid arguments...")
-        sys.exit()
+        print("No test prompt received, Defaulting to raw input....")
+        arg = int(arg)
+        
+        if arg >= 4000 and arg <= 8000:
+            servoCtl(COM_PORT, STEERING, arg)
 
 
 main()
