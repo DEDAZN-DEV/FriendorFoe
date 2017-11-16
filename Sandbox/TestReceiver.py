@@ -30,15 +30,15 @@ def main():
 
     sock.listen(5)
 
-    print("SERIAL TESTING...Please Wait.")
+    print("SERIAL TESTING....Please Wait.")
 
     print(serial_debug())
 
     test_controller(COM_PORT)
     
-    print("TESTING COMPLETE...")
+    print("TESTING COMPLETE....")
 
-    print("SERVER ESTABLISHED...")
+    print("SERVER ESTABLISHED....")
 
     while True:
         (conn, address) = sock.accept()
@@ -67,7 +67,7 @@ def serial_debug():
 
 def test_controller(port):
     servo = maestro.Controller(port)
-    print('SERVO CONNECTION')
+    print('SERVO CONNECTION ESTABLISHED....')
 
     # 3 ESC, 5 STEERING
 
@@ -75,7 +75,7 @@ def test_controller(port):
     servo.setAccel(ESC, 0)
     # print(servo.getMin(STEERING), servo.getMax(STEERING))
 
-    print('SENT SIGNAL')
+    print('SENT SIGNAL....')
 
     servo.setTarget(STEERING, MAX_RIGHT)
     print(servo.getPosition(STEERING))
@@ -87,15 +87,17 @@ def test_controller(port):
     print(servo.getPosition(STEERING))
     time.sleep(1)
     servo.setTarget(STEERING, CENTER)
+    print('STEERING ARMED....')
+    time.sleep(3)
 
     print(servo.getMin(ESC), servo.getMax(ESC))
 
     print(servo.getPosition(ESC))
     servo.setTarget(ESC, 8000)
-    print(servo.getPosition(ESC))
-    time.sleep(1)
     servo.setTarget(ESC, NEUTRAL)
     print(servo.getPosition(ESC))
+    print('MOTOR ARMED....')
+    time.sleep(3)
 
 def servoCtl(port, servoNum, val):
     servo = maestro.Controller(port)
@@ -105,15 +107,23 @@ def servoCtl(port, servoNum, val):
 def testRunCircle(arg):
     # arg = arg[2:len(arg)-1]
     print(arg)
-    if arg == 'start':
+        
+    if arg == 'kill':
+        servoCtl(COM_PORT, ESC, NEUTRAL)
+        servoCtl(COM_PORT, STEERING, CENTER)
+        sys.exit()
+    elif arg == 'start':
         servoCtl(COM_PORT, STEERING, MAX_RIGHT)
         servoCtl(COM_PORT, ESC, TEST_SPEED)
     elif arg == 'stop':
         servoCtl(COM_PORT, ESC, NEUTRAL)
         servoCtl(COM_PORT, STEERING, CENTER)
     else:
-        print("Invalid arguments...")
-        sys.exit()
+        print("No test prompt received, Defaulting to raw input....")
+        arg = int(arg)
+        
+        if arg >= 4000 and arg <= 8000:
+            servoCtl(COM_PORT, STEERING, arg)
 
 
 main()
