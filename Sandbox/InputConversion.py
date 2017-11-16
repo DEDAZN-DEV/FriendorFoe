@@ -36,7 +36,7 @@ MAXVELOCITY = 13.4  # m/s
 TEST_ITERATIONS = 25
 POSMAPBUFFERSIZE = 250
 
-CLIENT_IP_A = "127.0.0.1"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
+CLIENT_IP_A = "10.33.29.9"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
 CLIENT_PORT_A = 7777  # <-- DO NOT CHANGE
 
 CLIENT_IP_B = "127.0.0.1"
@@ -71,7 +71,7 @@ def main():
     calc_originxy()
     set_xy_ratio()
 
-    a = threading.Thread(target=testRun, args=(CLIENT_IP_A, CLIENT_PORT_A,))
+    a = threading.Thread(target=randRun, args=(CLIENT_IP_A, CLIENT_PORT_A,))
     a.start()
     # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
     # b.start()
@@ -82,7 +82,17 @@ def main():
 def testRun(client_ip, port):
     socket_tx('start', client_ip, port)
 
-    time.sleep(30)
+    time.sleep(15)
+
+    socket_tx('stop', client_ip, port)
+
+
+def randRun(client_ip, port):
+    for i in range(10):
+        inVal = random.randint(4000, 8000)
+        print(inVal)
+        socket_tx(str(inVal), client_ip, port)
+        time.sleep(2)
 
     socket_tx('stop', client_ip, port)
 
@@ -413,30 +423,30 @@ def disable(self):
     self.ENDC = ''
 
 
-calc_originxy()
-set_xy_ratio()
-
-print(parse_gps_msg(''))
-print("----------------")
-
-corner = gps_to_xy(CORNER_LAT, CORNER_LONG)
-print("*** Corner ***")
-print(corner)
-print(scale_xy(corner))
-
-print("\n*** Center ***")
-middle = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
-print(middle)
-print(scale_xy(middle))
-
-print("\n*** Origin ***")
-origin = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
-print(origin)
-print(scale_xy(origin))
-
-print("\n*** Test ***")
-test = gps_to_xy(29.195272, -81.054336)
-print(test)
-print(scale_xy(test))
+# calc_originxy()
+# set_xy_ratio()
+#
+# print(parse_gps_msg(''))
+# print("----------------")
+#
+# corner = gps_to_xy(CORNER_LAT, CORNER_LONG)
+# print("*** Corner ***")
+# print(corner)
+# print(scale_xy(corner))
+#
+# print("\n*** Center ***")
+# middle = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
+# print(middle)
+# print(scale_xy(middle))
+#
+# print("\n*** Origin ***")
+# origin = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
+# print(origin)
+# print(scale_xy(origin))
+#
+# print("\n*** Test ***")
+# test = gps_to_xy(29.195272, -81.054336)
+# print(test)
+# print(scale_xy(test))
 
 main()  # Invoke main()
