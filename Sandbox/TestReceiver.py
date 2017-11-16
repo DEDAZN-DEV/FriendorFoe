@@ -14,7 +14,7 @@ COM_PORT = ''
 STEERING = 5
 MAX_LEFT = 4000
 MAX_RIGHT = 8000
-CENTER = 6000
+CENTER = 5800
 
 ESC = 3
 NEUTRAL = 6000
@@ -35,7 +35,7 @@ def main():
     print(serial_debug())
 
     test_controller(COM_PORT)
-
+    
     print("TESTING COMPLETE...")
 
     print("SERVER ESTABLISHED...")
@@ -60,7 +60,7 @@ def serial_debug():
     for port in list:
         available.append(port.device)
 
-    # COM_PORT = available[0]
+    COM_PORT = available[1]
 
     return available
 
@@ -71,24 +71,31 @@ def test_controller(port):
 
     # 3 ESC, 5 STEERING
 
-    servo.setAccel(5, 0)
-    servo.setAccel(3, 0)
-    print(servo.getMin(5), servo.getMax(5))
+    servo.setAccel(STEERING, 0)
+    servo.setAccel(ESC, 0)
+    # print(servo.getMin(STEERING), servo.getMax(STEERING))
 
     print('SENT SIGNAL')
 
-    servo.setTarget(5, MAX_RIGHT)
-    print(servo.getPosition(5))
+    servo.setTarget(STEERING, MAX_RIGHT)
+    print(servo.getPosition(STEERING))
     time.sleep(1)
-    servo.setTarget(5, MAX_LEFT)
-    print(servo.getPosition(5))
+    servo.setTarget(STEERING, MAX_LEFT)
+    print(servo.getPosition(STEERING))
     time.sleep(1)
-    servo.setTarget(5, MAX_RIGHT)
-    print(servo.getPosition(5))
+    servo.setTarget(STEERING, MAX_RIGHT)
+    print(servo.getPosition(STEERING))
     time.sleep(1)
-    servo.setTarget(5, CENTER)
+    servo.setTarget(STEERING, CENTER)
 
-    servo.close()
+    print(servo.getMin(ESC), servo.getMax(ESC))
+
+    print(servo.getPosition(ESC))
+    servo.setTarget(ESC, 8000)
+    print(servo.getPosition(ESC))
+    time.sleep(1)
+    servo.setTarget(ESC, NEUTRAL)
+    print(servo.getPosition(ESC))
 
 def servoCtl(port, servoNum, val):
     servo = maestro.Controller(port)
@@ -96,7 +103,7 @@ def servoCtl(port, servoNum, val):
 
 
 def testRunCircle(arg):
-    arg = arg[2:len(arg)-1]
+    # arg = arg[2:len(arg)-1]
     print(arg)
     if arg == 'start':
         servoCtl(COM_PORT, STEERING, MAX_RIGHT)
