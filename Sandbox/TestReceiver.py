@@ -87,6 +87,8 @@ def test_controller(port):
     print(servo.getPosition(STEERING))
     time.sleep(1)
     servo.setTarget(STEERING, CENTER)
+    print('STEERING ARMED....')
+    time.sleep(3)
 
     print(servo.getMin(ESC), servo.getMax(ESC))
 
@@ -94,9 +96,8 @@ def test_controller(port):
     servo.setTarget(ESC, 8000)
     servo.setTarget(ESC, NEUTRAL)
     print(servo.getPosition(ESC))
-    time.sleep(1)
-    servo.setTarget(ESC, NEUTRAL)
-    print(servo.getPosition(ESC))
+    print('MOTOR ARMED....')
+    time.sleep(3)
 
 def servoCtl(port, servoNum, val):
     servo = maestro.Controller(port)
