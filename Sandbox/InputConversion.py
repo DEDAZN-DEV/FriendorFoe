@@ -30,7 +30,7 @@ Y_RATIO = 1
 ACCELERATION = 10  # m/s
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 
-DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
+DIRCHANGEFACTOR = 01.25  # % chance of changing velocity input
 MAXVELOCITY = 13.4  # m/s
 
 TEST_ITERATIONS = 25
@@ -47,6 +47,7 @@ CLIENT_PORT_C = 7777
 
 # Plotting things
 plt.ion()
+
 
 class BColors:
     """
@@ -70,12 +71,20 @@ def main():
     calc_originxy()
     set_xy_ratio()
 
-    a = threading.Thread(target=run, args=("Drone A", CLIENT_IP_A, CLIENT_PORT_A,))
+    a = threading.Thread(target=testRun, args=(CLIENT_IP_A, CLIENT_PORT_A,))
     a.start()
-    b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
-    b.start()
+    # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
+    # b.start()
     # c = threading.Thread(target=run, args=("Drone C",))
     # c.start()
+
+
+def testRun(client_ip, port):
+    socket_tx('start', client_ip, port)
+
+    time.sleep(30)
+
+    socket_tx('stop', client_ip, port)
 
 
 def run(dronename, ip, port):
@@ -369,7 +378,7 @@ def float_to_hex(f):  # IEEE 32-bit standard for float representation
     return hex(struct.unpack('<I', struct.pack('<f', f))[0])
 
 
-def socket_tx(data, server, port):
+def socket_tx(data, client_ip, port):
     """
     Transmits data over a socket.
     @param data: Data to be transmitted.
@@ -380,7 +389,7 @@ def socket_tx(data, server, port):
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.connect((server, port))
+        sock.connect((client_ip, port))
         sock.sendall(data.encode())
         print(BColors.OKGREEN + "Data Sent Successfully..." + BColors.ENDC)
     except ConnectionRefusedError:
