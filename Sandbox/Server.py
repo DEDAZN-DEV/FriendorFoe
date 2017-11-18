@@ -72,26 +72,20 @@ def main():
     calc_originxy()
     set_xy_ratio()
 
-    if testtype == 'normal':
+    if testtype == 'normal_run':
         a = threading.Thread(target=run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
-
         # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
-
         # c = threading.Thread(target=run, args=("Drone C",))
     elif testtype == 'debug_circle':
         a = threading.Thread(target=test_run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
-
         # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
-
         # c = threading.Thread(target=run, args=("Drone C",))
     elif testtype == 'debug_random':
         a = threading.Thread(target=rand_run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
-
         # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
-
         # c = threading.Thread(target=run, args=("Drone C",))
     else:
-        print("Invalid Input")
+        print("Invalid argument...\nUsage: python Server.py [normal_run, debug_circle, debug_random]")
         sys.exit()
 
     a.start()
@@ -111,8 +105,11 @@ def rand_run(client_ip, port):
     for i in range(10):
         inval = random.randint(4000, 8000)
         print(inval)
-        socket_tx(str(inval), client_ip, port)
+        socket_tx(str(5) + str(inval), client_ip, port)
         time.sleep(2)
+
+    for i in range(1, 10):
+        socket_tx(str(3) + str(4000 + (4000 / i)), client_ip, port)
 
     socket_tx('stop', client_ip, port)
 

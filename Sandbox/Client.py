@@ -46,7 +46,7 @@ def main():
 
         try:
             print("Received data from: " + conn.getpeername().__str__() + '\t\t' + data.__str__())
-            testRunCircle(data.__str__())
+            testRun(data.__str__())
         except TypeError as emsg2:
             print(emsg2)
             sys.exit()
@@ -104,7 +104,7 @@ def servoCtl(port, servoNum, val):
     servo.setTarget(servoNum, val)
 
 
-def testRunCircle(arg):
+def testRun(arg):
     # arg = arg[2:len(arg)-1]
     print(arg)
         
@@ -120,10 +120,11 @@ def testRunCircle(arg):
         servoCtl(COM_PORT, STEERING, CENTER)
     else:
         print("No test prompt received, Defaulting to raw input....")
-        arg = int(arg)
-        
-        if arg >= 4000 and arg <= 8000:
-            servoCtl(COM_PORT, STEERING, arg)
+        data1 = int(arg[0])
+        data2 = int(arg[1:len(arg)])
+
+        if 8000 >= data2 >= 4000:
+            servoCtl(COM_PORT, data1, arg)
 
 
 main()
