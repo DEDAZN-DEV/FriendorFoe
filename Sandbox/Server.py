@@ -9,6 +9,8 @@ import threading
 import time
 from datetime import datetime
 
+import matplotlib.pyplot as plt
+
 # TODO: Get current GPS, speed, and heading for car
 ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
 ORIGIN_LATITUDE = 29.195267
@@ -28,14 +30,23 @@ Y_RATIO = 1
 ACCELERATION = 10  # m/s
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 
-DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
+DIRCHANGEFACTOR = 01.25  # % chance of changing velocity input
 MAXVELOCITY = 13.4  # m/s
 
 TEST_ITERATIONS = 25
 POSMAPBUFFERSIZE = 250
 
-SERVER_IP = "127.0.0.1"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
-SERVER_PORT = 7777  # <-- DO NOT CHANGE
+CLIENT_IP_A = "10.33.29.9"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
+CLIENT_PORT_A = 7777  # <-- DO NOT CHANGE
+
+CLIENT_IP_B = "127.0.0.1"
+CLIENT_PORT_B = 7777
+
+CLIENT_IP_C = "127.0.0.1"
+CLIENT_PORT_C = 7777
+
+# Plotting things
+plt.ion()
 
 
 class BColors:
@@ -56,39 +67,78 @@ def main():
     Definition of main to run the code. Testing...
     @return: Nothing
     """
+    testtype = sys.argv[1]
 
     calc_originxy()
     set_xy_ratio()
 
-    a = threading.Thread(target=run, args=("Drone A",))
+    if testtype == 'normal':
+        a = threading.Thread(target=run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
+
+        # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
+
+        # c = threading.Thread(target=run, args=("Drone C",))
+    elif testtype == 'debug_circle':
+        a = threading.Thread(target=test_run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
+
+        # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
+
+        # c = threading.Thread(target=run, args=("Drone C",))
+    elif testtype == 'debug_random':
+        a = threading.Thread(target=rand_run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
+
+        # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
+
+        # c = threading.Thread(target=run, args=("Drone C",))
+    else:
+        print("Invalid Input")
+        sys.exit()
+
     a.start()
-    # b = threading.Thread(target=run, args=("Drone B",))
     # b.start()
-    # c = threading.Thread(target=run, args=("Drone C",))
     # c.start()
 
 
-def run(dronename):
+def test_run(client_ip, port):
+    socket_tx('start', client_ip, port)
+
+    time.sleep(15)
+
+    socket_tx('stop', client_ip, port)
+
+
+def rand_run(client_ip, port):
+    for i in range(10):
+        inval = random.randint(4000, 8000)
+        print(inval)
+        socket_tx(str(inval), client_ip, port)
+        time.sleep(2)
+
+    socket_tx('stop', client_ip, port)
+
+
+def run(dronename, ip, port):
     """
     Definition wrapper to handle the drones in their individual threads
-    @param dronename: A string that will be used as the name for the drone.
-    @return: Nothing
+    :param dronename:
+    :param ip:
+    :param port:
+    :return:
     """
+    xposstorage = []
+    yposstorage = []
 
     f_init = True  # FLAGS
-
-    xpossstorage = []  # STORAGE LISTS
-    yposstorage = []
 
     counter = 0  # LOCAL VARIABLES
     cardata = [0.0, 0.0, 0.0, 0.0]
 
     while True:
-        xpossstorage.append(cardata[0])
+        xposstorage.append(cardata[0])
         yposstorage.append(cardata[1])
 
-        if len(xpossstorage) > POSMAPBUFFERSIZE:  # Remove oldest data from buffer
-            xpossstorage.pop(0)
+        if len(xposstorage) > POSMAPBUFFERSIZE:  # Remove oldest data from buffer
+            xposstorage.pop(0)
             yposstorage.pop(0)
 
         # TODO: Get output vector from simulation
@@ -117,7 +167,7 @@ def run(dronename):
                vector.__str__(), cardata[0], cardata[1], cardata[2],
                hexangle, cardata[3], dronename)
 
-        socket_tx(str(curtime) + "     " + hexangle, SERVER_IP, SERVER_PORT)
+        socket_tx(str(curtime) + "     " + hexangle, ip, port)
 
         time.sleep(UPDATE_INTERVAL)
 
@@ -234,7 +284,7 @@ def parse_gps_msg(message):
     mlat = ''
     dlong = ''
     mlong = ''
-    altitude = ''
+    # altitude = ''
 
     # bytes 17 - 26
     print(message)
@@ -272,6 +322,7 @@ def parse_gps_msg(message):
     data = scale_xy(gps_to_xy(latitude, longitude))
 
     return data
+
 
 def poll_gps():
     print("Polling car....")
@@ -340,15 +391,6 @@ def gen_signal(anglevalue):
     # TODO: Determine what signals are needed to direct car ESC
 
 
-def tx_signal():
-    """
-    Sends signal to remote location.
-    @return: Nothing
-    """
-
-    # TODO: Transmit signals to car through WiFi
-
-
 def float_to_hex(f):  # IEEE 32-bit standard for float representation
     """
     Converts float value to hex value.
@@ -359,18 +401,18 @@ def float_to_hex(f):  # IEEE 32-bit standard for float representation
     return hex(struct.unpack('<I', struct.pack('<f', f))[0])
 
 
-def socket_tx(data, server, port):
+def socket_tx(data, client_ip, port):
     """
-    Transmits data over a socket.
-    @param data: Data to be transmitted.
-    @param server: Server IP address.
-    @param port: Server PORT
-    @return: Nothing
+    Transmits data over a socket
+    :param data:
+    :param client_ip:
+    :param port:
+    :return:
     """
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.connect((server, port))
+        sock.connect((client_ip, port))
         sock.sendall(data.encode())
         print(BColors.OKGREEN + "Data Sent Successfully..." + BColors.ENDC)
     except ConnectionRefusedError:
@@ -393,30 +435,33 @@ def disable(self):
     self.FAIL = ''
     self.ENDC = ''
 
-calc_originxy()
-set_xy_ratio()
 
-print(parse_gps_msg(''))
-print("----------------")
+def gps_debug():
+    calc_originxy()
+    set_xy_ratio()
 
-corner = gps_to_xy(CORNER_LAT, CORNER_LONG)
-print("*** Corner ***")
-print(corner)
-print(scale_xy(corner))
+    print(parse_gps_msg(''))
+    print("----------------")
 
-print("\n*** Center ***")
-middle = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
-print(middle)
-print(scale_xy(middle))
+    corner = gps_to_xy(CORNER_LAT, CORNER_LONG)
+    print("*** Corner ***")
+    print(corner)
+    print(scale_xy(corner))
 
-print("\n*** Origin ***")
-origin = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
-print(origin)
-print(scale_xy(origin))
+    print("\n*** Center ***")
+    middle = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
+    print(middle)
+    print(scale_xy(middle))
 
-print("\n*** Test ***")
-test = gps_to_xy(29.195272, -81.054336)
-print(test)
-print(scale_xy(test))
+    print("\n*** Origin ***")
+    origin = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
+    print(origin)
+    print(scale_xy(origin))
 
-# main()  # Invoke main()
+    print("\n*** Test ***")
+    test = gps_to_xy(29.195272, -81.054336)
+    print(test)
+    print(scale_xy(test))
+
+
+main()  # Invoke main()
