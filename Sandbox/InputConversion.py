@@ -67,15 +67,36 @@ def main():
     Definition of main to run the code. Testing...
     @return: Nothing
     """
+    type = sys.argv[1]
+    print(type)
 
     calc_originxy()
     set_xy_ratio()
 
-    a = threading.Thread(target=randRun, args=(CLIENT_IP_A, CLIENT_PORT_A,))
+    if type == 'normal':
+        a = threading.Thread(target=run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
+
+        # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
+
+        # c = threading.Thread(target=run, args=("Drone C",))
+    elif type == 'debug_circle':
+        a = threading.Thread(target=testRun, args=(CLIENT_IP_A, CLIENT_PORT_A,))
+
+        # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
+
+        # c = threading.Thread(target=run, args=("Drone C",))
+    elif type == 'debug_random':
+        a = threading.Thread(target=randRun, args=(CLIENT_IP_A, CLIENT_PORT_A,))
+
+        # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
+
+        # c = threading.Thread(target=run, args=("Drone C",))
+    else:
+        print("Invalid Input")
+        sys.exit()
+
     a.start()
-    # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
     # b.start()
-    # c = threading.Thread(target=run, args=("Drone C",))
     # c.start()
 
 
@@ -392,7 +413,6 @@ def socket_tx(data, client_ip, port):
     """
     Transmits data over a socket.
     @param data: Data to be transmitted.
-    @param server: Server IP address.
     @param port: Server PORT
     @return: Nothing
     """
