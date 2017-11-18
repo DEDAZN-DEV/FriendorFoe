@@ -1,11 +1,11 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
 import math
+import multiprocessing
 import random
 import socket
 import struct
 import sys
-import threading
 import time
 from datetime import datetime
 
@@ -36,7 +36,7 @@ MAXVELOCITY = 13.4  # m/s
 TEST_ITERATIONS = 25
 POSMAPBUFFERSIZE = 250
 
-CLIENT_IP_A = "10.33.29.9"  # <-- This is the internal IP on the machine running Client.py (ipconfig/ipconfig)
+CLIENT_IP_A = "10.33.29.182"  # <-- This is the internal IP on the machine running Client.py (ipconfig/ipconfig)
 CLIENT_PORT_A = 7777  # <-- DO NOT CHANGE
 
 CLIENT_IP_B = "127.0.0.1"
@@ -73,24 +73,23 @@ def main():
     set_xy_ratio()
 
     if testtype == 'normal_run':
-        a = threading.Thread(target=run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
-        # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
-        # c = threading.Thread(target=run, args=("Drone C",))
+        a = multiprocessing.Process(target=run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
     elif testtype == 'debug_circle':
-        a = threading.Thread(target=test_run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
-        # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
-        # c = threading.Thread(target=run, args=("Drone C",))
+        a = multiprocessing.Process(target=test_run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
     elif testtype == 'debug_random':
-        a = threading.Thread(target=rand_run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
-        # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
-        # c = threading.Thread(target=run, args=("Drone C",))
+        a = multiprocessing.Process(target=rand_run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
+    elif testtype == 'stop':
+        a = multiprocessing.Process(target=stop, args=(CLIENT_IP_A, CLIENT_PORT_A,))
     else:
-        print("Invalid argument...\nUsage: python Server.py [normal_run, debug_circle, debug_random]")
+        print("Invalid argument...\nUsage: python Server.py [stop, normal_run, debug_circle, debug_random]")
         sys.exit()
 
     a.start()
-    # b.start()
-    # c.start()
+
+
+def stop(client_ip, port):
+    socket_tx('stop', client_ip, port)
+    print('Stopping')
 
 
 def test_run(client_ip, port):
@@ -102,14 +101,24 @@ def test_run(client_ip, port):
 
 
 def rand_run(client_ip, port):
+    print('Controlling STR')
+
     for i in range(10):
         inval = random.randint(4000, 8000)
         print(inval)
         socket_tx(str(5) + str(inval), client_ip, port)
         time.sleep(2)
 
-    for i in range(1, 10):
-        socket_tx(str(3) + str(4000 + (4000 / i)), client_ip, port)
+    socket_tx('stop', client_ip, port)
+    time.sleep(1)
+
+    print('Controlling ESC')
+
+    # Forward
+    for x in range(6000, 8000, 50):
+        print(x)
+        socket_tx(str(3) + str(x), client_ip, port)
+        time.sleep(1)
 
     socket_tx('stop', client_ip, port)
 
