@@ -41,12 +41,15 @@ def main():
     print("SERVER ESTABLISHED....")
 
     while True:
-        (conn, address) = sock.accept()
-        data = conn.recv(64)
-
         try:
+            (conn, address) = sock.accept()
+            data = conn.recv(64)
             print("Received data from: " + conn.getpeername().__str__() + '\t\t' + data.__str__())
-            testRun(data.__str__())
+            testRun(data)
+
+        except socket.timeout as nosig:
+            servoCtl(COM_PORT, 3, NEUTRAL)
+            servoCtl(COM_PORT, 5, CENTER)
         except TypeError as emsg2:
             print(emsg2)
             sys.exit()
@@ -71,8 +74,8 @@ def test_controller(port):
 
     # 3 ESC, 5 STEERING
 
-    servo.setAccel(STEERING, 0)
-    servo.setAccel(ESC, 0)
+    servo.setAccel(STEERING, 50)
+    servo.setAccel(ESC, 100)
     # print(servo.getMin(STEERING), servo.getMax(STEERING))
 
     print('SENT SIGNAL....')
@@ -88,21 +91,18 @@ def test_controller(port):
     time.sleep(1)
     servo.setTarget(STEERING, CENTER)
     print('STEERING ARMED....')
-    time.sleep(3)
-
-    print(servo.getMin(ESC), servo.getMax(ESC))
+    time.sleep(1)
 
     print(servo.getPosition(ESC))
     servo.setTarget(ESC, 8000)
     servo.setTarget(ESC, NEUTRAL)
     print(servo.getPosition(ESC))
     print('MOTOR ARMED....')
-    time.sleep(3)
+    time.sleep(1)
 
 def servoCtl(port, servoNum, val):
     servo = maestro.Controller(port)
     servo.setTarget(servoNum, val)
-
 
 def testRun(arg):
     # arg = arg[2:len(arg)-1]
@@ -118,13 +118,16 @@ def testRun(arg):
     elif arg == 'stop':
         servoCtl(COM_PORT, ESC, NEUTRAL)
         servoCtl(COM_PORT, STEERING, CENTER)
+    elif arg == 'up':
+        # do nothing
+        print('Connected')
     else:
         print("No test prompt received, Defaulting to raw input....")
         data1 = int(arg[0])
         data2 = int(arg[1:len(arg)])
-
-        if 8000 >= data2 >= 4000:
-            servoCtl(COM_PORT, data1, arg)
+        
+        if 4000 <= data2 <= 8000:
+            servoCtl(COM_PORT, data1, data2)
 
 
 main()
