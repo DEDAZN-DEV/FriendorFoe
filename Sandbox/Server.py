@@ -36,7 +36,7 @@ MAXVELOCITY = 13.4  # m/s
 TEST_ITERATIONS = 25
 POSMAPBUFFERSIZE = 250
 
-CLIENT_IP_A = "10.33.29.9"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
+CLIENT_IP_A = "10.33.29.9"  # <-- This is the internal IP on the machine running Client.py (ipconfig/ipconfig)
 CLIENT_PORT_A = 7777  # <-- DO NOT CHANGE
 
 CLIENT_IP_B = "127.0.0.1"
