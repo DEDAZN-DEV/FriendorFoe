@@ -67,26 +67,26 @@ def main():
     Definition of main to run the code. Testing...
     @return: Nothing
     """
-    type = sys.argv[1]
-    print(type)
+    testtype = sys.argv[1]
+    print(testtype)
 
     calc_originxy()
     set_xy_ratio()
 
-    if type == 'normal':
+    if testtype == 'normal':
         a = threading.Thread(target=run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
 
         # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
 
         # c = threading.Thread(target=run, args=("Drone C",))
-    elif type == 'debug_circle':
-        a = threading.Thread(target=testRun, args=(CLIENT_IP_A, CLIENT_PORT_A,))
+    elif testtype == 'debug_circle':
+        a = threading.Thread(target=test_run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
 
         # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
 
         # c = threading.Thread(target=run, args=("Drone C",))
-    elif type == 'debug_random':
-        a = threading.Thread(target=randRun, args=(CLIENT_IP_A, CLIENT_PORT_A,))
+    elif testtype == 'debug_random':
+        a = threading.Thread(target=rand_run, args=(CLIENT_IP_A, CLIENT_PORT_A,))
 
         # b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
 
@@ -100,7 +100,7 @@ def main():
     # c.start()
 
 
-def testRun(client_ip, port):
+def test_run(client_ip, port):
     socket_tx('start', client_ip, port)
 
     time.sleep(15)
@@ -108,11 +108,11 @@ def testRun(client_ip, port):
     socket_tx('stop', client_ip, port)
 
 
-def randRun(client_ip, port):
+def rand_run(client_ip, port):
     for i in range(10):
-        inVal = random.randint(4000, 8000)
-        print(inVal)
-        socket_tx(str(inVal), client_ip, port)
+        inval = random.randint(4000, 8000)
+        print(inval)
+        socket_tx(str(inval), client_ip, port)
         time.sleep(2)
 
     socket_tx('stop', client_ip, port)
@@ -121,8 +121,10 @@ def randRun(client_ip, port):
 def run(dronename, ip, port):
     """
     Definition wrapper to handle the drones in their individual threads
-    @param dronename: A string that will be used as the name for the drone.
-    @return: Nothing
+    :param dronename:
+    :param ip:
+    :param port:
+    :return:
     """
     xposstorage = []
     yposstorage = []
@@ -283,7 +285,7 @@ def parse_gps_msg(message):
     mlat = ''
     dlong = ''
     mlong = ''
-    altitude = ''
+    # altitude = ''
 
     # bytes 17 - 26
     print(message)
@@ -411,10 +413,11 @@ def float_to_hex(f):  # IEEE 32-bit standard for float representation
 
 def socket_tx(data, client_ip, port):
     """
-    Transmits data over a socket.
-    @param data: Data to be transmitted.
-    @param port: Server PORT
-    @return: Nothing
+    Transmits data over a socket
+    :param data:
+    :param client_ip:
+    :param port:
+    :return:
     """
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
