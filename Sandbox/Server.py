@@ -68,7 +68,6 @@ def main():
     @return: Nothing
     """
     testtype = sys.argv[1]
-    print(testtype)
 
     calc_originxy()
     set_xy_ratio()
@@ -392,15 +391,6 @@ def gen_signal(anglevalue):
     # TODO: Determine what signals are needed to direct car ESC
 
 
-def tx_signal():
-    """
-    Sends signal to remote location.
-    @return: Nothing
-    """
-
-    # TODO: Transmit signals to car through WiFi
-
-
 def float_to_hex(f):  # IEEE 32-bit standard for float representation
     """
     Converts float value to hex value.
@@ -446,30 +436,32 @@ def disable(self):
     self.ENDC = ''
 
 
-# calc_originxy()
-# set_xy_ratio()
-#
-# print(parse_gps_msg(''))
-# print("----------------")
-#
-# corner = gps_to_xy(CORNER_LAT, CORNER_LONG)
-# print("*** Corner ***")
-# print(corner)
-# print(scale_xy(corner))
-#
-# print("\n*** Center ***")
-# middle = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
-# print(middle)
-# print(scale_xy(middle))
-#
-# print("\n*** Origin ***")
-# origin = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
-# print(origin)
-# print(scale_xy(origin))
-#
-# print("\n*** Test ***")
-# test = gps_to_xy(29.195272, -81.054336)
-# print(test)
-# print(scale_xy(test))
+def gps_debug():
+    calc_originxy()
+    set_xy_ratio()
+
+    print(parse_gps_msg(''))
+    print("----------------")
+
+    corner = gps_to_xy(CORNER_LAT, CORNER_LONG)
+    print("*** Corner ***")
+    print(corner)
+    print(scale_xy(corner))
+
+    print("\n*** Center ***")
+    middle = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
+    print(middle)
+    print(scale_xy(middle))
+
+    print("\n*** Origin ***")
+    origin = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
+    print(origin)
+    print(scale_xy(origin))
+
+    print("\n*** Test ***")
+    test = gps_to_xy(29.195272, -81.054336)
+    print(test)
+    print(scale_xy(test))
+
 
 main()  # Invoke main()
