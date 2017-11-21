@@ -20,6 +20,7 @@ ESC = 3
 NEUTRAL = 6000
 TEST_SPEED = 6320
 
+
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -35,7 +36,7 @@ def main():
     print(serial_debug())
 
     test_controller(COM_PORT)
-    
+
     print("TESTING COMPLETE....")
 
     print("SERVER ESTABLISHED....")
@@ -43,13 +44,18 @@ def main():
     while True:
         try:
             (conn, address) = sock.accept()
-            data = conn.recv(64)
-            print("Received data from: " + conn.getpeername().__str__() + '\t\t' + data.__str__())
-            testRun(data)
+            if conn.send("") == 0:  # ping server to see if connection is still valid, should return 0 on error
+                servoCtl(ESC, NEUTRAL)
+                servoCtl(STEERING, CENTER)
+                sock.close()
+            else:
+                data = conn.recv(64)
+                print("Received data from: " + conn.getpeername().__str__() + '\t\t' + data.__str__())
+                testRun(data)
 
-        except socket.timeout as nosig:
-            servoCtl(COM_PORT, 3, NEUTRAL)
-            servoCtl(COM_PORT, 5, CENTER)
+        except TimeoutError as nosig:
+            servoCtl(ESC, NEUTRAL)
+            servoCtl(STEERING, CENTER)
         except TypeError as emsg2:
             print(emsg2)
             sys.exit()
@@ -100,34 +106,33 @@ def test_controller(port):
     print('MOTOR ARMED....')
     time.sleep(1)
 
-def servoCtl(port, servoNum, val):
-    servo = maestro.Controller(port)
+
+def servoCtl(servoNum, val):
+    servo = maestro.Controller(COM_PORT)
     servo.setTarget(servoNum, val)
+
 
 def testRun(arg):
     # arg = arg[2:len(arg)-1]
     print(arg)
-        
+
     if arg == 'kill':
-        servoCtl(COM_PORT, ESC, NEUTRAL)
-        servoCtl(COM_PORT, STEERING, CENTER)
+        servoCtl(ESC, NEUTRAL)
+        servoCtl(STEERING, CENTER)
         sys.exit()
     elif arg == 'start':
-        servoCtl(COM_PORT, STEERING, MAX_RIGHT)
-        servoCtl(COM_PORT, ESC, TEST_SPEED)
+        servoCtl(STEERING, MAX_RIGHT)
+        servoCtl(ESC, TEST_SPEED)
     elif arg == 'stop':
-        servoCtl(COM_PORT, ESC, NEUTRAL)
-        servoCtl(COM_PORT, STEERING, CENTER)
-    elif arg == 'up':
-        # do nothing
-        print('Connected')
+        servoCtl(ESC, NEUTRAL)
+        servoCtl(STEERING, CENTER)
     else:
         print("No test prompt received, Defaulting to raw input....")
         data1 = int(arg[0])
         data2 = int(arg[1:len(arg)])
-        
+
         if 4000 <= data2 <= 8000:
-            servoCtl(COM_PORT, data1, data2)
+            servoCtl(data1, data2)
 
 
 main()
