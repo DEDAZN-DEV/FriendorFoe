@@ -20,6 +20,7 @@ CORNER_LONG = -81.054020
 RADIUS_OF_EARTH = 6378137  # m
 ROTATION_ANGLE = 15  # off x axis rotate clockwise
 
+# Parameters of operating area (field)
 LENGTH_X = 69
 LENGTH_Y = 117
 BASE_X = 0
@@ -27,16 +28,18 @@ BASE_Y = 0
 X_RATIO = 1
 Y_RATIO = 1
 
+# Car variables
 ACCELERATION = 10  # m/s
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
-
 DIRCHANGEFACTOR = 01.25  # % chance of changing velocity input
 MAXVELOCITY = 13.4  # m/s
 
+# Plotting variables
 TEST_ITERATIONS = 25
 POSMAPBUFFERSIZE = 250
 
-CLIENT_IP_A = "10.33.29.182"  # <-- This is the internal IP on the machine running Client.py (ipconfig/ipconfig)
+# Clientside IP addresses and ports for each RC car
+CLIENT_IP_A = "10.33.30.243"  # <-- This is the internal IP on the machine running Client.py (ipconfig/ifconfig)
 CLIENT_PORT_A = 7777  # <-- DO NOT CHANGE
 
 CLIENT_IP_B = "127.0.0.1"
@@ -45,7 +48,7 @@ CLIENT_PORT_B = 7777
 CLIENT_IP_C = "127.0.0.1"
 CLIENT_PORT_C = 7777
 
-# Plotting things
+# More plotting things
 plt.ion()
 
 
@@ -88,11 +91,23 @@ def main():
 
 
 def stop(client_ip, port):
+    """
+    Emergency override of current operation for car.
+    :param client_ip: IP of target client
+    :param port: PORT of target client
+    :return: Nothing
+    """
     socket_tx('stop', client_ip, port)
     print('Stopping')
 
 
 def test_run(client_ip, port):
+    """
+    Circular test profile for MSC to ESC and STR servos
+    :param client_ip: IP of target client
+    :param port: PORT of target client
+    :return: Nothing
+    """
     socket_tx('start', client_ip, port)
 
     time.sleep(15)
@@ -101,6 +116,12 @@ def test_run(client_ip, port):
 
 
 def rand_run(client_ip, port):
+    """
+    Creates 10 random STR inputs and then spools the ESC by increasing the pulse length by 50ms every 1s
+    :param client_ip: IP of target client
+    :param port: PORT of target client
+    :return: Nothing
+    """
     print('Controlling STR')
 
     for i in range(10):

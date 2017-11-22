@@ -44,18 +44,19 @@ def main():
     while True:
         try:
             (conn, address) = sock.accept()
-            if conn.send("") == 0:  # ping server to see if connection is still valid, should return 0 on error
-                servoCtl(ESC, NEUTRAL)
-                servoCtl(STEERING, CENTER)
+            if len(conn.recv()) <= 0:  # ping server to see if connection is still valid, should return 0 on error
+                servo_ctl(ESC, NEUTRAL)
+                servo_ctl(STEERING, CENTER)
+                print("Lost Connection...Idling....")
                 sock.close()
             else:
                 data = conn.recv(64)
                 print("Received data from: " + conn.getpeername().__str__() + '\t\t' + data.__str__())
-                testRun(data)
+                test_run(data)
 
         except TimeoutError as nosig:
-            servoCtl(ESC, NEUTRAL)
-            servoCtl(STEERING, CENTER)
+            servo_ctl(ESC, NEUTRAL)
+            servo_ctl(STEERING, CENTER)
         except TypeError as emsg2:
             print(emsg2)
             sys.exit()
@@ -107,32 +108,33 @@ def test_controller(port):
     time.sleep(1)
 
 
-def servoCtl(servoNum, val):
+def servo_ctl(servo_num, val):
     servo = maestro.Controller(COM_PORT)
-    servo.setTarget(servoNum, val)
+    servo.setTarget(servo_num, val)
 
 
-def testRun(arg):
+def test_run(arg):
     # arg = arg[2:len(arg)-1]
     print(arg)
 
     if arg == 'kill':
-        servoCtl(ESC, NEUTRAL)
-        servoCtl(STEERING, CENTER)
+        servo_ctl(ESC, NEUTRAL)
+        servo_ctl(STEERING, CENTER)
         sys.exit()
     elif arg == 'start':
-        servoCtl(STEERING, MAX_RIGHT)
-        servoCtl(ESC, TEST_SPEED)
+        servo_ctl(STEERING, MAX_RIGHT)
+        servo_ctl(ESC, TEST_SPEED)
     elif arg == 'stop':
-        servoCtl(ESC, NEUTRAL)
-        servoCtl(STEERING, CENTER)
+        servo_ctl(ESC, NEUTRAL)
+        servo_ctl(STEERING, CENTER)
     else:
-        print("No test prompt received, Defaulting to raw input....")
+        print("No test prompt received, Switching to raw input....")
+
         data1 = int(arg[0])
         data2 = int(arg[1:len(arg)])
 
         if 4000 <= data2 <= 8000:
-            servoCtl(data1, data2)
+            servo_ctl(data1, data2)
 
 
 main()

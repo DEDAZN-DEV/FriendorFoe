@@ -18,6 +18,7 @@ PY2 = version_info[0] == 2  # Running Python 2.x?
 # These functions provide access to many of the Maestro's capabilities using the
 # Pololu serial protocol
 #
+# noinspection PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming
 class Controller:
     # When connected via USB, the Maestro creates two virtual serial ports
     # /dev/ttyACM0 for commands and /dev/ttyACM1 for communications.
@@ -86,7 +87,7 @@ class Controller:
         if self.Mins[chan] > 0 and target < self.Mins[chan]:
             target = self.Mins[chan]
         # if Max is defined and Target is above, force to Max
-        if self.Maxs[chan] > 0 and target > self.Maxs[chan]:
+        if 0 < self.Maxs[chan] < target:
             target = self.Maxs[chan]
         #
         lsb = target & 0x7f  # 7 bits for least significant byte

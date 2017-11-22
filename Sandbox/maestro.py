@@ -17,7 +17,7 @@ PY2 = version_info[0] == 2  # Running Python 2.x?
 #
 # These functions provide access to many of the Maestro's capabilities using the
 # Pololu serial protocol
-#
+
 class Controller:
     # When connected via USB, the Maestro creates two virtual serial ports
     # /dev/ttyACM0 for commands and /dev/ttyACM1 for communications.
@@ -30,6 +30,7 @@ class Controller:
     # assumes.  If two or more controllers are connected to different serial
     # ports, or you are using a Windows OS, you can provide the tty port.  For
     # example, '/dev/ttyACM2' or for Windows, something like 'COM3'.
+    # noinspection PyPep8Naming
     def __init__(self, ttyStr='/dev/ttyACM0', device=0x0c):
         # Open the command port
         self.usb = serial.Serial(ttyStr)
@@ -48,6 +49,7 @@ class Controller:
         self.usb.close()
 
     # Send a Pololu command out the serial port
+    # noinspection PyPep8Naming,PyPep8Naming
     def sendCmd(self, cmd):
         cmdStr = self.PololuCmd + cmd
         if PY2:
@@ -62,15 +64,18 @@ class Controller:
     # ***Note that the Maestro itself is configured to limit the range of servo travel
     # which has precedence over these values.  Use the Maestro Control Center to configure
     # ranges that are saved to the controller.  Use setRange for software controllable ranges.
+    # noinspection PyPep8Naming
     def setRange(self, chan, min, max):
         self.Mins[chan] = min
         self.Maxs[chan] = max
 
     # Return Minimum channel range value
+    # noinspection PyPep8Naming
     def getMin(self, chan):
         return self.Mins[chan]
 
     # Return Maximum channel range value
+    # noinspection PyPep8Naming
     def getMax(self, chan):
         return self.Maxs[chan]
 
@@ -81,12 +86,13 @@ class Controller:
     # Servo center is at 1500 microseconds, or 6000 quarter-microseconds
     # Typcially valid servo range is 3000 to 9000 quarter-microseconds
     # If channel is configured for digital output, values < 6000 = Low ouput
+    # noinspection PyPep8Naming
     def setTarget(self, chan, target):
         # if Min is defined and Target is below, force to Min
         if self.Mins[chan] > 0 and target < self.Mins[chan]:
             target = self.Mins[chan]
         # if Max is defined and Target is above, force to Max
-        if self.Maxs[chan] > 0 and target > self.Maxs[chan]:
+        if 0 < self.Maxs[chan] < target:
             target = self.Maxs[chan]
         #
         lsb = target & 0x7f  # 7 bits for least significant byte
@@ -101,6 +107,7 @@ class Controller:
     # For the standard 1ms pulse width change to move a servo between extremes, a speed
     # of 1 will take 1 minute, and a speed of 60 would take 1 second.
     # Speed of 0 is unrestricted.
+    # noinspection PyPep8Naming
     def setSpeed(self, chan, speed):
         lsb = speed & 0x7f  # 7 bits for least significant byte
         msb = (speed >> 7) & 0x7f  # shift 7 and take next 7 bits for msb
@@ -111,6 +118,7 @@ class Controller:
     # This provide soft starts and finishes when servo moves to target position.
     # Valid values are from 0 to 255. 0=unrestricted, 1 is slowest start.
     # A value of 1 will take the servo about 3s to move between 1ms to 2ms range.
+    # noinspection PyPep8Naming
     def setAccel(self, chan, accel):
         lsb = accel & 0x7f  # 7 bits for least significant byte
         msb = (accel >> 7) & 0x7f  # shift 7 and take next 7 bits for msb
@@ -124,6 +132,7 @@ class Controller:
     # to the servo. If the Speed is set to below the top speed of the servo, then
     # the position result will align well with the acutal servo position, assuming
     # it is not stalled or slowed.
+    # noinspection PyPep8Naming
     def getPosition(self, chan):
         cmd = chr(0x10) + chr(chan)
         self.sendCmd(cmd)
@@ -138,6 +147,7 @@ class Controller:
     # ***Note if target position goes outside of Maestro's allowable range for the
     # channel, then the target can never be reached, so it will appear to always be
     # moving to the target.  
+    # noinspection PyPep8Naming
     def isMoving(self, chan):
         if self.Targets[chan] > 0:
             if self.getPosition(chan) != self.Targets[chan]:
@@ -147,6 +157,7 @@ class Controller:
     # Have all servo outputs reached their targets? This is useful only if Speed and/or
     # Acceleration have been set on one or more of the channels. Returns True or False.
     # Not available with Micro Maestro.
+    # noinspection PyPep8Naming
     def getMovingState(self):
         cmd = chr(0x13)
         self.sendCmd(cmd)
@@ -158,6 +169,7 @@ class Controller:
     # Run a Maestro Script subroutine in the currently active script. Scripts can
     # have multiple subroutines, which get numbered sequentially from 0 on up. Code your
     # Maestro subroutine to either infinitely loop, or just end (return is not valid).
+    # noinspection PyPep8Naming,PyPep8Naming
     def runScriptSub(self, subNumber):
         cmd = chr(0x27) + chr(subNumber)
         # can pass a param with command 0x28
@@ -165,6 +177,7 @@ class Controller:
         self.sendCmd(cmd)
 
     # Stop the current Maestro Script
+    # noinspection PyPep8Naming
     def stopScript(self):
         cmd = chr(0x24)
         self.sendCmd(cmd)
