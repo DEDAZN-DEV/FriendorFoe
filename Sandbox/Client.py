@@ -2,9 +2,11 @@ import socket
 import sys
 import time
 
-import maestro
 import serial
 import serial.tools.list_ports
+
+import ip_mailerv2
+import maestro
 
 HOST = ''
 PORT = 7777
@@ -31,32 +33,32 @@ def main():
 
     sock.listen(5)
 
-    print("SERIAL TESTING....Please Wait.")
+    print('SERIAL TESTING....Please Wait.')
 
     print(serial_debug())
 
     test_controller(COM_PORT)
 
-    print("TESTING COMPLETE....")
+    print('TESTING COMPLETE....')
 
-    print("SERVER ESTABLISHED....")
+    print('SERVER ESTABLISHED....')
 
     while True:
         try:
             (conn, address) = sock.accept()
-            if len(conn.recv()) <= 0:  # ping server to see if connection is still valid, should return 0 on error
-                servo_ctl(ESC, NEUTRAL)
-                servo_ctl(STEERING, CENTER)
-                print("Lost Connection...Idling....")
-                sock.close()
-            else:
-                data = conn.recv(64)
-                print("Received data from: " + conn.getpeername().__str__() + '\t\t' + data.__str__())
-                test_run(data)
+            # if len(conn.recv()) <= 0:  # ping server to see if connection is still valid, should return 0 on error
+            #     servo_ctl(ESC, NEUTRAL)
+            #     servo_ctl(STEERING, CENTER)
+            #     print('Lost Connection...Idling....')
+            #     sock.close()
+            # else:
+            data = conn.recv(64)
+            print('Received data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
+            test_run(data)
 
-        except TimeoutError as nosig:
-            servo_ctl(ESC, NEUTRAL)
-            servo_ctl(STEERING, CENTER)
+        # except TimeoutError as nosig:
+        #     servo_ctl(ESC, NEUTRAL)
+        #     servo_ctl(STEERING, CENTER)
         except TypeError as emsg2:
             print(emsg2)
             sys.exit()
@@ -128,7 +130,7 @@ def test_run(arg):
         servo_ctl(ESC, NEUTRAL)
         servo_ctl(STEERING, CENTER)
     else:
-        print("No test prompt received, Switching to raw input....")
+        print('No test prompt received, Switching to raw input....')
 
         data1 = int(arg[0])
         data2 = int(arg[1:len(arg)])
@@ -137,4 +139,5 @@ def test_run(arg):
             servo_ctl(data1, data2)
 
 
+ip_mailerv2.sendIP('stilwea1@my.erau.edu')
 main()
