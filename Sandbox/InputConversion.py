@@ -1,11 +1,11 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
 import math
+import multiprocessing
 import random
 import socket
 import struct
 import sys
-import threading
 import time
 from datetime import datetime
 
@@ -20,6 +20,7 @@ CORNER_LONG = -81.054020
 RADIUS_OF_EARTH = 6378137  # m
 ROTATION_ANGLE = 15  # off x axis rotate clockwise
 
+# Parameters of operating area (field)
 LENGTH_X = 69
 LENGTH_Y = 117
 BASE_X = 0
@@ -27,26 +28,24 @@ BASE_Y = 0
 X_RATIO = 1
 Y_RATIO = 1
 
+# Car variables
 ACCELERATION = 10  # m/s
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
-
-DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input
+DIRCHANGEFACTOR = 01.25  # % chance of changing velocity input
 MAXVELOCITY = 13.4  # m/s
 
+# Plotting variables
 TEST_ITERATIONS = 25
-POSMAPBUFFERSIZE = 250
+POSMAPBUFFERSIZE = 25
 
-CLIENT_IP_A = "127.0.0.1"  # <-- This is the internal IP on the machine running TestReceiver.py (ipconfig/ipconfig)
-CLIENT_PORT_A = 7777  # <-- DO NOT CHANGE
+# Clientside IP addresses and ports for each RC car
+CLIENT_IP_A = "10.33.28.231"  # <-- This is the internal IP on the machine running Client.py (ipconfig/ifconfig)
+PORT_NUMBER = 7777  # <-- DO NOT CHANGE
 
 CLIENT_IP_B = "127.0.0.1"
-CLIENT_PORT_B = 7777
 
 CLIENT_IP_C = "127.0.0.1"
-CLIENT_PORT_C = 7777
 
-# Plotting things
-plt.ion()
 
 class BColors:
     """
@@ -67,22 +66,91 @@ def main():
     @return: Nothing
     """
 
+    if len(sys.argv) < 2:
+        print("Missing argument...\nUsage: python Server.py [stop, normal_run, debug_circle, debug_random]")
+        sys.exit()
+    else:
+        testtype = sys.argv[1]
+
     calc_originxy()
     set_xy_ratio()
 
-    a = threading.Thread(target=run, args=("Drone A", CLIENT_IP_A, CLIENT_PORT_A,))
+    if testtype == 'normal_run':
+        a = multiprocessing.Process(target=run, args=(CLIENT_IP_A, PORT_NUMBER,))
+    elif testtype == 'debug_circle':
+        length = int(sys.argv[2])
+        a = multiprocessing.Process(target=test_run, args=(CLIENT_IP_A, PORT_NUMBER, length,))
+    elif testtype == 'debug_random':
+        a = multiprocessing.Process(target=rand_run, args=(CLIENT_IP_A, PORT_NUMBER,))
+    elif testtype == 'stop':
+        a = multiprocessing.Process(target=stop, args=(CLIENT_IP_A, PORT_NUMBER,))
+    else:
+        print("Invalid argument...\nUsage: python Server.py [stop, normal_run, debug_circle, debug_random]")
+        sys.exit()
+
     a.start()
-    b = threading.Thread(target=run, args=("Drone B", CLIENT_IP_B, CLIENT_PORT_B))
-    b.start()
-    # c = threading.Thread(target=run, args=("Drone C",))
-    # c.start()
 
 
-def run(dronename, ip, port):
+def stop(client_ip, port):
+    """
+    Emergency override of current operation for car.
+    :param client_ip: IP of target client
+    :param port: PORT of target client
+    :return: Nothing
+    """
+    socket_tx('stop', client_ip, port)
+    print('Stopping')
+
+
+def test_run(client_ip, port, length):
+    """
+    Circular test profile for MSC to ESC and STR servos
+    :param client_ip: IP of target client
+    :param port: PORT of target client
+    :return: Nothing
+    """
+    socket_tx('start', client_ip, port)
+
+    time.sleep(length)
+
+    socket_tx('stop', client_ip, port)
+
+
+def rand_run(client_ip, port):
+    """
+    Creates 10 random STR inputs and then spools the ESC by increasing the pulse length by 50ms every 1s
+    :param client_ip: IP of target client
+    :param port: PORT of target client
+    :return: Nothing
+    """
+    print('Controlling STR')
+
+    for i in range(10):
+        inval = random.randint(4000, 8000)
+        print(inval)
+        socket_tx(str(5) + str(inval), client_ip, port)
+        time.sleep(2)
+
+    socket_tx('stop', client_ip, port)
+    time.sleep(1)
+
+    print('Controlling ESC')
+
+    # Forward
+    for x in range(6000, 8000, 50):
+        print(x)
+        socket_tx(str(3) + str(x), client_ip, port)
+        time.sleep(1)
+
+    socket_tx('stop', client_ip, port)
+
+
+def run(dronename, ip):
     """
     Definition wrapper to handle the drones in their individual threads
-    @param dronename: A string that will be used as the name for the drone.
-    @return: Nothing
+    :param dronename:
+    :param ip:
+    :return:
     """
     xposstorage = []
     yposstorage = []
@@ -119,14 +187,21 @@ def run(dronename, ip, port):
 
         hexangle = gen_signal(cardata[2])
 
-        counter = counter + 1
-        curtime = datetime.now()
-        printf(BColors.OKBLUE + "%10s [CONSOLE]%7.5d%10s%45s%15.10f%15.10f%12.5f%12s%11.5f%10s\n" + BColors.ENDC,
-               str(curtime), counter, dronename,
-               vector.__str__(), cardata[0], cardata[1], cardata[2],
-               hexangle, cardata[3], dronename)
+        # counter = counter + 1
+        # curtime = datetime.now()
+        # printf(BColors.OKBLUE + "%10s [CONSOLE]%7.5d%10s%45s%15.10f%15.10f%12.5f%12s%11.5f%10s\n" + BColors.ENDC,
+        #        str(curtime), counter, dronename,
+        #        vector.__str__(), cardata[0], cardata[1], cardata[2],
+        #        hexangle, cardata[3], dronename)
+        #
+        # socket_tx(str(curtime) + "     " + hexangle, ip, PORT_NUMBER)
 
-        socket_tx(str(curtime) + "     " + hexangle, ip, port)
+        print(xposstorage, yposstorage)
+
+        # More plotting things
+        plt.ion()
+        plt.axis([0.0, 64.0, 0.0, 100.0])
+        plt.plot(xposstorage, yposstorage, 'k-')
 
         time.sleep(UPDATE_INTERVAL)
 
@@ -243,7 +318,7 @@ def parse_gps_msg(message):
     mlat = ''
     dlong = ''
     mlong = ''
-    altitude = ''
+    # altitude = ''
 
     # bytes 17 - 26
     print(message)
@@ -350,15 +425,6 @@ def gen_signal(anglevalue):
     # TODO: Determine what signals are needed to direct car ESC
 
 
-def tx_signal():
-    """
-    Sends signal to remote location.
-    @return: Nothing
-    """
-
-    # TODO: Transmit signals to car through WiFi
-
-
 def float_to_hex(f):  # IEEE 32-bit standard for float representation
     """
     Converts float value to hex value.
@@ -369,23 +435,23 @@ def float_to_hex(f):  # IEEE 32-bit standard for float representation
     return hex(struct.unpack('<I', struct.pack('<f', f))[0])
 
 
-def socket_tx(data, server, port):
+def socket_tx(data, client_ip, port):
     """
-    Transmits data over a socket.
-    @param data: Data to be transmitted.
-    @param server: Server IP address.
-    @param port: Server PORT
-    @return: Nothing
+    Transmits data over a socket
+    :param data:
+    :param client_ip:
+    :param port:
+    :return:
     """
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.connect((server, port))
+        sock.connect((client_ip, port))
         sock.sendall(data.encode())
         print(BColors.OKGREEN + "Data Sent Successfully..." + BColors.ENDC)
-    except ConnectionRefusedError:
+    except socket.herror:
         print(BColors.FAIL + "Connection refused...." + BColors.ENDC)
-    except TimeoutError:
+    except socket.timeout:
         print(BColors.FAIL + "Connection timed out...." + BColors.ENDC)
 
 
@@ -404,30 +470,32 @@ def disable(self):
     self.ENDC = ''
 
 
-calc_originxy()
-set_xy_ratio()
+def gps_debug():
+    calc_originxy()
+    set_xy_ratio()
 
-print(parse_gps_msg(''))
-print("----------------")
+    print(parse_gps_msg(''))
+    print("----------------")
 
-corner = gps_to_xy(CORNER_LAT, CORNER_LONG)
-print("*** Corner ***")
-print(corner)
-print(scale_xy(corner))
+    corner = gps_to_xy(CORNER_LAT, CORNER_LONG)
+    print("*** Corner ***")
+    print(corner)
+    print(scale_xy(corner))
 
-print("\n*** Center ***")
-middle = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
-print(middle)
-print(scale_xy(middle))
+    print("\n*** Center ***")
+    middle = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
+    print(middle)
+    print(scale_xy(middle))
 
-print("\n*** Origin ***")
-origin = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
-print(origin)
-print(scale_xy(origin))
+    print("\n*** Origin ***")
+    origin = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
+    print(origin)
+    print(scale_xy(origin))
 
-print("\n*** Test ***")
-test = gps_to_xy(29.195272, -81.054336)
-print(test)
-print(scale_xy(test))
+    print("\n*** Test ***")
+    test = gps_to_xy(29.195272, -81.054336)
+    print(test)
+    print(scale_xy(test))
+
 
 main()  # Invoke main()
