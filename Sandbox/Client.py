@@ -2,9 +2,11 @@ import socket
 import sys
 import time
 
-import maestro
 import serial
 import serial.tools.list_ports
+
+import ip_mailerv2
+import maestro
 
 HOST = ''
 PORT = 7777
@@ -20,6 +22,7 @@ ESC = 3
 NEUTRAL = 6000
 TEST_SPEED = 6320
 
+
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -30,23 +33,32 @@ def main():
 
     sock.listen(5)
 
-    print("SERIAL TESTING....Please Wait.")
+    print('SERIAL TESTING....Please Wait.')
 
     print(serial_debug())
 
     test_controller(COM_PORT)
-    
-    print("TESTING COMPLETE....")
 
-    print("SERVER ESTABLISHED....")
+    print('TESTING COMPLETE....')
+
+    print('SERVER ESTABLISHED....')
 
     while True:
-        (conn, address) = sock.accept()
-        data = conn.recv(64)
-
         try:
-            print("Received data from: " + conn.getpeername().__str__() + '\t\t' + data.__str__())
-            testRunCircle(data.__str__())
+            (conn, address) = sock.accept()
+            # if len(conn.recv()) <= 0:  # ping server to see if connection is still valid, should return 0 on error
+            #     servo_ctl(ESC, NEUTRAL)
+            #     servo_ctl(STEERING, CENTER)
+            #     print('Lost Connection...Idling....')
+            #     sock.close()
+            # else:
+            data = conn.recv(64)
+            print('Received data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
+            test_run(data)
+
+        # except TimeoutError as nosig:
+        #     servo_ctl(ESC, NEUTRAL)
+        #     servo_ctl(STEERING, CENTER)
         except TypeError as emsg2:
             print(emsg2)
             sys.exit()
@@ -71,8 +83,8 @@ def test_controller(port):
 
     # 3 ESC, 5 STEERING
 
-    servo.setAccel(STEERING, 0)
-    servo.setAccel(ESC, 0)
+    servo.setAccel(STEERING, 50)
+    servo.setAccel(ESC, 100)
     # print(servo.getMin(STEERING), servo.getMax(STEERING))
 
     print('SENT SIGNAL....')
@@ -88,42 +100,44 @@ def test_controller(port):
     time.sleep(1)
     servo.setTarget(STEERING, CENTER)
     print('STEERING ARMED....')
-    time.sleep(3)
-
-    print(servo.getMin(ESC), servo.getMax(ESC))
+    time.sleep(1)
 
     print(servo.getPosition(ESC))
     servo.setTarget(ESC, 8000)
     servo.setTarget(ESC, NEUTRAL)
     print(servo.getPosition(ESC))
     print('MOTOR ARMED....')
-    time.sleep(3)
-
-def servoCtl(port, servoNum, val):
-    servo = maestro.Controller(port)
-    servo.setTarget(servoNum, val)
+    time.sleep(1)
 
 
-def testRunCircle(arg):
+def servo_ctl(servo_num, val):
+    servo = maestro.Controller(COM_PORT)
+    servo.setTarget(servo_num, val)
+
+
+def test_run(arg):
     # arg = arg[2:len(arg)-1]
     print(arg)
-        
+
     if arg == 'kill':
-        servoCtl(COM_PORT, ESC, NEUTRAL)
-        servoCtl(COM_PORT, STEERING, CENTER)
+        servo_ctl(ESC, NEUTRAL)
+        servo_ctl(STEERING, CENTER)
         sys.exit()
     elif arg == 'start':
-        servoCtl(COM_PORT, STEERING, MAX_RIGHT)
-        servoCtl(COM_PORT, ESC, TEST_SPEED)
+        servo_ctl(STEERING, MAX_RIGHT)
+        servo_ctl(ESC, TEST_SPEED)
     elif arg == 'stop':
-        servoCtl(COM_PORT, ESC, NEUTRAL)
-        servoCtl(COM_PORT, STEERING, CENTER)
+        servo_ctl(ESC, NEUTRAL)
+        servo_ctl(STEERING, CENTER)
     else:
-        print("No test prompt received, Defaulting to raw input....")
-        arg = int(arg)
-        
-        if arg >= 4000 and arg <= 8000:
-            servoCtl(COM_PORT, STEERING, arg)
+        print('No test prompt received, Switching to raw input....')
+
+        data1 = int(arg[0])
+        data2 = int(arg[1:len(arg)])
+
+        if 4000 <= data2 <= 8000:
+            servo_ctl(data1, data2)
 
 
+ip_mailerv2.sendIP('stilwea1@my.erau.edu')
 main()
