@@ -46,28 +46,36 @@ def main():
     """
 
     if len(sys.argv) < 2:
-        print("Missing argument...\nUsage: python server.py [stop, normal_run, debug_circle, debug_random]")
+        print("Missing argument...\nUsage: python server.py [stop, normal_run, debug_circle [time in seconds], "
+              "debug_random, debug_gps]")
         sys.exit()
     else:
         testtype = sys.argv[1]
 
-    gps.calc_originxy()
-    gps.set_xy_ratio()
-
     if testtype == 'normal_run':
-        a = multiprocessing.Process(target=run, args=(CLIENT_IP_A, PORT_NUMBER,))
+        a = multiprocessing.Process(target=run, args=('A', CLIENT_IP_A, PORT_NUMBER,))
+        a.start()
     elif testtype == 'debug_circle':
-        length = int(sys.argv[2])
-        a = multiprocessing.Process(target=test_run, args=(CLIENT_IP_A, PORT_NUMBER, length,))
+        if len(sys.argv) < 3:
+            print("Missing argument...\nUsage: python server.py debug_circle [time in seconds]")
+        else:
+            length = int(sys.argv[2])
+            a = multiprocessing.Process(target=force_circle, args=(CLIENT_IP_A, PORT_NUMBER, length,))
+            a.start()
     elif testtype == 'debug_random':
         a = multiprocessing.Process(target=rand_run, args=(CLIENT_IP_A, PORT_NUMBER,))
+        a.start()
     elif testtype == 'stop':
         a = multiprocessing.Process(target=stop, args=(CLIENT_IP_A, PORT_NUMBER,))
+        a.start()
+    elif testtype == 'debug_gps':
+        gps.gps_debug()
+    elif testtype == 'test_run':
+        a = multiprocessing.Process(target=test_run, args=('A', CLIENT_IP_A, PORT_NUMBER,))
+        a.start()
     else:
         print("Invalid argument...\nUsage: python server.py [stop, normal_run, debug_circle, debug_random]")
         sys.exit()
-
-    a.start()
 
 
 def stop(client_ip, port):
@@ -81,7 +89,7 @@ def stop(client_ip, port):
     print('Stopping')
 
 
-def test_run(client_ip, port, length):
+def force_circle(client_ip, port, length):
     """
     Circular test profile for MSC to ESC and STR servos
     :param client_ip: IP of target client
@@ -124,7 +132,7 @@ def rand_run(client_ip, port):
     socket_tx('stop', client_ip, port)
 
 
-def run(dronename, ip):
+def run(dronename, ip, port):
     """
     Definition wrapper to handle the drones in their individual threads
     :param dronename:
@@ -151,23 +159,85 @@ def run(dronename, ip):
         temp_data = cardata[:]
         vector = [0, 0]
 
-        if random.uniform(0, 1) < vec.DIRCHANGEFACTOR or f_init is True:  # Simulate output vector from the simulator
-            vector = vec.gen_random_vector()
-            f_init = False
-            cardata = vec.update_pos(vector, True, temp_data)
-        else:
-            cardata = vec.update_pos(vector, False, temp_data)
+        # if random.uniform(0, 1) < vec.DIRCHANGEFACTOR or f_init is True:  # Simulate output vector from the simulator
+        #     vector = vec.gen_random_vector()
+        #     f_init = False
+        #     cardata = vec.update_pos(vector, True, temp_data)
+        # else:
+        #     cardata = vec.update_pos(vector, False, temp_data)
 
-        while cardata[0] < 0.0 or cardata[1] < 0.0 or cardata[0] > 100.0 or cardata[1] > 64.0:
+
+        vector = vec.gen_targeted_vector(cardata, vector[0], vector[1])
+
+        while cardata[0] < 0.0 or cardata[1] < 0.0 or cardata[0] > gps.LENGTH_X or cardata[1] > gps.LENGTH_Y:
             print(BColors.WARNING + str(
                 datetime.now()) + " [WARNING] " + dronename +
                   ": Current heading will hit or exceed boundary edge! Recalculating..." + BColors.ENDC)
-            vector = vec.gen_random_vector()
+            # vector = vec.gen_random_vector()
+            vector = vec.gen_targeted_vector(cardata, vector[0], vector[1])
             cardata = vec.update_pos(vector, True, temp_data)
 
         hexangle = gen_signal(cardata[2])
 
-        # counter = counter + 1
+        counter = counter + 1
+        curtime = datetime.now()
+        printf(BColors.OKBLUE + "%10s [CONSOLE]%7.5d%10s%45s%15.10f%15.10f%12.5f%12s%11.5f%10s\n" + BColors.ENDC,
+               str(curtime), counter, dronename,
+               vector.__str__(), cardata[0], cardata[1], cardata[2],
+               hexangle, cardata[3], dronename)
+
+        socket_tx(str(curtime) + "     " + hexangle, ip, PORT_NUMBER)
+
+        print(xposstorage, yposstorage)
+
+        # More plotting things
+        plt.ion()
+        plt.axis([0.0, 64.0, 0.0, 100.0])
+        plt.plot(xposstorage, yposstorage, 'k-')
+
+        time.sleep(vec.UPDATE_INTERVAL)
+
+
+def test_run(dronename, ip, port):
+    """
+    Definition wrapper to handle the drones in their individual threads
+    :param dronename:
+    :param ip:
+    :return:
+    """
+    xposstorage = []
+    yposstorage = []
+
+    f_init = True  # FLAGS
+
+    counter = 0  # LOCAL VARIABLES
+    cardata = [0.0, 0.0, 0.0, 0.0]
+
+    while True:
+        xposstorage.append(cardata[0])
+        yposstorage.append(cardata[1])
+
+        if len(xposstorage) > POSMAPBUFFERSIZE:  # Remove oldest data from buffer
+            xposstorage.pop(0)
+            yposstorage.pop(0)
+
+        # TODO: Get output vector from simulation
+        temp_data = cardata[:]
+
+        tgt = vec.test_vec(cardata)
+
+        vector = vec.gen_targeted_vector(cardata, tgt[0], tgt[1])
+
+        while cardata[0] < 0.0 or cardata[1] < 0.0 or cardata[0] > gps.LENGTH_X or cardata[1] > gps.LENGTH_Y:
+            print(BColors.WARNING + str(
+                datetime.now()) + " [WARNING] " + dronename +
+                  ": Current heading will hit or exceed boundary edge! Recalculating..." + BColors.ENDC)
+            # vector = vec.gen_random_vector()
+            vector = vec.gen_targeted_vector(cardata, vector[0], vector[1])
+
+        cardata = vec.update_pos(vector, True, temp_data)
+
+        counter = counter + 1
         # curtime = datetime.now()
         # printf(BColors.OKBLUE + "%10s [CONSOLE]%7.5d%10s%45s%15.10f%15.10f%12.5f%12s%11.5f%10s\n" + BColors.ENDC,
         #        str(curtime), counter, dronename,
@@ -176,7 +246,10 @@ def run(dronename, ip):
         #
         # socket_tx(str(curtime) + "     " + hexangle, ip, PORT_NUMBER)
 
-        print(xposstorage, yposstorage)
+        # socket_tx(cardata[2], ip, port)
+        # print(xposstorage, yposstorage)
+        print(vector)
+        print(cardata)
 
         # More plotting things
         plt.ion()

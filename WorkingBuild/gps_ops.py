@@ -1,20 +1,21 @@
 import math
 
 ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
-ORIGIN_LATITUDE = 29.195267
-ORIGIN_LONGITUDE = -81.054341
-CORNER_LAT = 29.196433
-CORNER_LONG = -81.054020
-RADIUS_OF_EARTH = 6378137  # m
-ROTATION_ANGLE = 15  # off x axis rotate clockwise
 
 # Parameters of operating area (field)
-LENGTH_X = 69
-LENGTH_Y = 117
+LENGTH_X = 50
+LENGTH_Y = 100
 BASE_X = 0
 BASE_Y = 0
 X_RATIO = 1
 Y_RATIO = 1
+
+ORIGIN_LATITUDE = 29.1900097
+ORIGIN_LONGITUDE = -81.046258
+CORNER_LAT = 29.190575
+CORNER_LONG = -81.045074
+RADIUS_OF_EARTH = 6378137  # m
+ROTATION_ANGLE = 315  # degrees rotated counter-clockwise
 
 
 def parse_gps_msg(message):
@@ -116,8 +117,8 @@ def gps_to_xy(lat, long):
     x = radlong - math.radians(ORIGIN_LONGITUDE)
     y = math.log(math.tan(radlat) + (1 / math.cos(radlat)))
 
-    rot_x = x * math.cos(math.radians(ROTATION_ANGLE)) + y * math.sin(math.radians(ROTATION_ANGLE))
-    rot_y = -x * math.sin(math.radians(ROTATION_ANGLE)) + y * math.cos(math.radians(ROTATION_ANGLE))
+    rot_x = x * math.cos(math.radians(ROTATION_ANGLE)) - y * math.sin(math.radians(ROTATION_ANGLE))
+    rot_y = y * math.cos(math.radians(ROTATION_ANGLE)) + x * math.sin(math.radians(ROTATION_ANGLE))
 
     xy = [rot_x - BASE_X, rot_y - BASE_Y]
     # xy = [x - BASE_X, y - BASE_Y]
@@ -149,9 +150,9 @@ def gps_debug():
     print(scale_xy(corner))
 
     print("\n*** Center ***")
-    middle = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
-    print(middle)
-    print(scale_xy(middle))
+    center = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
+    print(center)
+    print(scale_xy(center))
 
     print("\n*** Origin ***")
     origin = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
@@ -159,7 +160,9 @@ def gps_debug():
     print(scale_xy(origin))
 
     print("\n*** Test ***")
-    test = gps_to_xy(29.195272, -81.054336)
+    testlat = input('Enter Test Latitude: ')
+    testlong = input('Enter Test Longitude: ')
+    test = gps_to_xy(float(testlat), float(testlong))
     print(test)
     print(scale_xy(test))
 

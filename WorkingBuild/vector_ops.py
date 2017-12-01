@@ -18,11 +18,37 @@ def gen_random_vector():
     return newvector
 
 
-def gen_targeted_vector():
+def gen_targeted_vector(cardata, tgtxpos, tgtypos):
     """
     Creates a targeted vector towards a specific position.
     @return: Returns a two element vector consisiting of the x and y component of a velocity.
     """
+
+    xdiff = abs(cardata[0] - tgtxpos)
+    ydiff = abs(cardata[1] - tgtypos)
+    zdiff = math.sqrt((xdiff ** 2) + (ydiff ** 2))
+    newhdg = 0
+
+    # checking quadrants for proper turn angle
+    if xdiff > 0 and ydiff > 0:
+        newhdg = math.degrees(math.atan(ydiff / xdiff))
+    elif xdiff < 0 and ydiff > 0:
+        newhdg = 360 + math.degrees(math.atan(ydiff / xdiff))
+    elif xdiff < 0 and ydiff < 0:
+        newhdg = 180 + math.degrees(math.atan(ydiff / xdiff))
+    elif xdiff > 0 and ydiff < 0:
+        newhdg = 180 + math.degrees(math.atan(ydiff / xdiff))
+
+    if zdiff > MAXVELOCITY:
+        xcom = math.cos(math.radians(newhdg) * MAXVELOCITY)
+        ycom = math.sin(math.radians(newhdg) * MAXVELOCITY)
+    else:
+        xcom = math.cos(math.radians(newhdg) * zdiff)
+        ycom = math.sin(math.radians(newhdg) * zdiff)
+
+    print newhdg
+
+    return [xcom, ycom]
 
 
 def update_pos(vector, flag, data):
@@ -65,3 +91,7 @@ def update_pos(vector, flag, data):
         newdata[3] = newdata[3] - 360
 
     return newdata
+
+
+def test_vec(cardata):
+    return [cardata[0] + random.randint(-5, 5), cardata[1] + random.randint(-5, 5)]
