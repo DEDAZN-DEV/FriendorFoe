@@ -232,11 +232,16 @@ def test_run(dronename, ip, port):
 
         flag = False
 
-        if abs(cardata[0] - 25) < 0.05 and abs(cardata[1] - 50) < 0.05 and flag is False:
+        if abs(cardata[0] - 30) < 0.5 and abs(cardata[1] - 20) < 0.5:
             stage = stage + 1
-            flag = True
-        elif abs(cardata[0] - 50) < 0.1 and abs(cardata[1] - 35) < 0.1:
-            socket_tx('stop', ip, port)
+        elif abs(cardata[0] - 40) < 0.5 and abs(cardata[1] - 40) < 0.5:
+            stage = stage + 1
+        elif abs(cardata[0] - 50) < 0.5 and abs(cardata[1] - 65) < 0.5:
+            stage = stage + 1
+        elif abs(cardata[0] - 45) < 0.5 and abs(cardata[1] - 90) < 0.5:
+            stage = stage + 1
+        elif abs(cardata[0] - 55) < 0.5 and abs(cardata[1] - 110) < 0.5:
+            socket_tx('stop', cfg.CLIENT_IP_A, cfg.PORT)
             break
 
         # More plotting things
@@ -261,20 +266,31 @@ def gen_signal(angle, speed):
         @return: Returns a 32-byte value in hex format.
     """
 
-    if angle < 0:
-        # center is 6000
-        ang = int(round(4000 + (abs(angle) * cfg.DEGPERPOINT)))
-    else:
-        ang = int(round(6000 + (angle * cfg.DEGPERPOINT)))
 
-    spd = int(round(6000 + (speed * cfg.SPDSCALE)))
+    if angle < 0:
+        ang = int(round(cfg.CENTER + (abs(angle) * cfg.DEGPERPOINT)))
+    else:
+        ang = int(round(cfg.CENTER + (angle * cfg.DEGPERPOINT)))
+
+    if ang > 8000:
+        ang = cfg.MAX_LEFT
+    elif ang < 4000:
+        ang = cfg.MAX_RIGHT
+
+    spd = int(round(cfg.TEST_SPEED + (speed * cfg.SPDSCALE)))
+    if spd > 8000:
+        spd = cfg.MAX_SPEED - 1000  # <- FOR TESTING
 
     print(str(5) + str(ang))
     print(str(3) + str(spd))
 
     socket_tx(str(5) + str(ang), cfg.CLIENT_IP_A, cfg.PORT)
-    socket_tx(str(3) + str(spd), cfg.CLIENT_IP_A, cfg.PORT)
-
+    if ang != cfg.CENTER:
+        time.sleep(2)
+        socket_tx(str(5) + str(cfg.CENTER), cfg.CLIENT_IP_A, cfg.PORT)
+        time.sleep(0.5)
+    # I changed this \/ from spd
+    socket_tx(str(3) + str(cfg.TEST_SPEED + 100), cfg.CLIENT_IP_A, cfg.PORT)
 
 def socket_tx(data, client_ip, port):
     """

@@ -23,6 +23,7 @@ LENGTH_Y = 120
 
 MAX_RIGHT = 8000
 MAX_LEFT = 4000
+MAX_SPEED = 8000
 MAXVELOCITY = 13.4  # m/s
 
 NEUTRAL = 6000
@@ -41,7 +42,7 @@ STEERING = 5
 
 TEST_ITERATIONS = 25
 TEST_SPEED = 6320
-TURNRADIUS = 60  # degrees each direction
+TURNRADIUS = 30  # degrees each direction
 
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 

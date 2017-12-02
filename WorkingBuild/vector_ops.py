@@ -88,15 +88,12 @@ def new_pos(stage, cardata):
     radius = 5
 
     if stage == 1:
-        return [25, 50]
+        return [30, 20]
     elif stage == 2:
-        x = radius * math.cos(math.radians(CIRCLETGTANGLE)) + cardata[0]
-        y = radius * math.sin(math.radians(CIRCLETGTANGLE)) + cardata[1]
-
-        CIRCLETGTANGLE = CIRCLETGTANGLE + 5
-
-        return [x, y]
+        return [40, 40]
     elif stage == 3:
-        return [50, 35]
-    elif stage > 3:
-        return [random.randint, random.randint]
+        return [50, 65]
+    elif stage == 4:
+        return [45, 90]
+    elif stage == 5:
+        return [55, 110]
