@@ -229,7 +229,6 @@ def test_run(dronename, ip, port):
         print(cardata)
 
         gen_signal(cardata[2], cardata[4])
-        # socket_tx(gen_signal(cardata[2], cardata[4]), ip, port)
 
         flag = False
 
@@ -237,7 +236,7 @@ def test_run(dronename, ip, port):
             stage = stage + 1
             flag = True
         elif abs(cardata[0] - 50) < 0.1 and abs(cardata[1] - 35) < 0.1:
-            # socket_tx('stop', ip, port)
+            socket_tx('stop', ip, port)
             break
 
         # More plotting things
@@ -272,6 +271,9 @@ def gen_signal(angle, speed):
 
     print(str(5) + str(ang))
     print(str(3) + str(spd))
+
+    socket_tx(str(5) + str(ang), cfg.CLIENT_IP_A, cfg.PORT)
+    socket_tx(str(3) + str(spd), cfg.CLIENT_IP_A, cfg.PORT)
 
 
 def socket_tx(data, client_ip, port):
