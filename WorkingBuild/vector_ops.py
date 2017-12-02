@@ -6,6 +6,11 @@ ACCELERATION = 10  # m/s
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 DIRCHANGEFACTOR = 01.25  # % chance of changing velocity input
 MAXVELOCITY = 13.4  # m/s
+TURNRADIUS = 60  # degrees each direction
+DEGPERPOINT = 2000 / TURNRADIUS
+SPDSCALE = 2000 / MAXVELOCITY
+
+CIRCLETGTANGLE = 0
 
 
 def gen_random_vector():
@@ -24,38 +29,34 @@ def gen_targeted_vector(cardata, tgtxpos, tgtypos):
     @return: Returns a two element vector consisiting of the x and y component of a velocity.
     """
 
-    xdiff = abs(cardata[0] - tgtxpos)
-    ydiff = abs(cardata[1] - tgtypos)
+    xdiff = tgtxpos - cardata[0]
+    ydiff = tgtypos - cardata[1]
     zdiff = math.sqrt((xdiff ** 2) + (ydiff ** 2))
-    newhdg = 0
 
     # checking quadrants for proper turn angle
-    if xdiff > 0 and ydiff > 0:
-        newhdg = math.degrees(math.atan(ydiff / xdiff))
-    elif xdiff < 0 and ydiff > 0:
-        newhdg = 360 + math.degrees(math.atan(ydiff / xdiff))
-    elif xdiff < 0 and ydiff < 0:
-        newhdg = 180 + math.degrees(math.atan(ydiff / xdiff))
-    elif xdiff > 0 and ydiff < 0:
-        newhdg = 180 + math.degrees(math.atan(ydiff / xdiff))
+    newhdg = math.degrees(math.atan2(ydiff, xdiff))
+
+    if newhdg < 0:
+        newhdg = newhdg + 360
 
     if zdiff > MAXVELOCITY:
-        xcom = math.cos(math.radians(newhdg) * MAXVELOCITY)
-        ycom = math.sin(math.radians(newhdg) * MAXVELOCITY)
+        ratio = zdiff / MAXVELOCITY
     else:
-        xcom = math.cos(math.radians(newhdg) * zdiff)
-        ycom = math.sin(math.radians(newhdg) * zdiff)
+        ratio = zdiff
 
-    print newhdg
+    xcom = xdiff / ratio
+    ycom = ydiff / ratio
+
+    print("HDG: " + str(newhdg))
+    print(xdiff, ydiff, zdiff)
 
     return [xcom, ycom]
 
 
-def update_pos(vector, flag, data):
+def update_pos(vector, data):
     """
     Updates the current position of the drone as well as the heading and turn angle.
     @param vector: The velocity vector (xv, yv).
-    @param flag: Whether or not to update the heading and turn angle.
     @param data: Temp storage for the car data; 4 elements (xpos, ypos, angle, heading)
     @return: Returns the updated cardata.
     """
@@ -68,30 +69,39 @@ def update_pos(vector, flag, data):
     newdata[0] = newdata[0] + xdelta  # xpos
     newdata[1] = newdata[1] + ydelta  # ypos
 
-    if flag:
-        if ydelta >= 0:
-            newdata[2] = math.atan(xdelta / ydelta) * 180 / math.pi  # angle
-        else:
-            newdata[2] = (math.atan(xdelta / ydelta) * 180 / math.pi) - 180
-        if vector[1] >= 0:
-            newdata[3] = math.atan(vector[1] / vector[0]) * 180 / math.pi  # heading
-        else:
-            newdata[3] = (math.atan(vector[1] / vector[0]) * 180 / math.pi) - 180
+    newhdg = 0
+
+    print(xdelta, ydelta)
+
+    newhdg = math.degrees(math.atan2(ydelta, xdelta))
+
+    if newhdg < 0:
+        newhdg = newhdg + 360
+
+    if newdata[3] != newhdg:
+        newdata[2] = newdata[3] - newhdg  # <-- This is what needs to be sent to the car.
+        newdata[3] = newhdg
     else:
-        newdata[2] = 0.00
+        newdata[2] = 0
 
-    if newdata[2] < -180:
-        newdata[2] = newdata[2] + 360
-    elif newdata[2] > 180:
-        newdata[2] = newdata[2] - 360
-
-    if newdata[3] < 0:
-        newdata[3] = newdata[3] + 360
-    elif newdata[3] > 360:
-        newdata[3] = newdata[3] - 360
+    newdata[4] = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
 
     return newdata
 
 
-def test_vec(cardata):
-    return [cardata[0] + random.randint(-5, 5), cardata[1] + random.randint(-5, 5)]
+def new_pos(stage, cardata):
+    global CIRCLETGTANGLE
+
+    radius = 5
+
+    if stage == 1:
+        return [25, 50]
+    elif stage == 2:
+        x = radius * math.cos(math.radians(CIRCLETGTANGLE)) + cardata[0]
+        y = radius * math.sin(math.radians(CIRCLETGTANGLE)) + cardata[1]
+
+        CIRCLETGTANGLE = CIRCLETGTANGLE + 5
+
+        return [x, y]
+    elif stage == 3:
+        return [25, 10]
