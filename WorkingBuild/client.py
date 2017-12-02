@@ -5,28 +5,15 @@ import time
 import serial
 import serial.tools.list_ports
 
+import global_cfg as cfg
 import ip_mailerv2
 import maestro
-
-HOST = ''
-PORT = 7777
-
-COM_PORT = ''
-
-STEERING = 5
-MAX_LEFT = 4000
-MAX_RIGHT = 8000
-CENTER = 5800
-
-ESC = 3
-NEUTRAL = 6000
-TEST_SPEED = 6320
 
 
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.bind((HOST, PORT))
+        sock.bind((cfg.HOST, cfg.PORT))
     except socket.error as emsg1:
         print(emsg1)
         sys.exit()
@@ -85,35 +72,40 @@ def test_controller(port):
 
     # 3 ESC, 5 STEERING
 
-    servo.setAccel(STEERING, 50)
-    servo.setAccel(ESC, 100)
+    servo.setAccel(cfg.STEERING, 50)
+    servo.setAccel(cfg.ESC, 100)
     # print(servo.getMin(STEERING), servo.getMax(STEERING))
 
     print('SENT SIGNAL....')
 
-    servo.setTarget(STEERING, MAX_RIGHT)
-    print(servo.getPosition(STEERING))
+    servo.setTarget(cfg.STEERING, cfg.MAX_RIGHT)
+    print(servo.getPosition(cfg.STEERING))
     time.sleep(1)
-    servo.setTarget(STEERING, MAX_LEFT)
-    print(servo.getPosition(STEERING))
+    servo.setTarget(cfg.STEERING, cfg.MAX_LEFT)
+    print(servo.getPosition(cfg.STEERING))
     time.sleep(1)
-    servo.setTarget(STEERING, MAX_RIGHT)
-    print(servo.getPosition(STEERING))
+    servo.setTarget(cfg.STEERING, cfg.MAX_RIGHT)
+    print(servo.getPosition(cfg.STEERING))
     time.sleep(1)
-    servo.setTarget(STEERING, CENTER)
+    servo.setTarget(cfg.STEERING, cfg.CENTER)
     print('STEERING ARMED....')
     time.sleep(1)
 
-    print(servo.getPosition(ESC))
-    servo.setTarget(ESC, 8000)
-    servo.setTarget(ESC, NEUTRAL)
-    print(servo.getPosition(ESC))
+    print(servo.getPosition(cfg.ESC))
+    servo.setTarget(cfg.ESC, 8000)
+    servo.setTarget(cfg.ESC, cfg.NEUTRAL)
+    print(servo.getPosition(cfg.ESC))
     print('MOTOR ARMED....')
     time.sleep(1)
 
 
 def servo_ctl(servo_num, val):
     servo = maestro.Controller(COM_PORT)
+
+    # TODO: Modify this to accomadate for speed
+    servo.setAccel(cfg.STEERING, 50)
+    servo.setAccel(cfg.ESC, 100)
+
     servo.setTarget(servo_num, val)
 
 
@@ -122,15 +114,15 @@ def test_run(arg):
     print(arg)
 
     if arg == 'kill':
-        servo_ctl(ESC, NEUTRAL)
-        servo_ctl(STEERING, CENTER)
+        servo_ctl(cfg.ESC, cfg.NEUTRAL)
+        servo_ctl(cfg.STEERING, cfg.CENTER)
         sys.exit()
     elif arg == 'start':
-        servo_ctl(STEERING, MAX_RIGHT)
-        servo_ctl(ESC, TEST_SPEED)
+        servo_ctl(cfg.STEERING, cfg.MAX_RIGHT)
+        servo_ctl(cfg.ESC, cfg.TEST_SPEED)
     elif arg == 'stop':
-        servo_ctl(ESC, NEUTRAL)
-        servo_ctl(STEERING, CENTER)
+        servo_ctl(cfg.ESC, cfg.NEUTRAL)
+        servo_ctl(cfg.STEERING, cfg.CENTER)
     else:
         print('No test prompt received, Switching to raw input....')
 

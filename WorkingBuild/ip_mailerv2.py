@@ -6,14 +6,14 @@ import subprocess
 import urllib2
 from email.mime.text import MIMEText
 
+import global_cfg as cfg
+
 
 def sendIP(to):
-    gmail_user = 'stilwell.andrewk@gmail.com'
-    gmail_password = 'whnqwmnpojxeqkyc'
     smtpserver = smtplib.SMTP('smtp.gmail.com', 587)
     smtpserver.ehlo()
     smtpserver.starttls()
-    smtpserver.login(gmail_user, gmail_password)
+    smtpserver.login(cfg.GMAIL_USER, cfg.GMAIL_PASSWORD)
     today = datetime.date.today()
     # Very Linux Specific
     arg = 'ip route list'
@@ -25,7 +25,7 @@ def sendIP(to):
     my_ip = 'Local address: %s\nExternal address: %s' % (ipaddr, extipaddr)
     msg = MIMEText(my_ip)
     msg['Subject'] = 'IP For RaspberryPi on %s' % today.strftime('%b %d %Y')
-    msg['From'] = gmail_user
+    msg['From'] = cfg.GMAIL_USER
     msg['To'] = to
-    smtpserver.sendmail(gmail_user, [to], msg.as_string())
+    smtpserver.sendmail(cfg.GMAIL_USER, [to], msg.as_string())
     smtpserver.quit()

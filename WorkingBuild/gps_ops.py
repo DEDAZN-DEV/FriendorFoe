@@ -1,21 +1,6 @@
 import math
 
-ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
-
-# Parameters of operating area (field)
-LENGTH_X = 50
-LENGTH_Y = 100
-BASE_X = 0
-BASE_Y = 0
-X_RATIO = 1
-Y_RATIO = 1
-
-ORIGIN_LATITUDE = 29.1900097
-ORIGIN_LONGITUDE = -81.046258
-CORNER_LAT = 29.190575
-CORNER_LONG = -81.045074
-RADIUS_OF_EARTH = 6378137  # m
-ROTATION_ANGLE = 315  # degrees rotated counter-clockwise
+import global_cfg as cfg
 
 
 def parse_gps_msg(message):
@@ -114,11 +99,11 @@ def gps_to_xy(lat, long):
     radlat = math.radians(lat)
     radlong = math.radians(long)
 
-    x = radlong - math.radians(ORIGIN_LONGITUDE)
+    x = radlong - math.radians(cfg.ORIGIN_LONGITUDE)
     y = math.log(math.tan(radlat) + (1 / math.cos(radlat)))
 
-    rot_x = x * math.cos(math.radians(ROTATION_ANGLE)) - y * math.sin(math.radians(ROTATION_ANGLE))
-    rot_y = y * math.cos(math.radians(ROTATION_ANGLE)) + x * math.sin(math.radians(ROTATION_ANGLE))
+    rot_x = x * math.cos(math.radians(cfg.ROTATION_ANGLE)) - y * math.sin(math.radians(cfg.ROTATION_ANGLE))
+    rot_y = y * math.cos(math.radians(cfg.ROTATION_ANGLE)) + x * math.sin(math.radians(cfg.ROTATION_ANGLE))
 
     xy = [rot_x - BASE_X, rot_y - BASE_Y]
     # xy = [x - BASE_X, y - BASE_Y]
@@ -144,18 +129,18 @@ def gps_debug():
     print(parse_gps_msg(''))
     print("----------------")
 
-    corner = gps_to_xy(CORNER_LAT, CORNER_LONG)
+    corner = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
     print("*** Corner ***")
     print(corner)
     print(scale_xy(corner))
 
     print("\n*** Center ***")
-    center = gps_to_xy((ORIGIN_LATITUDE + CORNER_LAT) / 2, (ORIGIN_LONGITUDE + CORNER_LONG) / 2)
+    center = gps_to_xy((cfg.ORIGIN_LATITUDE + cfg.CORNER_LAT) / 2, (cfg.ORIGIN_LONGITUDE + cfg.CORNER_LONG) / 2)
     print(center)
     print(scale_xy(center))
 
     print("\n*** Origin ***")
-    origin = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
+    origin = gps_to_xy(cfg.ORIGIN_LATITUDE, cfg.ORIGIN_LONGITUDE)
     print(origin)
     print(scale_xy(origin))
 
@@ -170,7 +155,7 @@ def gps_debug():
 def calc_originxy():
     global BASE_X, BASE_Y
 
-    temp = gps_to_xy(ORIGIN_LATITUDE, ORIGIN_LONGITUDE)
+    temp = gps_to_xy(cfg.ORIGIN_LATITUDE, cfg.ORIGIN_LONGITUDE)
     BASE_X = temp[0]
     BASE_Y = temp[1]
 
@@ -178,6 +163,6 @@ def calc_originxy():
 def set_xy_ratio():
     global X_RATIO, Y_RATIO
 
-    temp = gps_to_xy(CORNER_LAT, CORNER_LONG)
-    Y_RATIO = temp[1] / LENGTH_Y
-    X_RATIO = temp[0] / LENGTH_X
+    temp = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
+    Y_RATIO = temp[1] / cfg.LENGTH_Y
+    X_RATIO = temp[0] / cfg.LENGTH_X

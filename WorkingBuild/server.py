@@ -8,16 +8,9 @@ import time
 
 import matplotlib.pyplot as plt
 
+import global_cfg as cfg
 import gps_ops as gps
 import vector_ops as vec
-
-# Plotting variables
-TEST_ITERATIONS = 25
-POSMAPBUFFERSIZE = 25
-
-# Clientside IP addresses and ports for each RC car
-CLIENT_IP_A = "10.33.28.231"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
-PORT_NUMBER = 7777  # <-- DO NOT CHANGE
 
 
 class BColors:
@@ -47,7 +40,7 @@ def main():
         testtype = sys.argv[1]
 
     if testtype == 'normal_run':
-        # a = multiprocessing.Process(target=run, args=('A', CLIENT_IP_A, PORT_NUMBER,))
+        # a = multiprocessing.Process(target=run, args=('A', CLIENT_IP_A, cfg.PORT,))
         # a.start()
         print()
     elif testtype == 'debug_circle':
@@ -55,18 +48,18 @@ def main():
             print("Missing argument...\nUsage: python server.py debug_circle [time in seconds]")
         else:
             length = int(sys.argv[2])
-            a = multiprocessing.Process(target=force_circle, args=(CLIENT_IP_A, PORT_NUMBER, length,))
+            a = multiprocessing.Process(target=force_circle, args=(cfg.CLIENT_IP_A, cfg.PORT, length,))
             a.start()
     elif testtype == 'debug_random':
-        a = multiprocessing.Process(target=rand_run, args=(CLIENT_IP_A, PORT_NUMBER,))
+        a = multiprocessing.Process(target=rand_run, args=(cfg.CLIENT_IP_A, cfg.PORT,))
         a.start()
     elif testtype == 'stop':
-        a = multiprocessing.Process(target=stop, args=(CLIENT_IP_A, PORT_NUMBER,))
+        a = multiprocessing.Process(target=stop, args=(cfg.CLIENT_IP_A, cfg.PORT,))
         a.start()
     elif testtype == 'debug_gps':
         gps.gps_debug()
     elif testtype == 'test_run':
-        a = multiprocessing.Process(target=test_run, args=('A', CLIENT_IP_A, PORT_NUMBER,))
+        a = multiprocessing.Process(target=test_run, args=('A', cfg.CLIENT_IP_A, cfg.PORT,))
         a.start()
     else:
         print("Invalid argument...\nUsage: python server.py [stop, normal_run, debug_circle, debug_random]")
@@ -180,7 +173,7 @@ def rand_run(client_ip, port):
 #                vector.__str__(), cardata[0], cardata[1], cardata[2],
 #                hexangle, cardata[3], dronename)
 #
-#         # socket_tx(str(curtime) + "     " + hexangle, ip, PORT_NUMBER)
+#         # socket_tx(str(curtime) + "     " + hexangle, ip, cfg.PORT)
 #
 #         print(xposstorage, yposstorage)
 #
@@ -209,13 +202,13 @@ def test_run(dronename, ip, port):
     stage = 1
 
     plt.ion()
-    plt.axis([0.0, gps.LENGTH_X, 0.0, gps.LENGTH_Y])
+    plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
 
     while True:
         xposstorage.append(cardata[0])
         yposstorage.append(cardata[1])
 
-        if len(xposstorage) > POSMAPBUFFERSIZE:  # Remove oldest data from buffer
+        if len(xposstorage) > cfg.POSMAPBUFFERSIZE:  # Remove oldest data from buffer
             xposstorage.pop(0)
             yposstorage.pop(0)
 
@@ -224,9 +217,9 @@ def test_run(dronename, ip, port):
 
         tgt = vec.new_pos(stage, cardata)  # dummy input from algorithm
         print(tgt)
-        while tgt[0] < 0 or tgt[0] > gps.LENGTH_X or tgt[1] < 0 or tgt[1] > gps.LENGTH_Y:
+        while tgt[0] < 0 or tgt[0] > cfg.LENGTH_X or tgt[1] < 0 or tgt[1] > cfg.LENGTH_Y:
             print("Outside of boundaries....Recalculating")
-            tgt = vec.new_pos(temp_data, cardata)
+            tgt = vec.new_pos(stage, cardata)
 
         vector = vec.gen_targeted_vector(temp_data, tgt[0], tgt[1])
 
@@ -238,14 +231,18 @@ def test_run(dronename, ip, port):
         gen_signal(cardata[2], cardata[4])
         # socket_tx(gen_signal(cardata[2], cardata[4]), ip, port)
 
-        if abs(cardata[0] - 25) < 0.05 and abs(cardata[1] - 50) < 0.05:
+        flag = False
+
+        if abs(cardata[0] - 25) < 0.05 and abs(cardata[1] - 50) < 0.05 and flag is False:
             stage = stage + 1
-        elif abs(cardata[0] - 25) < 0.1 and abs(cardata[1] - 10) < 0.1:
+            flag = True
+        elif abs(cardata[0] - 50) < 0.1 and abs(cardata[1] - 35) < 0.1:
+            # socket_tx('stop', ip, port)
             break
 
         # More plotting things
         plt.plot(xposstorage, yposstorage, 'k-')
-        plt.pause(vec.UPDATE_INTERVAL)
+        plt.pause(cfg.UPDATE_INTERVAL)
 
 
 def printf(layout, *args):
@@ -267,11 +264,11 @@ def gen_signal(angle, speed):
 
     if angle < 0:
         # center is 6000
-        ang = int(round(4000 + (abs(angle) * vec.DEGPERPOINT)))
+        ang = int(round(4000 + (abs(angle) * cfg.DEGPERPOINT)))
     else:
-        ang = int(round(6000 + (angle * vec.DEGPERPOINT)))
+        ang = int(round(6000 + (angle * cfg.DEGPERPOINT)))
 
-    spd = int(round(6000 + (speed * vec.SPDSCALE)))
+    spd = int(round(6000 + (speed * cfg.SPDSCALE)))
 
     print(str(5) + str(ang))
     print(str(3) + str(spd))

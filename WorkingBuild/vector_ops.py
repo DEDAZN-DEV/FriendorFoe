@@ -1,14 +1,7 @@
 import math
 import random
 
-# Car variables
-ACCELERATION = 10  # m/s
-UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
-DIRCHANGEFACTOR = 01.25  # % chance of changing velocity input
-MAXVELOCITY = 13.4  # m/s
-TURNRADIUS = 60  # degrees each direction
-DEGPERPOINT = 2000 / TURNRADIUS
-SPDSCALE = 2000 / MAXVELOCITY
+import global_cfg as cfg
 
 CIRCLETGTANGLE = 0
 
@@ -19,7 +12,7 @@ def gen_random_vector():
     @return: Returns a two element vector consisting of the x and y component of a velocity.
     """
 
-    newvector = [random.uniform(-MAXVELOCITY, MAXVELOCITY), random.uniform(-MAXVELOCITY, MAXVELOCITY)]
+    newvector = [random.uniform(-cfg.MAXVELOCITY, cfg.MAXVELOCITY), random.uniform(-cfg.MAXVELOCITY, cfg.MAXVELOCITY)]
     return newvector
 
 
@@ -39,8 +32,8 @@ def gen_targeted_vector(cardata, tgtxpos, tgtypos):
     if newhdg < 0:
         newhdg = newhdg + 360
 
-    if zdiff > MAXVELOCITY:
-        ratio = zdiff / MAXVELOCITY
+    if zdiff > cfg.MAXVELOCITY:
+        ratio = zdiff / cfg.MAXVELOCITY
     else:
         ratio = zdiff
 
@@ -61,8 +54,8 @@ def update_pos(vector, data):
     @return: Returns the updated cardata.
     """
 
-    xdelta = (vector[0] * UPDATE_INTERVAL) + ((1 / 2) * ACCELERATION * (UPDATE_INTERVAL ** 2))
-    ydelta = (vector[1] * UPDATE_INTERVAL) + ((1 / 2) * ACCELERATION * (UPDATE_INTERVAL ** 2))
+    xdelta = (vector[0] * cfg.UPDATE_INTERVAL) + ((1 / 2) * cfg.ACCELERATION * (cfg.UPDATE_INTERVAL ** 2))
+    ydelta = (vector[1] * cfg.UPDATE_INTERVAL) + ((1 / 2) * cfg.ACCELERATION * (cfg.UPDATE_INTERVAL ** 2))
 
     newdata = data[:]
 
@@ -104,4 +97,6 @@ def new_pos(stage, cardata):
 
         return [x, y]
     elif stage == 3:
-        return [25, 10]
+        return [50, 35]
+    elif stage > 3:
+        return [random.randint, random.randint]
