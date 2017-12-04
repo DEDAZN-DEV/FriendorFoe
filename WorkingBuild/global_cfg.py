@@ -1,4 +1,4 @@
-ACCELERATION = 5  # of car in m/s
+ACCELERATION = 15  # of car in m/s**2
 
 BASE_X = 0
 BASE_Y = 0
@@ -38,10 +38,12 @@ POSMAPBUFFERSIZE = 25
 RADIUS_OF_EARTH = 6378137  # m
 ROTATION_ANGLE = 315  # degrees rotated counter-clockwise
 
+SPDLIMITER = 1000
 STEERING = 5
 
 TEST_ITERATIONS = 25
 TEST_SPEED = 6320
+TURNDELAY = 25
 TURNRADIUS = 30  # degrees each direction
 
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate

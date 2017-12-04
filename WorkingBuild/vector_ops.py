@@ -32,13 +32,16 @@ def gen_targeted_vector(cardata, tgtxpos, tgtypos):
     if newhdg < 0:
         newhdg = newhdg + 360
 
-    if zdiff > cfg.MAXVELOCITY:
-        ratio = zdiff / cfg.MAXVELOCITY
+    if zdiff > cfg.MAXVELOCITY / (cfg.UPDATE_INTERVAL / 1000):
+        ratio = cfg.MAXVELOCITY / zdiff
+
+        xcom = xdiff * ratio
+        ycom = ydiff * ratio
     else:
         ratio = zdiff
 
-    xcom = xdiff / ratio
-    ycom = ydiff / ratio
+        xcom = xdiff
+        ycom = ydiff
 
     print("HDG: " + str(newhdg))
     print(xdiff, ydiff, zdiff)
@@ -73,18 +76,23 @@ def update_pos(vector, data):
 
     if newdata[3] != newhdg:
         newdata[2] = newdata[3] - newhdg  # <-- This is what needs to be sent to the car.
+
+        if newdata[2] > 180:
+            newdata[2] = newdata[2] - 360
+
         newdata[3] = newhdg
     else:
         newdata[2] = 0
 
-    newdata[4] = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
+    if math.sqrt(vector[0] ** 2 + vector[1] ** 2) > cfg.MAXVELOCITY:
+        newdata[4] = cfg.MAXVELOCITY
+    else:
+        newdata[4] = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
 
     return newdata
 
 
 def new_pos(stage, cardata):
-    global CIRCLETGTANGLE
-
     radius = 5
 
     if stage == 1:
@@ -93,7 +101,15 @@ def new_pos(stage, cardata):
         return [40, 40]
     elif stage == 3:
         return [50, 65]
-    elif stage == 4:
-        return [45, 90]
-    elif stage == 5:
-        return [55, 110]
+    elif stage > 3 and stage <= 26:
+        circleangle = math.fmod(cardata[3] + 1, 360)
+
+        x = 50 + radius * math.cos(math.radians(circleangle))
+        y = 65 + radius * math.sin(math.radians(circleangle))
+
+        return [x, y]
+        #    return [45, 90]
+        # elif stage == 5:
+        #    return [55, 110]
+    else:
+        return [75, 110]
