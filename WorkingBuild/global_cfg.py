@@ -43,8 +43,8 @@ STEERING = 5
 
 TEST_ITERATIONS = 25
 TEST_SPEED = 6320
-TURNDELAY = 25
-TURNRADIUS = 30  # degrees each direction
+TURNDELAY = 30
+TURNRADIUS = 45  # degrees each direction
 
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 

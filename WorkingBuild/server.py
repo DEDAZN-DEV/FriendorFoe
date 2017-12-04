@@ -244,7 +244,7 @@ def test_run(dronename, ip, port):
             # elif abs(cardata[0] - 45) < 0.5 and abs(cardata[1] - 90) < 0.5:
             # stage = stage + 1
 
-        print("Stage: " + str(stage))
+        print("Stage: " + str(stage) + '\n---------------------------------------------------------')
 
         # More plotting things
         plt.plot(xposstorage, yposstorage, 'k-')
@@ -330,4 +330,5 @@ def disable(self):
     self.ENDC = ''
 
 
-main()  # Invoke main()
+if __name__ == '__main__':
+    main()  # Invoke main()

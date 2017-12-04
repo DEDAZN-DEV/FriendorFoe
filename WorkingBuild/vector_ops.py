@@ -101,7 +101,7 @@ def new_pos(stage, cardata):
         return [40, 40]
     elif stage == 3:
         return [50, 65]
-    elif stage > 3 and stage <= 26:
+    elif stage > 3 and stage <= 25:
         circleangle = math.fmod(cardata[3] + 1, 360)
 
         x = 50 + radius * math.cos(math.radians(circleangle))
