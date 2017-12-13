@@ -1,6 +1,6 @@
 import math
 
-import global_cfg as cfg
+from WorkingBuild import global_cfg as cfg
 
 
 def parse_gps_msg(message):
@@ -166,3 +166,8 @@ def set_xy_ratio():
     temp = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
     Y_RATIO = temp[1] / cfg.LENGTH_Y
     X_RATIO = temp[0] / cfg.LENGTH_X
+
+
+def get_coords():
+    # TODO: Parse GGA message, convert to XY and return
+    print("GPS Coords Code Stub")

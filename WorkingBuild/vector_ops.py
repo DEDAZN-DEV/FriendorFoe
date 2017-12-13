@@ -1,7 +1,7 @@
 import math
 import random
 
-import global_cfg as cfg
+from WorkingBuild import global_cfg as cfg
 
 CIRCLETGTANGLE = 0
 
@@ -113,3 +113,15 @@ def new_pos(stage, cardata):
         #    return [55, 110]
     else:
         return [75, 110]
+
+
+def calcXY(oldvx, oldxy, curx, cury):
+    xdistance = (oldvx * cfg.UPDATE_INTERVAL) + (0.5 * cfg.ACCELERATION * (cfg.UPDATE_INTERVAL ** 2.0))
+    ydistance = (oldxy * cfg.UPDATE_INTERVAL) + (0.5 * cfg.ACCELERATION + (cfg.UPDATE_INTERVAL ** 2.0))
+
+    return [curx + xdistance, cury + ydistance]
+
+
+def sim_api():
+    # TODO: Create method call for ATE-3 Simulation
+    print("Code Stub")

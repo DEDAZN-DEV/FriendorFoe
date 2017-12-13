@@ -1,5 +1,6 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
+import dubins
 import multiprocessing
 import random
 import socket
@@ -8,14 +9,14 @@ import time
 
 import matplotlib.pyplot as plt
 
-from . import global_cfg as cfg
-from . import gps_ops as gps
-from . import vector_ops as vec
+from WorkingBuild import global_cfg as cfg
+from WorkingBuild import gps_ops as gps
+from WorkingBuild import vector_ops as vec
 
 
 class BColors:
     """
-    Wrapper class for console output coloring.
+
     """
 
     HEADER = '\033[95m'
@@ -26,10 +27,22 @@ class BColors:
     ENDC = '\033[0m'
 
 
+class CarData:
+    """
+
+    """
+
+    XPOS = 0.0
+    YPOS = 0.0
+    HEADING = 0.0
+    TURNANGLE = 0.0
+    SPEED = 0.0
+
+
 def main():
     """
-    Definition of main to run the code. Testing...
-    @return: Nothing
+
+    :return:
     """
 
     if len(sys.argv) < 2:
@@ -37,33 +50,64 @@ def main():
               "debug_random, debug_gps]")
         sys.exit()
     else:
-        testtype = sys.argv[1]
+        test_type = sys.argv[1]
 
-    if testtype == 'normal_run':
-        # a = multiprocessing.Process(target=run, args=('A', CLIENT_IP_A, cfg.PORT,))
-        # a.start()
-        print()
-    elif testtype == 'debug_circle':
+    if test_type == 'run':
+        a = multiprocessing.Process(target=run, args=("DRONE A", cfg.CLIENT_IP_A, cfg.PORT,))
+        a.start()
+
+    elif test_type == 'debug_circle':
         if len(sys.argv) < 3:
-            print("Missing argument...\nUsage: python server.py debug_circle [time in seconds]")
+            print("Missing argument...\nUsage: python server.py debug_circle <time in seconds>")
         else:
             length = int(sys.argv[2])
             a = multiprocessing.Process(target=force_circle, args=(cfg.CLIENT_IP_A, cfg.PORT, length,))
             a.start()
-    elif testtype == 'debug_random':
+
+    elif test_type == 'debug_random':
         a = multiprocessing.Process(target=rand_run, args=(cfg.CLIENT_IP_A, cfg.PORT,))
         a.start()
-    elif testtype == 'stop':
-        a = multiprocessing.Process(target=stop, args=(cfg.CLIENT_IP_A, cfg.PORT,))
-        a.start()
-    elif testtype == 'debug_gps':
+
+    elif test_type == 'stop':
+        stop(cfg.CLIENT_IP_A, cfg.PORT)
+
+    elif test_type == 'debug_gps':
         gps.gps_debug()
-    elif testtype == 'test_run':
-        a = multiprocessing.Process(target=test_run, args=('A', cfg.CLIENT_IP_A, cfg.PORT,))
+
+    elif test_type == 'test_run':
+        a = multiprocessing.Process(target=test_run, args=None)
         a.start()
+
     else:
-        print("Invalid argument...\nUsage: python server.py [stop, normal_run, debug_circle, debug_random]")
+        print(
+            "Invalid argument...\nUsage: python server.py [stop, normal_run, debug_circle <time>, debug_random, "
+            "test_run]")
         sys.exit()
+
+
+def run(dronename, ip, port):
+    """
+
+    :param dronename:
+    :param ip:
+    :param port:
+    :return:
+    """
+
+    # TODO
+    cardata = CarData()
+
+    # cardata.XPOS, cardata.YPOS = gps.get_coords()
+    # velocity_vector = vec.sim_api()
+
+    q0 = (cardata.XPOS, cardata.YPOS, cardata.HEADING)
+    q1 = (cfg.LENGTH_X / 2.0, cfg.LENGTH_Y / 2.0, cardata.HEADING)
+    turning_radius = 1.0
+    step_size = 0.5
+
+    qs, _ = dubins.path_sample(q0, q1, turning_radius, step_size)
+
+    print(qs)
 
 
 def stop(client_ip, port):
@@ -73,17 +117,20 @@ def stop(client_ip, port):
     :param port: PORT of target client
     :return: Nothing
     """
+
     socket_tx('stop', client_ip, port)
     print('Stopping')
 
 
 def force_circle(client_ip, port, length):
     """
-    Circular test profile for MSC to ESC and STR servos
-    :param client_ip: IP of target client
-    :param port: PORT of target client
-    :return: Nothing
+
+    :param client_ip:
+    :param port:
+    :param length:
+    :return:
     """
+
     socket_tx('start', client_ip, port)
 
     time.sleep(length)
@@ -120,84 +167,15 @@ def rand_run(client_ip, port):
     socket_tx('stop', client_ip, port)
 
 
-# def run(dronename, ip, port):
-#     """
-#     Definition wrapper to handle the drones in their individual threads
-#     :param dronename:
-#     :param ip:
-#     :return:
-#     """
-#     xposstorage = []
-#     yposstorage = []
-#
-#     f_init = True  # FLAGS
-#
-#     counter = 0  # LOCAL VARIABLES
-#     cardata = [0.0, 0.0, 0.0, 0.0]
-#
-#     while True:
-#         xposstorage.append(cardata[0])
-#         yposstorage.append(cardata[1])
-#
-#         if len(xposstorage) > POSMAPBUFFERSIZE:  # Remove oldest data from buffer
-#             xposstorage.pop(0)
-#             yposstorage.pop(0)
-#
-#         temp_data = cardata[:]
-#         vector = [0, 0]
-#
-#         # if random.uniform(0, 1) < vec.DIRCHANGEFACTOR or f_init is True:  # Simulate output vector from the simulator
-#         #     vector = vec.gen_random_vector()
-#         #     f_init = False
-#         #     cardata = vec.update_pos(vector, True, temp_data)
-#         # else:
-#         #     cardata = vec.update_pos(vector, False, temp_data)
-#
-#
-#         vector = vec.gen_targeted_vector(cardata, vector[0], vector[1])
-#
-#         while cardata[0] < 0.0 or cardata[1] < 0.0 or cardata[0] > gps.LENGTH_X or cardata[1] > gps.LENGTH_Y:
-#             print(BColors.WARNING + str(
-#                 datetime.now()) + " [WARNING] " + dronename +
-#                   ": Current heading will hit or exceed boundary edge! Recalculating..." + BColors.ENDC)
-#             # vector = vec.gen_random_vector()
-#             vector = vec.gen_targeted_vector(cardata, vector[0], vector[1])
-#             cardata = vec.update_pos(vector, temp_data)
-#
-#         # hexangle = gen_signal(cardata[2])
-#
-#         counter = counter + 1
-#         curtime = datetime.now()
-#         # printf(BColors.OKBLUE + "%10s [CONSOLE]%7.5d%10s%45s%15.10f%15.10f%12.5f%12s%11.5f%10s\n" + BColors.ENDC,
-#                str(curtime), counter, dronename,
-#                vector.__str__(), cardata[0], cardata[1], cardata[2],
-#                hexangle, cardata[3], dronename)
-#
-#         # socket_tx(str(curtime) + "     " + hexangle, ip, cfg.PORT)
-#
-#         print(xposstorage, yposstorage)
-#
-#         # More plotting things
-#         plt.ion()
-#         plt.axis([0.0, 64.0, 0.0, 100.0])
-#         plt.plot(xposstorage, yposstorage, 'k-')
-#
-#         time.sleep(vec.UPDATE_INTERVAL)
-
-
-def test_run(dronename, ip, port):
+def test_run():
     """
-    Definition wrapper to handle the drones in their individual threads
-    :param dronename:
-    :param ip:
+
     :return:
     """
+
     xposstorage = []
     yposstorage = []
 
-    f_init = True  # FLAGS
-
-    counter = 0  # LOCAL VARIABLES
     cardata = [0.0, 0.0, 0.0, 45.0, 0.0]
     stage = 1
 
@@ -209,10 +187,6 @@ def test_run(dronename, ip, port):
     while True:
         xposstorage.append(cardata[0])
         yposstorage.append(cardata[1])
-
-        if len(xposstorage) > cfg.POSMAPBUFFERSIZE:  # Remove oldest data from buffer
-            xposstorage.pop(0)
-            yposstorage.pop(0)
 
         # TODO: Get output vector from simulation
         temp_data = cardata[:]
@@ -231,8 +205,6 @@ def test_run(dronename, ip, port):
         print(cardata)
 
         gen_signal(cardata[2], cardata[4])
-
-        flag = False
 
         if abs(cardata[0] - 30) < 0.5 and abs(cardata[1] - 20) < 0.5 and stage < 3:
             stage = stage + 1
@@ -256,10 +228,10 @@ def test_run(dronename, ip, port):
 
 def printf(layout, *args):
     """
-    Quality of life improvement (Personal sanity).
-    @param layout: Standard C layout for printf.
-    @param args: Arguments for the placeholders in layout
-    @return:
+
+    :param layout:
+    :param args:
+    :return:
     """
 
     sys.stdout.write(layout % args)
@@ -267,8 +239,10 @@ def printf(layout, *args):
 
 def gen_signal(angle, speed):
     """
-    Crafts a signal based on the input, IEEE floating point single-percision.
-        @return: Returns a 32-byte value in hex format.
+
+    :param angle:
+    :param speed:
+    :return:
     """
 
     if angle < 0:
@@ -278,10 +252,8 @@ def gen_signal(angle, speed):
 
     if ang > 8000:
         ang = cfg.MAX_LEFT
-        spd = cfg.TEST_SPEED
     elif ang < 4000:
         ang = cfg.MAX_RIGHT
-        spd = cfg.TEST_SPEED
 
     if abs(ang - cfg.CENTER) > 0.5:
         spd = int(round((cfg.TEST_SPEED + (speed * cfg.SPDSCALE)) / (abs(angle) * cfg.TURNFACTOR)))
@@ -303,12 +275,12 @@ def gen_signal(angle, speed):
         socket_tx(str(5) + str(cfg.CENTER), cfg.CLIENT_IP_A, cfg.PORT)
         time.sleep(0.1)
         # I changed this \/ from spd
-        socket_tx(str(3) + str(cfg.TEST_SPEED + 100), cfg.CLIENT_IP_A, cfg.PORT)
+        socket_tx(str(3) + str(spd), cfg.CLIENT_IP_A, cfg.PORT)
 
 
 def socket_tx(data, client_ip, port):
     """
-    Transmits data over a socket
+
     :param data:
     :param client_ip:
     :param port:
@@ -328,9 +300,9 @@ def socket_tx(data, client_ip, port):
 
 def disable(self):
     """
-    Terminating color for console output.
-    @param self: Reference to itself.
-    @return: Nothing
+
+    :param self:
+    :return:
     """
 
     self.HEADER = ''
