@@ -8,9 +8,9 @@ import time
 
 import matplotlib.pyplot as plt
 
-import global_cfg as cfg
-import gps_ops as gps
-import vector_ops as vec
+from . import global_cfg as cfg
+from . import gps_ops as gps
+from . import vector_ops as vec
 
 
 class BColors:
@@ -100,7 +100,7 @@ def rand_run(client_ip, port):
     """
     print('Controlling STR')
 
-    for i in range(10):
+    for i in range(5):
         inval = random.randint(4000, 8000)
         print(inval)
         socket_tx(str(5) + str(inval), client_ip, port)
@@ -204,6 +204,8 @@ def test_run(dronename, ip, port):
     plt.ion()
     plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
 
+    time.sleep(5)
+
     while True:
         xposstorage.append(cardata[0])
         yposstorage.append(cardata[1])
@@ -237,7 +239,8 @@ def test_run(dronename, ip, port):
         elif abs(cardata[0] - 40) < 0.5 and abs(cardata[1] - 40) < 0.5 and stage < 3:
             stage = stage + 1
         elif abs(cardata[0] - 75) < 0.5 and abs(cardata[1] - 110) < 0.5:
-            # socket_tx('stop', cfg.CLIENT_IP_A, cfg.PORT)
+            socket_tx('stop', cfg.CLIENT_IP_A, cfg.PORT)
+            time.sleep(30)
             break
         elif stage >= 3:  # abs(cardata[0] - 50) < 0.5 and abs(cardata[1] - 65) < 0.5:
             stage = stage + 1
@@ -275,24 +278,32 @@ def gen_signal(angle, speed):
 
     if ang > 8000:
         ang = cfg.MAX_LEFT
+        spd = cfg.TEST_SPEED
     elif ang < 4000:
         ang = cfg.MAX_RIGHT
+        spd = cfg.TEST_SPEED
 
-    spd = int(round(cfg.TEST_SPEED + (speed * cfg.SPDSCALE)))
-    if spd > 8000:
+    if abs(ang - cfg.CENTER) > 0.5:
+        spd = int(round((cfg.TEST_SPEED + (speed * cfg.SPDSCALE)) / (abs(angle) * cfg.TURNFACTOR)))
+    else:
+        spd = int(round(cfg.TEST_SPEED + (speed * cfg.SPDSCALE)))
+
+    if spd > cfg.MAX_SPEED:
         spd = cfg.MAX_SPEED - cfg.SPDLIMITER  # <- FOR TESTING
+    elif spd < cfg.TEST_SPEED:
+        spd = cfg.TEST_SPEED
 
     print(str(5) + str(ang))
     print(str(3) + str(spd))
 
-    # socket_tx(str(5) + str(ang), cfg.CLIENT_IP_A, cfg.PORT)
+    socket_tx(str(5) + str(ang), cfg.CLIENT_IP_A, cfg.PORT)
     if ang != cfg.CENTER:
         print('*** Turn Delay *** - ' + str(abs(angle / cfg.TURNDELAY)))
         time.sleep(abs(angle / 30))
-        # socket_tx(str(5) + str(cfg.CENTER), cfg.CLIENT_IP_A, cfg.PORT)
+        socket_tx(str(5) + str(cfg.CENTER), cfg.CLIENT_IP_A, cfg.PORT)
         time.sleep(0.1)
         # I changed this \/ from spd
-        # socket_tx(str(3) + str(cfg.TEST_SPEED + 100), cfg.CLIENT_IP_A, cfg.PORT)
+        socket_tx(str(3) + str(cfg.TEST_SPEED + 100), cfg.CLIENT_IP_A, cfg.PORT)
 
 
 def socket_tx(data, client_ip, port):
