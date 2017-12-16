@@ -1,6 +1,7 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
 import dubins
+import math
 import multiprocessing
 import random
 import socket
@@ -45,44 +46,64 @@ def main():
     :return:
     """
 
-    if len(sys.argv) < 2:
-        print("Missing argument...\nUsage: python server.py [stop, normal_run, debug_circle [time in seconds], "
-              "debug_random, debug_gps]")
-        sys.exit()
-    else:
-        test_type = sys.argv[1]
+    subprocesses = []
 
-    if test_type == 'run':
-        a = multiprocessing.Process(target=run, args=("DRONE A", cfg.CLIENT_IP_A, cfg.PORT,))
-        a.start()
-
-    elif test_type == 'debug_circle':
-        if len(sys.argv) < 3:
-            print("Missing argument...\nUsage: python server.py debug_circle <time in seconds>")
+    try:
+        if len(sys.argv) < 2:
+            print("Missing argument...\nUsage: python server.py [stop, normal_run, debug_circle [time in seconds], "
+                  "debug_random, debug_gps]")
+            sys.exit()
         else:
-            length = int(sys.argv[2])
-            a = multiprocessing.Process(target=force_circle, args=(cfg.CLIENT_IP_A, cfg.PORT, length,))
+            test_type = sys.argv[1]
+
+        if test_type == 'run':
+            a = multiprocessing.Process(target=run, args=("DRONE A", cfg.CLIENT_IP_A, cfg.PORT,))
+            a.daemon = True
             a.start()
+            subprocesses.append(a)
+            a.join()
 
-    elif test_type == 'debug_random':
-        a = multiprocessing.Process(target=rand_run, args=(cfg.CLIENT_IP_A, cfg.PORT,))
-        a.start()
+        elif test_type == 'debug_circle':
+            if len(sys.argv) < 3:
+                print("Missing argument...\nUsage: python server.py debug_circle <time in seconds>")
+            else:
+                length = int(sys.argv[2])
+                a = multiprocessing.Process(target=force_circle, args=(cfg.CLIENT_IP_A, cfg.PORT, length,))
+                a.start()
+                subprocesses.append(a)
+                a.join()
 
-    elif test_type == 'stop':
-        stop(cfg.CLIENT_IP_A, cfg.PORT)
+        elif test_type == 'debug_random':
+            a = multiprocessing.Process(target=rand_run, args=(cfg.CLIENT_IP_A, cfg.PORT,))
+            a.start()
+            subprocesses.append(a)
+            a.join()
 
-    elif test_type == 'debug_gps':
-        gps.gps_debug()
+        elif test_type == 'stop':
+            stop(cfg.CLIENT_IP_A, cfg.PORT)
 
-    elif test_type == 'test_run':
-        a = multiprocessing.Process(target=test_run, args=None)
-        a.start()
+        elif test_type == 'debug_gps':
+            gps.gps_debug()
 
-    else:
-        print(
-            "Invalid argument...\nUsage: python server.py [stop, normal_run, debug_circle <time>, debug_random, "
-            "test_run]")
-        sys.exit()
+        elif test_type == 'test_run':
+            a = multiprocessing.Process(target=test_run, args=None)
+            a.start()
+            subprocesses.append(a)
+            a.join()
+
+        else:
+            print(
+                "Invalid argument...\nUsage: python server.py [stop, normal_run, debug_circle <time>, debug_random, "
+                "test_run]")
+            sys.exit()
+
+    except KeyboardInterrupt:
+        print('Early Termination...Killing alive processes')
+        for i in range(0, len(subprocesses)):
+            if subprocesses[i].is_alive():
+                subprocesses[i].terminate()
+            print('....Done')
+            sys.exit()
 
 
 def run(dronename, ip, port):
@@ -93,21 +114,70 @@ def run(dronename, ip, port):
     :param port:
     :return:
     """
-
-    # TODO
     cardata = CarData()
 
     # cardata.XPOS, cardata.YPOS = gps.get_coords()
-    # velocity_vector = vec.sim_api()
+    # velocity_vector = vec.call_sim()
+    # [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS)
 
-    q0 = (cardata.XPOS, cardata.YPOS, cardata.HEADING)
-    q1 = (cfg.LENGTH_X / 2.0, cfg.LENGTH_Y / 2.0, cardata.HEADING)
-    turning_radius = 1.0
-    step_size = 0.5
+    plt.figure(num=1, figsize=(6, 8))
+    plt.ion()
 
-    qs, _ = dubins.path_sample(q0, q1, turning_radius, step_size)
+    xpos = []
+    ypos = []
 
-    print(qs)
+    q0 = (cardata.XPOS, cardata.YPOS, 0)
+    qs = []
+
+    init_flag = True
+    old_heading = cardata.HEADING
+
+    turning_radius = 3.0  # TODO: feet or meters or degrees/radians? Need to check what this value represents.
+    step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
+
+    for n in range(cfg.TEST_ITERATIONS):
+        if init_flag is True:
+            q1 = (random.randint(10, cfg.LENGTH_X - 10), random.randint(10, cfg.LENGTH_Y) - 10, 0)
+            # q1 = (tgtx, tgty, 0)
+            init_flag = False
+        else:
+            q1 = (random.randint(10, cfg.LENGTH_X - 10), random.randint(10, cfg.LENGTH_Y - 10), cardata.HEADING)
+            # q1 = (tgtx, tgty, 0)
+
+        qs, _ = dubins.path_sample(q0, q1, turning_radius, step_size)
+
+        for i in range(len(qs) - 1):
+            if qs[i + 1][2] != qs[i][2]:
+                cardata.TURNANGLE = abs(old_heading - math.degrees(qs[i][2]))
+                cardata.HEADING = math.degrees(qs[i][2])
+                old_heading = math.degrees(qs[i][2])
+            else:
+                cardata.TURNANGLE = 0.0
+
+            # print(cardata.TURNANGLE, cardata.HEADING)
+
+            if len(xpos) > cfg.BUFFERSIZE:
+                xpos.pop(0)
+                ypos.pop(0)
+
+            xpos.append(qs[i][0])
+            ypos.append(qs[i][1])
+
+            tgtxstorage = q1[0]
+            tgtystorage = q1[1]
+
+            plt.clf()
+            plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
+            plt.plot(xpos, ypos, 'k-')
+            plt.plot(tgtxstorage, tgtystorage, 'rx')
+            plt.grid(True)
+            plt.pause(cfg.UPDATE_INTERVAL / len(qs))
+
+        # print('*****' + str(q1) + '*****')
+        # print(xpos)
+        # print(ypos)
+
+        q0 = q1
 
 
 def stop(client_ip, port):

@@ -2,6 +2,7 @@ ACCELERATION = 15  # of car in m/s**2
 
 BASE_X = 0
 BASE_Y = 0
+BUFFERSIZE = 50
 
 CENTER = 5800
 CLIENT_IP_A = "10.33.29.189"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
@@ -40,10 +41,10 @@ ROTATION_ANGLE = 315  # degrees rotated counter-clockwise
 SPDLIMITER = 250
 STEERING = 5
 
-TEST_ITERATIONS = 25
+TEST_ITERATIONS = 5
 TEST_SPEED = 6320
 TURNDELAY = 30
-TURNFACTOR = 0.5
+TURNFACTOR = 0.001
 TURNRADIUS = 45  # degrees each direction
 
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
