@@ -132,10 +132,11 @@ def run(dronename, ip, port):
     init_flag = True
     old_heading = cardata.HEADING
 
-    turning_radius = 3.0  # TODO: feet or meters or degrees/radians? Need to check what this value represents.
+    turning_radius = 1.5  # TODO: feet or meters or degrees/radians? Need to check what this value represents.
     step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
 
-    for n in range(cfg.TEST_ITERATIONS):
+    # for n in range(cfg.TEST_ITERATIONS):
+    while True:
         if init_flag is True:
             q1 = (random.randint(10, cfg.LENGTH_X - 10), random.randint(10, cfg.LENGTH_Y) - 10, 0)
             # q1 = (tgtx, tgty, 0)
@@ -147,14 +148,38 @@ def run(dronename, ip, port):
         qs, _ = dubins.path_sample(q0, q1, turning_radius, step_size)
 
         for i in range(len(qs) - 1):
-            if qs[i + 1][2] != qs[i][2]:
-                cardata.TURNANGLE = abs(old_heading - math.degrees(qs[i][2]))
-                cardata.HEADING = math.degrees(qs[i][2])
-                old_heading = math.degrees(qs[i][2])
-            else:
-                cardata.TURNANGLE = 0.0
 
-            # print(cardata.TURNANGLE, cardata.HEADING)
+            cardata.XPOS = qs[i][0]
+            cardata.YPOS = qs[i][1]
+
+            old_heading = cardata.HEADING
+
+            cardata.TURNANGLE = math.degrees(qs[i][2]) - old_heading
+
+            if cardata.TURNANGLE <= -180:
+                cardata.TURNANGLE = cardata.TURNANGLE + 360
+            elif cardata.TURNANGLE >= 180:
+                cardata.TURNANGLE = cardata.TURNANGLE - 360
+
+            cardata.HEADING = math.degrees(qs[i][2])
+
+            printf('-------------------------------------------------------------------------------------------\n')
+            printf('%15s | %15s | %27s | %23s |\n', 'XPOS', 'YPOS', 'TURN ANGLE', 'HEADING')
+            printf('-------------------------------------------------------------------------------------------\n')
+
+            if cardata.TURNANGLE > 0.0:
+                printf(BColors.FAIL + '%15f | %15f | %15f degrees (L) | %15f degrees |\n' + BColors.ENDC, cardata.XPOS,
+                       cardata.YPOS, cardata.TURNANGLE,
+                       cardata.HEADING)
+            elif cardata.TURNANGLE < 0.0:
+                printf(BColors.OKGREEN + '%15f | %15f | %15f degrees (R) | %15f degrees |\n' + BColors.ENDC,
+                       cardata.XPOS,
+                       cardata.YPOS, cardata.TURNANGLE,
+                       cardata.HEADING)
+            else:
+                printf('%15f | %15f | %15f degrees (-) | %15f degrees |\n', cardata.XPOS, cardata.YPOS,
+                       cardata.TURNANGLE,
+                       cardata.HEADING)
 
             if len(xpos) > cfg.BUFFERSIZE:
                 xpos.pop(0)
@@ -171,7 +196,7 @@ def run(dronename, ip, port):
             plt.plot(xpos, ypos, 'k-')
             plt.plot(tgtxstorage, tgtystorage, 'rx')
             plt.grid(True)
-            plt.pause(cfg.UPDATE_INTERVAL / len(qs))
+            plt.pause(1e-6)
 
         # print('*****' + str(q1) + '*****')
         # print(xpos)
@@ -339,13 +364,6 @@ def gen_signal(angle, speed):
     print(str(3) + str(spd))
 
     socket_tx(str(5) + str(ang), cfg.CLIENT_IP_A, cfg.PORT)
-    if ang != cfg.CENTER:
-        print('*** Turn Delay *** - ' + str(abs(angle / cfg.TURNDELAY)))
-        time.sleep(abs(angle / 30))
-        socket_tx(str(5) + str(cfg.CENTER), cfg.CLIENT_IP_A, cfg.PORT)
-        time.sleep(0.1)
-        # I changed this \/ from spd
-        socket_tx(str(3) + str(spd), cfg.CLIENT_IP_A, cfg.PORT)
 
 
 def socket_tx(data, client_ip, port):

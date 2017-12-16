@@ -115,13 +115,13 @@ def new_pos(stage, cardata):
         return [75, 110]
 
 
-def calcXY(oldvx, oldxy, curx, cury):
-    xdistance = (oldvx * cfg.UPDATE_INTERVAL) + (0.5 * cfg.ACCELERATION * (cfg.UPDATE_INTERVAL ** 2.0))
-    ydistance = (oldxy * cfg.UPDATE_INTERVAL) + (0.5 * cfg.ACCELERATION + (cfg.UPDATE_INTERVAL ** 2.0))
+def calc_xy(vx, xy, curx, cury):
+    xdistance = (vx * cfg.UPDATE_INTERVAL) + (0.5 * cfg.ACCELERATION * (cfg.UPDATE_INTERVAL ** 2.0))
+    ydistance = (xy * cfg.UPDATE_INTERVAL) + (0.5 * cfg.ACCELERATION + (cfg.UPDATE_INTERVAL ** 2.0))
 
     return [curx + xdistance, cury + ydistance]
 
 
-def sim_api():
+def call_sim():
     # TODO: Create method call for ATE-3 Simulation
     print("Code Stub")
