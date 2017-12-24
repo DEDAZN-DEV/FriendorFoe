@@ -1,18 +1,16 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
-import dubins
 import math
 import multiprocessing
 import random
-import socket
 import sys
+import socket
 import time
-
-import matplotlib.pyplot as plt
-
 from WorkingBuild import global_cfg as cfg
 from WorkingBuild import gps_ops as gps
 from WorkingBuild import vector_ops as vec
+import dubins
+import matplotlib.pyplot as plt
 
 
 class BColors:
