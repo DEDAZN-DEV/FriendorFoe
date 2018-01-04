@@ -1,16 +1,18 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
+import dubins
 import math
 import multiprocessing
 import random
-import sys
 import socket
+import sys
 import time
-from WorkingBuild import global_cfg as cfg
-from WorkingBuild import gps_ops as gps
-from WorkingBuild import vector_ops as vec
-import dubins
+
+import global_cfg as cfg
+import gps_ops as gps
 import matplotlib.pyplot as plt
+import pymysql as sql
+import vector_ops as vec
 
 
 class BColors:
@@ -44,23 +46,18 @@ def main():
     :return:
     """
 
-    subprocesses = []
+    proclst = []
 
     try:
         if len(sys.argv) < 2:
-            print("Missing argument...\nUsage: python server.py [stop, normal_run, debug_circle [time in seconds], "
+            print("Missing argument...\nUsage: python server.py [stop, run, debug_circle [time in seconds], "
                   "debug_random, debug_gps]")
             sys.exit()
         else:
             test_type = sys.argv[1]
-
         if test_type == 'run':
-            a = multiprocessing.Process(target=run, args=("DRONE A", cfg.CLIENT_IP_A, cfg.PORT,))
-            a.daemon = True
-            a.start()
-            subprocesses.append(a)
-            a.join()
-
+            proclst.append(multiprocessing.Process(target=run, args=('Drone 1', cfg.CLIENT_IP_A, cfg.PORT,)).start())
+            proclst.append(multiprocessing.Process(target=run, args=('Drone 2', cfg.CLIENT_IP_A, cfg.PORT,)).start())
         elif test_type == 'debug_circle':
             if len(sys.argv) < 3:
                 print("Missing argument...\nUsage: python server.py debug_circle <time in seconds>")
@@ -68,27 +65,22 @@ def main():
                 length = int(sys.argv[2])
                 a = multiprocessing.Process(target=force_circle, args=(cfg.CLIENT_IP_A, cfg.PORT, length,))
                 a.start()
-                subprocesses.append(a)
+                # subprocesses.append(a)
                 a.join()
-
         elif test_type == 'debug_random':
             a = multiprocessing.Process(target=rand_run, args=(cfg.CLIENT_IP_A, cfg.PORT,))
             a.start()
-            subprocesses.append(a)
+            # subprocesses.append(a)
             a.join()
-
         elif test_type == 'stop':
             stop(cfg.CLIENT_IP_A, cfg.PORT)
-
         elif test_type == 'debug_gps':
             gps.gps_debug()
-
         elif test_type == 'test_run':
             a = multiprocessing.Process(target=test_run, args=None)
             a.start()
-            subprocesses.append(a)
+            # subprocesses.append(a)
             a.join()
-
         else:
             print(
                 "Invalid argument...\nUsage: python server.py [stop, normal_run, debug_circle <time>, debug_random, "
@@ -97,11 +89,10 @@ def main():
 
     except KeyboardInterrupt:
         print('Early Termination...Killing alive processes')
-        for i in range(0, len(subprocesses)):
-            if subprocesses[i].is_alive():
-                subprocesses[i].terminate()
-            print('....Done')
-            sys.exit()
+        for i in range(0, len(proclst)):
+            while proclst[i].isalive():
+                proclst[i].terminate()
+                print(str(proclst[i]) + '....Killed')
 
 
 def run(dronename, ip, port):
@@ -120,6 +111,12 @@ def run(dronename, ip, port):
 
     plt.figure(num=1, figsize=(6, 8))
     plt.ion()
+
+    # file = open('./logs/' + dronename + ' LOG.txt', 'w+')
+    # file.write(
+    #     '%15s %15s %27s %23s %15s\n' % ('XPOS', 'YPOS', 'TURN ANGLE', 'HEADING', 'PATH LENGTH'))
+    # file.write(
+    #     '---------------------------------------------------------------------------------------------------\n')
 
     xpos = []
     ypos = []
@@ -144,11 +141,18 @@ def run(dronename, ip, port):
             # q1 = (tgtx, tgty, 0)
 
         qs, _ = dubins.path_sample(q0, q1, turning_radius, step_size)
+        path_length = dubins.path_length(q0, q1, turning_radius)
 
         for i in range(len(qs) - 1):
 
+            prev_XPOS = cardata.XPOS
+            prev_YPOS = cardata.YPOS
+
             cardata.XPOS = qs[i][0]
             cardata.YPOS = qs[i][1]
+
+            dist_traveled = math.sqrt((cardata.XPOS - prev_XPOS) ** 2 + (cardata.YPOS - prev_YPOS) ** 2)
+            path_length = path_length - dist_traveled
 
             old_heading = cardata.HEADING
 
@@ -161,23 +165,51 @@ def run(dronename, ip, port):
 
             cardata.HEADING = math.degrees(qs[i][2])
 
-            printf('-------------------------------------------------------------------------------------------\n')
-            printf('%15s | %15s | %27s | %23s |\n', 'XPOS', 'YPOS', 'TURN ANGLE', 'HEADING')
-            printf('-------------------------------------------------------------------------------------------\n')
+            # TODO: Insert speed modification function here
 
-            if cardata.TURNANGLE > 0.0:
-                printf(BColors.FAIL + '%15f | %15f | %15f degrees (L) | %15f degrees |\n' + BColors.ENDC, cardata.XPOS,
-                       cardata.YPOS, cardata.TURNANGLE,
-                       cardata.HEADING)
-            elif cardata.TURNANGLE < 0.0:
-                printf(BColors.OKGREEN + '%15f | %15f | %15f degrees (R) | %15f degrees |\n' + BColors.ENDC,
-                       cardata.XPOS,
-                       cardata.YPOS, cardata.TURNANGLE,
-                       cardata.HEADING)
-            else:
-                printf('%15f | %15f | %15f degrees (-) | %15f degrees |\n', cardata.XPOS, cardata.YPOS,
-                       cardata.TURNANGLE,
-                       cardata.HEADING)
+            # file.write(
+            #     '---------------------------------------------------------------------------------------------------------------\n')
+            # file.write(
+            #     '| %15s | %15s | %27s | %23s | %15s |\n' % ('XPOS', 'YPOS', 'TURN ANGLE', 'HEADING', 'PATH LENGTH'))
+            # file.write(
+            #     '---------------------------------------------------------------------------------------------------------------\n')
+
+            # printf(
+            #     '---------------------------------------------------------------------------------------------------------------\n')
+            # printf('| %15s | %15s | %27s | %23s | %15s |\n', 'XPOS', 'YPOS', 'TURN ANGLE', 'HEADING', 'PATH LENGTH')
+            # printf(
+            #     '---------------------------------------------------------------------------------------------------------------\n')
+
+            # if cardata.TURNANGLE > 0.0:
+            #     # file.write(
+            #     #     '%15f %15f %15f degrees (L) %15f degrees %15f\n' % (
+            #     #         cardata.XPOS,
+            #     #         cardata.YPOS, cardata.TURNANGLE,
+            #     #         cardata.HEADING, path_length))
+            #     # printf(BColors.FAIL + '| %15f | %15f | %15f degrees (L) | %15f degrees | %15f | %10s\n' + BColors.ENDC,
+            #     #        cardata.XPOS,
+            #     #        cardata.YPOS, cardata.TURNANGLE,
+            #     #        cardata.HEADING, path_length, dronename)
+            # elif cardata.TURNANGLE < 0.0:
+            #     file.write(
+            #         '%15f %15f %15f degrees (R) %15f degrees %15f\n' % (
+            #             cardata.XPOS,
+            #             cardata.YPOS, cardata.TURNANGLE,
+            #             cardata.HEADING, path_length))
+            #     # printf(
+            #     #     BColors.OKGREEN + '| %15f | %15f | %15f degrees (R) | %15f degrees | %15f | %10s\n' + BColors.ENDC,
+            #     #     cardata.XPOS,
+            #     #     cardata.YPOS, cardata.TURNANGLE,
+            #     #     cardata.HEADING, path_length, dronename)
+            # else:
+            #     file.write(
+            #         '%15f %15f %15f degrees (-) %15f degrees %15f\n' % (
+            #             cardata.XPOS,
+            #             cardata.YPOS, cardata.TURNANGLE,
+            #             cardata.HEADING, path_length))
+            #     # printf('| %15f | %15f | %15f degrees (-) | %15f degrees | %15f | %10s\n', cardata.XPOS, cardata.YPOS,
+            #     #        cardata.TURNANGLE,
+            #     #        cardata.HEADING, path_length, dronename)
 
             if len(xpos) > cfg.BUFFERSIZE:
                 xpos.pop(0)
@@ -190,11 +222,14 @@ def run(dronename, ip, port):
             tgtystorage = q1[1]
 
             plt.clf()
+            plt.title(dronename)
             plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
             plt.plot(xpos, ypos, 'k-')
             plt.plot(tgtxstorage, tgtystorage, 'rx')
             plt.grid(True)
-            plt.pause(1e-6)
+            plt.pause(0.1)  # <- TODO: Update this to reflect car speed (distance / current speed)?
+
+            dbinsert(cardata, dronename)
 
         # print('*****' + str(q1) + '*****')
         # print(xpos)
@@ -399,5 +434,22 @@ def disable(self):
     self.ENDC = ''
 
 
+def dbinsert(data, dronename):
+    db = sql.connect(host='localhost', user='FriendorFoe@localhost', passwd='password', db='DRONES')
+    cursor = db.cursor()
+
+    query = """INSERT INTO DRONES.POS(DRONENAME, XPOS, YPOS, SPEED, HEADING, TURN_ANGLE) VALUES ('%s', %f, %f, %f, %f, %f)"""
+
+    try:
+        cursor.execute(query % (
+            dronename, data.XPOS, data.YPOS, data.SPEED, data.HEADING, data.TURNANGLE,))
+        db.commit()
+    except Exception as e1:
+        db.rollback()
+        print(e1)
+
+    db.close()
+
+
 if __name__ == '__main__':
-    main()  # Invoke main()
+    main()

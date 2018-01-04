@@ -2,7 +2,7 @@ ACCELERATION = 15  # of car in m/s**2
 
 BASE_X = 0
 BASE_Y = 0
-BUFFERSIZE = 100
+BUFFERSIZE = 50
 
 CENTER = 5800
 CLIENT_IP_A = "10.33.29.189"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)

@@ -1,6 +1,6 @@
 import math
 
-from WorkingBuild import global_cfg as cfg
+import global_cfg as cfg
 
 
 def parse_gps_msg(message):
