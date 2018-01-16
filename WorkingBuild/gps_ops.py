@@ -168,3 +168,5 @@ def set_xy_ratio():
     temp = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
     Y_RATIO = temp[1] / cfg.LENGTH_Y
     X_RATIO = temp[0] / cfg.LENGTH_X
+
+# Test
