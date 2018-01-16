@@ -45,7 +45,8 @@ TEST_ITERATIONS = 25
 TEST_SPEED = 6320
 TURNDELAY = 30
 TURNFACTOR = 0.001
-TURNRADIUS = 45  # degrees each direction
+TURNRADIUS = 3.0  # degrees each direction
+TURNSPEED = 5  # m/s
 
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 

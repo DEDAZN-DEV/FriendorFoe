@@ -3,7 +3,7 @@ import math
 import global_cfg as cfg
 
 
-def parse_gps_msg(message):
+def parse_gps_msg():
     """
     Gets the current GPS coordinates from the RC car. Currently generates a random GPS coordinate +/- error factor
     @return: Returns the lat, long, and altitude.
@@ -29,10 +29,12 @@ def parse_gps_msg(message):
     # 74 ASCII characters, 74 byte message length
 
     # Insert method to poll GPS chips
-    poll_gps()
+
+    # message = poll_gps()
 
     message = "$GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65"
     # message = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.5,M,46.9,M,,*47"
+
     separator = []
 
     for char in range(0, len(message)):
@@ -126,7 +128,7 @@ def gps_debug():
     calc_originxy()
     set_xy_ratio()
 
-    print(parse_gps_msg(''))
+    print(parse_gps_msg())
     print("----------------")
 
     corner = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
@@ -166,8 +168,3 @@ def set_xy_ratio():
     temp = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
     Y_RATIO = temp[1] / cfg.LENGTH_Y
     X_RATIO = temp[0] / cfg.LENGTH_X
-
-
-def get_coords():
-    # TODO: Parse GGA message, convert to XY and return
-    print("GPS Coords Code Stub")
