@@ -2,11 +2,11 @@
 
 import dubins
 import math
-import multiprocessing
 import random
 import socket
 import sys
 import time
+from multiprocessing import Process
 
 import global_cfg as cfg
 import gps_ops as gps
@@ -41,6 +41,16 @@ class CarData:
     DIST_TRAVELED = 0.0
 
 
+class Drone:
+    """
+    """
+
+    def __init__(self, func, ip, port, droneid):
+        self.name = droneid
+        self.process = Process(target=func, args=('Drone ' + str(droneid), ip, port,))
+        print('Drone ID: ' + str(self.name))
+
+
 def main():
     """
     Driver function for the entire program. Spawns sub-processes to control each drone and then terminates.
@@ -57,22 +67,34 @@ def main():
         else:
             test_type = sys.argv[1]
         if test_type == 'run':
-            droneId = random.randint(000, 999)
-            print('Session ID: ' + str(droneId))
-            proclst.append(
-                multiprocessing.Process(target=run, args=('Drone ' + str(droneId), cfg.CLIENT_IP_A, cfg.PORT,)).start())
-        # proclst.append(multiprocessing.Process(target=run, args=('Drone 2', cfg.CLIENT_IP_A, cfg.PORT,)).start())
+            a = Drone(run, cfg.CLIENT_IP_A, cfg.PORT, random.randint(0, 999))
+            proclst.append(a)
+
+            b = Drone(run, cfg.CLIENT_IP_A, cfg.PORT, random.randint(0, 999))
+            proclst.append(b)
+
+            c = Drone(run, cfg.CLIENT_IP_A, cfg.PORT, random.randint(0, 999))
+            proclst.append(c)
+
+            a.process.start()
+            b.process.start()
+            c.process.start()
+
+            a.process.join()
+            b.process.join()
+            c.process.join()
+
         elif test_type == 'debug_circle':
             if len(sys.argv) < 3:
                 print("Missing argument...\nUsage: python server.py debug_circle <time in seconds>")
             else:
                 length = int(sys.argv[2])
-                a = multiprocessing.Process(target=force_circle, args=(cfg.CLIENT_IP_A, cfg.PORT, length,))
+                a = Process(target=force_circle, args=(cfg.CLIENT_IP_A, cfg.PORT, length,))
                 a.start()
                 # subprocesses.append(a)
                 a.join()
         elif test_type == 'debug_random':
-            a = multiprocessing.Process(target=rand_run, args=(cfg.CLIENT_IP_A, cfg.PORT,))
+            a = Process(target=rand_run, args=(cfg.CLIENT_IP_A, cfg.PORT,))
             a.start()
             # subprocesses.append(a)
             a.join()
@@ -81,7 +103,7 @@ def main():
         elif test_type == 'debug_gps':
             gps.gps_debug()
         elif test_type == 'test_run':
-            a = multiprocessing.Process(target=test_run, args=None)
+            a = Process(target=test_run, args=None)
             a.start()
             # subprocesses.append(a)
             a.join()
@@ -92,12 +114,12 @@ def main():
             sys.exit()
 
     except KeyboardInterrupt:
-        print('Early Termination...Killing alive processes')
+        print('Keyboard Interrupt....Killing live processes')
         for i in range(0, len(proclst)):
-            while proclst[i].isalive():
-                proclst[i].terminate()
-                print(str(proclst[i]) + '....Killed')
-
+            if proclst[i].process.is_alive():
+                print('Killing Drone ID: ' + str(proclst[i].name))
+                proclst[i].process.terminate()
+        print('....Done\n')
     return 0
 
 
@@ -165,8 +187,6 @@ def run(dronename, ip, port):
 
             cardata.HEADING = math.degrees(qs[i][2])
 
-            # TODO: Insert speed modification function here
-            # Speed Modification Stub
             if abs(cardata.TURNANGLE) < 1.0:
                 cardata.SPEED = cfg.MAXVELOCITY
             else:
@@ -196,7 +216,7 @@ def run(dronename, ip, port):
             plt.plot(tgtxstorage, tgtystorage, 'rx')
             plt.grid(True)
 
-            plt.pause(pause_interval)  # <- TODO: Update this to reflect car speed (distance / current speed)?
+            plt.pause(pause_interval)
 
         q0 = q1
 
@@ -286,7 +306,7 @@ def test_run():
         xposstorage.append(cardata[0])
         yposstorage.append(cardata[1])
 
-        # TODO: Get output vector from simulation
+        # TODO: Get output vector from simulation (API Function HERE)
         temp_data = cardata[:]
 
         tgt = vec.new_pos(stage, cardata)  # dummy input from algorithm
