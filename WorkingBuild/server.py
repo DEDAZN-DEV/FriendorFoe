@@ -1,6 +1,5 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
-import dubins
 import math
 import random
 import socket
@@ -8,10 +7,12 @@ import sys
 import time
 from multiprocessing import Process
 
-import global_cfg as cfg
-import gps_ops as gps
+import dubins
 import matplotlib.pyplot as plt
 import pymysql as sql
+
+import global_cfg as cfg
+import gps_ops as gps
 import vector_ops as vec
 
 
@@ -177,8 +178,8 @@ def run(dronename, ip, port):
 
         q1 = (tgtx, tgty, desired_heading)
 
-        qs, _ = dubins.path_sample(q0, q1, cfg.TURNRADIUS, step_size)
-        path_length = dubins.path_length(q0, q1, cfg.TURNRADIUS)
+        qs, _ = dubins.path_sample(q0, q1, cfg.TURNDIAMETER, step_size)
+        path_length = dubins.path_length(q0, q1, cfg.TURNDIAMETER)
 
         for i in range(len(qs) - 1):
 
@@ -227,7 +228,7 @@ def run(dronename, ip, port):
             tgtxstorage = q1[0]
             tgtystorage = q1[1]
 
-            dbinsert(cardata, dronename)
+            # dbinsert(cardata, dronename)
 
             plt.clf()
             plt.title(dronename)
