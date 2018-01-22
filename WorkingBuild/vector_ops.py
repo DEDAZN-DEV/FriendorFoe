@@ -124,4 +124,4 @@ def calc_xy(vx, xy, curx, cury):
 
 def call_sim():
     # TODO: Create method call for ATE-3 Simulation
-    print("Code Stub")
+    return (random.uniform(0, math.sqrt(cfg.MAXVELOCITY)), random.uniform(0, math.sqrt(cfg.MAXVELOCITY)))

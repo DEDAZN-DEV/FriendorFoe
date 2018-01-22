@@ -1,5 +1,6 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
+import dubins
 import math
 import random
 import socket
@@ -7,7 +8,6 @@ import sys
 import time
 from multiprocessing import Process
 
-import dubins
 import matplotlib.pyplot as plt
 import pymysql as sql
 
@@ -33,7 +33,8 @@ class CarData:
     """
     Data structure for drone metrics
     """
-
+    LAT = 0.0
+    LONG = 0.0
     XPOS = 0.0
     YPOS = 0.0
     HEADING = 0.0
@@ -138,41 +139,22 @@ def run(dronename, ip, port):
     xpos = []
     ypos = []
 
+    gps.calc_originxy()
+    gps.set_xy_ratio()
+
+    [cardata.LAT, cardata.LONG] = gps.test_poll_gps(True, cardata)
+    [cardata.XPOS, cardata.YPOS] = gps.gps_to_xy(cardata.LAT, cardata.LONG)
+
     q0 = (cardata.XPOS, cardata.YPOS, 0)
 
     step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
 
     while True:
-        # cardata.XPOS, cardata.YPOS = gps.get_coords()
-        # velocity_vector = vec.call_sim()
-        # [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS)
+        [cardata.LAT, cardata.LONG] = gps.test_poll_gps(False, cardata)
+        [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
 
-        seed1 = random.uniform(0, 1)
-        seed2 = random.uniform(0, 1)
-
-        if seed1 >= 0.5:
-            tgty = cardata.YPOS + random.randint(3, 7)
-        else:
-            tgty = cardata.YPOS - random.randint(3, 7)
-
-        if seed2 >= 0.5:
-            tgtx = cardata.XPOS + random.randint(3, 7)
-        else:
-            tgtx = cardata.XPOS - random.randint(3, 7)
-
-        while tgty < 0 or tgty > cfg.LENGTH_Y or tgtx < 0 or tgtx > cfg.LENGTH_X:
-            seed1 = random.uniform(0, 1)
-            seed2 = random.uniform(0, 1)
-
-            if seed1 >= 0.5:
-                tgty = cardata.YPOS + random.randint(3, 7)
-            else:
-                tgty = cardata.YPOS - random.randint(3, 7)
-
-            if seed2 >= 0.5:
-                tgtx = cardata.XPOS + random.randint(3, 7)
-            else:
-                tgtx = cardata.XPOS - random.randint(3, 7)
+        velocity_vector = vec.call_sim()
+        [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS)
 
         desired_heading = math.atan2((tgty - cardata.YPOS), (tgtx - cardata.XPOS))
 
@@ -188,6 +170,9 @@ def run(dronename, ip, port):
 
             cardata.XPOS = qs[i][0]
             cardata.YPOS = qs[i][1]
+
+            # [cardata.LAT, cardata.LONG] = gps.test_poll_gps(False, cardata)
+            # [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
 
             dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
             cardata.DIST_TRAVELED = dist_traveled
@@ -222,11 +207,11 @@ def run(dronename, ip, port):
                 xpos.pop(0)
                 ypos.pop(0)
 
-            xpos.append(qs[i][0])
-            ypos.append(qs[i][1])
+            # xpos.append(qs[i][0])
+            # ypos.append(qs[i][1])
 
-            tgtxstorage = q1[0]
-            tgtystorage = q1[1]
+            xpos.append(cardata.XPOS)
+            ypos.append(cardata.YPOS)
 
             # dbinsert(cardata, dronename)
 
@@ -234,8 +219,14 @@ def run(dronename, ip, port):
             plt.title(dronename)
             plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
             plt.plot(xpos, ypos, 'k-')
-            plt.plot(tgtxstorage, tgtystorage, 'rx')
+            plt.plot(tgtx, tgty, 'rx')
             plt.grid(True)
+
+            print(velocity_vector)
+            print(tgtx, tgty)
+            print(cardata.LAT, cardata.LONG)
+            print(cardata.XPOS, cardata.YPOS)
+            print('')
 
             plt.pause(pause_interval)
 

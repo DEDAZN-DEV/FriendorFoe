@@ -7,7 +7,7 @@ import serial.tools.list_ports
 
 import global_cfg as cfg
 import ip_mailerv2
-import maestro
+import maestro as maestro
 
 
 def main():
