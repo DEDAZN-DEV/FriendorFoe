@@ -170,7 +170,7 @@ def xy_to_gps(x, y):
     unrot_y = y * math.cos(math.radians(-cfg.ROTATION_ANGLE)) - x * math.sin(math.radians(-cfg.ROTATION_ANGLE))
 
     lat = math.atan(math.sinh(unrot_y))
-    long = unrot_x + cfg.ORIGIN_LONGITUDE
+    long = math.degrees(unrot_x) + cfg.ORIGIN_LONGITUDE
 
     lat = math.degrees(lat)
 
@@ -220,10 +220,9 @@ def gps_debug():
     print(scale_xy(origin))
 
     print("\n*** Test ***")
-    # testlat = input('Enter Test Latitude: ')
-    # testlong = input('Enter Test Longitude: ')
-    # test = gps_to_xy(float(testlat), float(testlong))
+    testlat = input('Enter Test Latitude: ')
+    testlong = input('Enter Test Longitude: ')
+    test = gps_to_xy(float(testlat), float(testlong))
 
-    test = gps_to_xy(29.190119, -81.046239)
     print(test)
     print(scale_xy(test))

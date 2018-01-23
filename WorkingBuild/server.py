@@ -15,6 +15,8 @@ import global_cfg as cfg
 import gps_ops as gps
 import vector_ops as vec
 
+BUFFERSIZE = 50
+
 
 class BColors:
     """
@@ -150,18 +152,27 @@ def run(dronename, ip, port):
     step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
 
     while True:
-        [cardata.LAT, cardata.LONG] = gps.test_poll_gps(False, cardata)
+        [cardata.LAT, cardata.LONG] = gps.xy_to_gps(cardata.XPOS, cardata.YPOS)
+        # [cardata.LAT, cardata.LONG] = gps.test_poll_gps(False, cardata) # <- Disabled for testing
+
         [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
 
         velocity_vector = vec.call_sim()
-        [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS)
+        [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS, cardata.HEADING)
+
+        while tgtx < 0 or tgtx > cfg.LENGTH_X or tgty < 0 or tgty > cfg.LENGTH_Y:
+            velocity_vector = vec.call_sim()
+            [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS,
+                                       cardata.HEADING)
 
         desired_heading = math.atan2((tgty - cardata.YPOS), (tgtx - cardata.XPOS))
 
-        q1 = (tgtx, tgty, desired_heading)
+        q1 = (tgtx, tgty, desired_heading)  # maintain original heading to target
 
         qs, _ = dubins.path_sample(q0, q1, cfg.TURNDIAMETER, step_size)
         path_length = dubins.path_length(q0, q1, cfg.TURNDIAMETER)
+
+        interval_time = 0.0
 
         for i in range(len(qs) - 1):
 
@@ -171,8 +182,10 @@ def run(dronename, ip, port):
             cardata.XPOS = qs[i][0]
             cardata.YPOS = qs[i][1]
 
-            # [cardata.LAT, cardata.LONG] = gps.test_poll_gps(False, cardata)
-            # [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
+            [cardata.LAT, cardata.LONG] = gps.xy_to_gps(cardata.XPOS, cardata.YPOS)
+            # [cardata.LAT, cardata.LONG] = gps.test_poll_gps(False, cardata) # <- Disabled for testing
+
+            [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
 
             dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
             cardata.DIST_TRAVELED = dist_traveled
@@ -203,7 +216,7 @@ def run(dronename, ip, port):
             if pause_interval == 0:
                 pause_interval = 1e-6  # <-- This is a starter to the program for the initial draw
 
-            if len(xpos) > cfg.BUFFERSIZE:
+            if len(xpos) > BUFFERSIZE:
                 xpos.pop(0)
                 ypos.pop(0)
 
@@ -213,7 +226,7 @@ def run(dronename, ip, port):
             xpos.append(cardata.XPOS)
             ypos.append(cardata.YPOS)
 
-            # dbinsert(cardata, dronename)
+            dbinsert(cardata, dronename)
 
             plt.clf()
             plt.title(dronename)
@@ -222,10 +235,14 @@ def run(dronename, ip, port):
             plt.plot(tgtx, tgty, 'rx')
             plt.grid(True)
 
-            print(velocity_vector)
-            print(tgtx, tgty)
-            print(cardata.LAT, cardata.LONG)
-            print(cardata.XPOS, cardata.YPOS)
+            interval_time = interval_time + pause_interval
+
+            print('Recieved Vel Vector: ', velocity_vector)
+            print('Calculated Tgt Pos: ', tgtx, tgty)
+            print('Last Angle Orientation: ', math.degrees(desired_heading))
+            print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
+            print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
+            print('Interval Time: ', interval_time)
             print('')
 
             plt.pause(pause_interval)
@@ -469,11 +486,12 @@ def dbinsert(data, dronename):
     db = sql.connect(host='localhost', user='FriendorFoe@localhost', passwd='password', db='DRONES')
     cursor = db.cursor()
 
-    query = """INSERT INTO DRONES.POS(DRONENAME, XPOS, YPOS, SPEED, HEADING, TURN_ANGLE, DIST_TRAVELED) VALUES ("%s", %f, %f, %f, %f, %f, %f)"""
+    query = """INSERT INTO DRONES.POS(DRONENAME, GPSX, GPSY, XPOS, YPOS, SPEED, HEADING, TURN_ANGLE, DIST_TRAVELED) VALUES ("%s", %f, %f, %f, %f, %f, %f, %f, %f)"""
 
     try:
         cursor.execute(query % (
-            dronename, data.XPOS, data.YPOS, data.SPEED, data.HEADING, data.TURNANGLE, data.DIST_TRAVELED))
+            dronename, data.LONG, data.LAT, data.XPOS, data.YPOS, data.SPEED, data.HEADING, data.TURNANGLE,
+            data.DIST_TRAVELED))
         db.commit()
     except Exception as e1:
         db.rollback()
