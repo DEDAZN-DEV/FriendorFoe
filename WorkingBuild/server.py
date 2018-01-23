@@ -6,7 +6,7 @@ import random
 import socket
 import sys
 import time
-from multiprocessing import Process
+from multiprocessing import Process, freeze_support
 
 import matplotlib.pyplot as plt
 import pymysql as sql
@@ -35,23 +35,25 @@ class CarData:
     """
     Data structure for drone metrics
     """
-    LAT = 0.0
-    LONG = 0.0
-    XPOS = 0.0
-    YPOS = 0.0
-    HEADING = 0.0
-    TURNANGLE = 0.0
-    SPEED = 0.0
-    DIST_TRAVELED = 0.0
+
+    def __init__(self):
+        self.LAT = 0.0
+        self.LONG = 0.0
+        self.XPOS = 0.0
+        self.YPOS = 0.0
+        self.HEADING = 0.0
+        self.TURNANGLE = 0.0
+        self.SPEED = 0.0
+        self.DIST_TRAVELED = 0.0
 
 
 class Drone:
     """
     """
 
-    def __init__(self, func, ip, port, droneid):
+    def __init__(self, func, ip, port, transmit, droneid):
         self.name = droneid
-        self.process = Process(target=func, args=('Drone ' + str(droneid), ip, port,))
+        self.process = Process(target=func, args=('Drone ' + str(droneid), ip, port, transmit))
         print('Drone ID: ' + str(self.name))
 
 
@@ -71,7 +73,7 @@ def main():
         else:
             test_type = sys.argv[1]
         if test_type == 'run':
-            a = Drone(run, cfg.CLIENT_IP_A, cfg.PORT, random.randint(0, 999))
+            a = Drone(run, cfg.CLIENT_IP_A, cfg.PORT, False, random.randint(0, 999))
             proclst.append(a)
 
             # b = Drone(run, cfg.CLIENT_IP_A, cfg.PORT, random.randint(0, 999))
@@ -125,7 +127,7 @@ def main():
     return 0
 
 
-def run(dronename, ip, port):
+def run(dronename, ip, port, transmit):
     """
     Default drone control algorithm. Uses input from ATE-3 Sim to control drones.
     :param dronename: String, name of drone
@@ -133,6 +135,7 @@ def run(dronename, ip, port):
     :param port: LAN Port of drone to be controlled, not necessary but can be changed.
     :return: Nothing
     """
+    init = True
     cardata = CarData()
 
     plt.figure(num=1, figsize=(6, 8))
@@ -145,7 +148,9 @@ def run(dronename, ip, port):
     gps.set_xy_ratio()
 
     [cardata.LAT, cardata.LONG] = gps.test_poll_gps(True, cardata)
-    [cardata.XPOS, cardata.YPOS] = gps.gps_to_xy(cardata.LAT, cardata.LONG)
+    print cardata.LAT, cardata.LONG
+    [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
+    print cardata.XPOS, cardata.YPOS
 
     q0 = (cardata.XPOS, cardata.YPOS, 0)
 
@@ -157,10 +162,16 @@ def run(dronename, ip, port):
 
         [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
 
-        velocity_vector = vec.call_sim()
-        [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS, cardata.HEADING)
+        seed1 = random.random()
 
-        while tgtx < 0 or tgtx > cfg.LENGTH_X or tgty < 0 or tgty > cfg.LENGTH_Y:
+        if seed1 <= cfg.DIRCHANGEFACTOR or init:
+            init = False
+            velocity_vector = vec.call_sim()
+
+        [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS,
+                                   cardata.HEADING)
+
+        while tgtx < cfg.TURNDIAMETER or tgtx > cfg.LENGTH_X - cfg.TURNDIAMETER or tgty < cfg.TURNDIAMETER or tgty > cfg.LENGTH_Y - cfg.TURNDIAMETER:
             velocity_vector = vec.call_sim()
             [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS,
                                        cardata.HEADING)
@@ -208,8 +219,9 @@ def run(dronename, ip, port):
                 cardata.SPEED = cfg.TURNSPEED
                 # ^ Relate this to the angle in which its turning, higher angle == slower speed
 
-            # gen_turn_signal(cardata.TURNANGLE, ip, port)
-            # gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port)
+            if transmit:
+                gen_turn_signal(cardata.TURNANGLE, ip, port)
+                # gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port)
 
             pause_interval = dist_traveled / cardata.SPEED
 
@@ -335,7 +347,6 @@ def test_run():
         xposstorage.append(cardata[0])
         yposstorage.append(cardata[1])
 
-        # TODO: Get output vector from simulation (API Function HERE)
         temp_data = cardata[:]
 
         tgt = vec.new_pos(stage, cardata)  # dummy input from algorithm
@@ -351,8 +362,8 @@ def test_run():
         print(vector)
         print(cardata)
 
-        gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, cfg.CLIENT_IP_A)
-        gen_turn_signal(cardata.TURNANGLE, cfg.CLIENT_IP_A)
+        gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, cfg.CLIENT_IP_A, cfg.PORT)
+        gen_turn_signal(cardata.TURNANGLE, cfg.CLIENT_IP_A, cfg.PORT)
 
         if abs(cardata[0] - 30) < 0.5 and abs(cardata[1] - 20) < 0.5 and stage < 3:
             stage = stage + 1
@@ -394,6 +405,7 @@ def gen_turn_signal(angle, client, port):
     Generates turn signal for MSC and transmits to drone
     :param angle: Float, angle of turn for drone
     :param client: String, LAN IP for drone to be controlled
+    :param port:
     :return: 0 on successful completion
     """
 
@@ -418,6 +430,7 @@ def gen_spd_signal(speed, angle, client, port):
     :param speed: Float, speed to be reached
     :param angle: Float, current angle of turn
     :param client: LAN IP address of drone
+    :param port:
     :return: 0 on successful completion
     """
 
@@ -431,7 +444,7 @@ def gen_spd_signal(speed, angle, client, port):
     elif spd < cfg.TEST_SPEED:
         spd = cfg.TEST_SPEED
 
-    socket_tx(str(cfg.SPEED) + str(spd), client, port)
+    socket_tx(str(cfg.ESC) + str(spd), client, port)
 
     return 0
 
@@ -503,4 +516,5 @@ def dbinsert(data, dronename):
 
 
 if __name__ == '__main__':
+    freeze_support()
     main()

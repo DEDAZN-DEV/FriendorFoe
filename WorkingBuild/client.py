@@ -56,9 +56,9 @@ def main():
 def serial_debug():
     global COM_PORT
 
-    list = serial.tools.list_ports.comports()
+    comlist = serial.tools.list_ports.comports()
     available = []
-    for port in list:
+    for port in comlist:
         available.append(port.device)
 
     COM_PORT = available[1]

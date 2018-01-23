@@ -22,7 +22,7 @@ def set_xy_ratio():
 def parse_gps_msg():
     """
     Gets the current GPS coordinates from the RC car. Currently generates a random GPS coordinate +/- error factor
-    @return: Returns the lat, long, and altitude.
+    @return: Returns the lat, longitude, and altitude.
     """
 
     # $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.5,M,46.9,M,,*47
@@ -106,7 +106,7 @@ def parse_gps_msg():
 def test_poll_gps(flag, data):
     if flag:
         lat = (cfg.CORNER_LAT + cfg.ORIGIN_LATITUDE) / 2
-        long = (cfg.CORNER_LONG + cfg.ORIGIN_LONGITUDE) / 2
+        longitude = (cfg.CORNER_LONG + cfg.ORIGIN_LONGITUDE) / 2
     else:
         seed1 = random.random()
         seed2 = random.random()
@@ -117,37 +117,38 @@ def test_poll_gps(flag, data):
             lat = data.LAT - random.uniform(0, cfg.NOISE)
 
         if seed2 >= 0.5:
-            long = data.LONG + random.uniform(0, cfg.NOISE)
+            longitude = data.LONG + random.uniform(0, cfg.NOISE)
         else:
-            long = data.LONG - random.uniform(0, cfg.NOISE)
+            longitude = data.LONG - random.uniform(0, cfg.NOISE)
 
-        # while lat < cfg.ORIGIN_LATITUDE or lat > cfg.CORNER_LAT or long < cfg.ORIGIN_LONGITUDE or long > cfg.CORNER_LONG:
-        #      seed1 = random.random()
-        #      seed2 = random.random()
-        #
-        #      if seed1 >= 0.5:
-        #          lat = data.LAT + random.uniform(0,0.0005)
-        #      else:
-        #          lat = data.LAT - random.uniform(0,0.0005)
-        #
-        #      if seed2 >= 0.5:
-        #          long = data.LONG + random.uniform(0,0.0005)
-        #      else:
-        #          long = data.LONG - random.uniform(0,0.0005)
+        while lat < cfg.ORIGIN_LATITUDE or lat > cfg.CORNER_LAT \
+                or longitude < cfg.ORIGIN_LONGITUDE or longitude > cfg.CORNER_LONG:
+            seed1 = random.random()
+            seed2 = random.random()
 
-    return [lat, long]
+            if seed1 >= 0.5:
+                lat = data.LAT + random.uniform(0, cfg.NOISE)
+            else:
+                lat = data.LAT - random.uniform(0, cfg.NOISE)
+
+            if seed2 >= 0.5:
+                longitude = data.LONG + random.uniform(0, cfg.NOISE)
+            else:
+                longitude = data.LONG - random.uniform(0, cfg.NOISE)
+
+    return [lat, longitude]
 
 
-def gps_to_xy(lat, long):
+def gps_to_xy(lat, longitude):
     """
 
     @param lat:
-    @param long:
+    @param longitude:
     @return:
     """
 
     radlat = math.radians(lat)
-    radlong = math.radians(long)
+    radlong = math.radians(longitude)
 
     x = radlong - math.radians(cfg.ORIGIN_LONGITUDE)
     y = math.log(math.tan(radlat) + (1 / math.cos(radlat)))
@@ -170,11 +171,11 @@ def xy_to_gps(x, y):
     unrot_y = y * math.cos(math.radians(-cfg.ROTATION_ANGLE)) - x * math.sin(math.radians(-cfg.ROTATION_ANGLE))
 
     lat = math.atan(math.sinh(unrot_y))
-    long = math.degrees(unrot_x) + cfg.ORIGIN_LONGITUDE
+    longitude = math.degrees(unrot_x) + cfg.ORIGIN_LONGITUDE
 
     lat = math.degrees(lat)
 
-    return (lat, long)
+    return [lat, longitude]
 
 
 def scale_xy(xy):
@@ -189,6 +190,7 @@ def invert_xy(xy):
     xy[1] = xy[1] * cfg.Y_RATIO
 
     return xy
+
 
 def deg_to_seconds(val):
     return val * 60 * 60

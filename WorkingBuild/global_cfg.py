@@ -6,7 +6,7 @@ COM_PORT = ''
 CORNER_LAT = 29.190643
 CORNER_LONG = -81.045049
 
-DIRCHANGEFACTOR = 01.25  # % chance of changing velocity input for testing
+DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input for testing
 
 ESC = 3
 
