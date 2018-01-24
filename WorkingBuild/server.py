@@ -133,6 +133,7 @@ def run(dronename, ip, port, transmit):
     :param dronename: String, name of drone
     :param ip: String, LAN IP address of drone
     :param port: LAN Port of drone to be controlled, not necessary but can be changed.
+    :param transmit: True/False send data to client
     :return: Nothing
     """
     init = True
