@@ -131,9 +131,9 @@ def run(dronename, ip, port):
     gps.set_xy_ratio()
 
     [cardata.LAT, cardata.LONG] = gps.test_poll_gps(True, cardata)
-    print cardata.LAT, cardata.LONG
+    print(cardata.LAT, cardata.LONG)
     [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
-    print cardata.XPOS, cardata.YPOS
+    print(cardata.XPOS, cardata.YPOS)
 
     q0 = (cardata.XPOS, cardata.YPOS, 0)
 
