@@ -102,7 +102,6 @@ def main():
         for i in range(0, len(proclst)):
 
             if proclst[i].process.is_alive():
-
                 print('Killing Drone ID: ' + str(proclst[i].name))
                 proclst[i].process.terminate()
 
@@ -165,10 +164,7 @@ def run(dronename, ip, port):
         ##########################################################################
         desired_heading = math.atan2((tgty - cardata.YPOS), (tgtx - cardata.XPOS))
         print('Last Angle Orientation: ', math.degrees(desired_heading))
-        if abs(cardata.HEADING) - abs(desired_heading) <= cfg.MAX_TURN_RADIUS:
-            q1 = (tgtx, tgty, cardata.HEADING)  # maintain original heading to target
-        else:
-            q1 = (tgtx, tgty, desired_heading)  # maintain original heading to target
+        q1 = (tgtx, tgty, desired_heading)  # maintain original heading to target
         ##########################################################################
 
         qs, _ = dubins.path_sample(q0, q1, cfg.TURNDIAMETER, step_size)
@@ -176,7 +172,7 @@ def run(dronename, ip, port):
 
         interval_time = 0.0
 
-        for i in range(len(qs) - 1):
+        for i in range(0, len(qs) - 1):
 
             prev_xpos = cardata.XPOS
             prev_ypos = cardata.YPOS
@@ -207,9 +203,9 @@ def run(dronename, ip, port):
             cardata.HEADING = math.degrees(qs[i][2])
 
             if abs(cardata.TURNANGLE) < 1.0:
-                cardata.SPEED = cfg.MAXVELOCITY
+                cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2)
             else:
-                cardata.SPEED = cfg.TURNSPEED
+                cardata.SPEED = 5
                 # ^ Relate this to the angle in which its turning, higher angle == slower speed
 
             ################################################################
@@ -240,12 +236,12 @@ def run(dronename, ip, port):
 
             interval_time = interval_time + pause_interval
 
-            print('Recieved Vel Vector: ', velocity_vector)
-            print('Calculated Tgt Pos: ', tgtx, tgty)
-            print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
-            print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
-            print('Interval Time: ', interval_time)
-            print('')
+            # print('Recieved Vel Vector: ', velocity_vector)
+            # print('Calculated Tgt Pos: ', tgtx, tgty)
+            # print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
+            # print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
+            # print('Interval Time: ', interval_time)
+            # print('')
 
             plt.pause(pause_interval)
 
@@ -271,7 +267,6 @@ def force_circle(client_ip, port):
     Forces the specified drone to run in a continuous circle for a designated period of time.
     :param client_ip: String, LAN IP of drone to be controlled
     :param port: String, LAN Port of drone to be controlled
-    :param length: Int, Length of circle pattern in seconds
     :return: 0 on successful completion
     """
 
