@@ -1,12 +1,12 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
-import dubins
 import math
 import random
 import socket
 import sys
 from multiprocessing import Process, freeze_support
 
+import dubins
 import matplotlib.pyplot as plt
 import pymysql as sql
 
@@ -164,88 +164,92 @@ def run(dronename, ip, port):
         ##########################################################################
         desired_heading = math.atan2((tgty - cardata.YPOS), (tgtx - cardata.XPOS))
         print('Last Angle Orientation: ', math.degrees(desired_heading))
-        q1 = (tgtx, tgty, desired_heading)  # maintain original heading to target
+
+        if abs(math.degrees(desired_heading)) >= cfg.MAX_TURN_RADIUS:
+            print('Code For Dampened Turn Here')
+        else:
+            q1 = (tgtx, tgty, desired_heading)  # maintain original heading to target
         ##########################################################################
 
-        qs, _ = dubins.path_sample(q0, q1, cfg.TURNDIAMETER, step_size)
-        path_length = dubins.path_length(q0, q1, cfg.TURNDIAMETER)
+            qs, _ = dubins.path_sample(q0, q1, cfg.TURNDIAMETER, step_size)
+            path_length = dubins.path_length(q0, q1, cfg.TURNDIAMETER)
 
-        interval_time = 0.0
+            interval_time = 0.0
 
-        for i in range(0, len(qs) - 1):
+            for i in range(0, len(qs) - 1):
 
-            prev_xpos = cardata.XPOS
-            prev_ypos = cardata.YPOS
+                prev_xpos = cardata.XPOS
+                prev_ypos = cardata.YPOS
 
-            cardata.XPOS = qs[i][0]
-            cardata.YPOS = qs[i][1]
+                cardata.XPOS = qs[i][0]
+                cardata.YPOS = qs[i][1]
 
-            ###########################################################################################
-            [cardata.LAT, cardata.LONG] = gps.xy_to_gps(cardata.XPOS, cardata.YPOS)
-            # [cardata.LAT, cardata.LONG] = gps.test_poll_gps(False, cardata) # <- Disabled for testing
-            ###########################################################################################
+                ###########################################################################################
+                [cardata.LAT, cardata.LONG] = gps.xy_to_gps(cardata.XPOS, cardata.YPOS)
+                # [cardata.LAT, cardata.LONG] = gps.test_poll_gps(False, cardata) # <- Disabled for testing
+                ###########################################################################################
 
-            [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
+                [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
 
-            dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
-            cardata.DIST_TRAVELED = dist_traveled
-            path_length = path_length - dist_traveled
+                dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
+                cardata.DIST_TRAVELED = dist_traveled
+                path_length = path_length - dist_traveled
 
-            old_heading = cardata.HEADING
+                old_heading = cardata.HEADING
 
-            cardata.TURNANGLE = math.degrees(qs[i][2]) - old_heading
+                cardata.TURNANGLE = math.degrees(qs[i][2]) - old_heading
 
-            if cardata.TURNANGLE <= -180:
-                cardata.TURNANGLE = cardata.TURNANGLE + 360
-            elif cardata.TURNANGLE >= 180:
-                cardata.TURNANGLE = cardata.TURNANGLE - 360
+                if cardata.TURNANGLE <= -180:
+                    cardata.TURNANGLE = cardata.TURNANGLE + 360
+                elif cardata.TURNANGLE >= 180:
+                    cardata.TURNANGLE = cardata.TURNANGLE - 360
 
-            cardata.HEADING = math.degrees(qs[i][2])
+                cardata.HEADING = math.degrees(qs[i][2])
 
-            if abs(cardata.TURNANGLE) < 1.0:
-                cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2)
-            else:
-                cardata.SPEED = 5
-                # ^ Relate this to the angle in which its turning, higher angle == slower speed
+                if abs(cardata.TURNANGLE) < 1.0:
+                    cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2)
+                else:
+                    cardata.SPEED = 5
+                    # ^ Relate this to the angle in which its turning, higher angle == slower speed
 
-            ################################################################
-            # gen_turn_signal(cardata.TURNANGLE, ip, port)
-            # gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port)
-            ################################################################
+                ################################################################
+                # gen_turn_signal(cardata.TURNANGLE, ip, port)
+                # gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port)
+                ################################################################
 
-            pause_interval = dist_traveled / cardata.SPEED
+                pause_interval = dist_traveled / cardata.SPEED
 
-            if pause_interval == 0:
-                pause_interval = 1e-6  # <-- This is a starter to the program for the initial draw
+                if pause_interval == 0:
+                    pause_interval = 1e-6  # <-- This is a starter to the program for the initial draw
 
-            if len(xpos) > BUFFERSIZE:
-                xpos.pop(0)
-                ypos.pop(0)
+                if len(xpos) > BUFFERSIZE:
+                    xpos.pop(0)
+                    ypos.pop(0)
 
-            xpos.append(cardata.XPOS)
-            ypos.append(cardata.YPOS)
+                xpos.append(cardata.XPOS)
+                ypos.append(cardata.YPOS)
 
-            dbinsert(cardata, dronename)
+                plt.clf()
+                plt.title(dronename)
+                plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
+                plt.plot(xpos, ypos, 'k-')
+                plt.plot(tgtx, tgty, 'rx')
+                plt.grid(True)
 
-            plt.clf()
-            plt.title(dronename)
-            plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
-            plt.plot(xpos, ypos, 'k-')
-            plt.plot(tgtx, tgty, 'rx')
-            plt.grid(True)
+                interval_time = interval_time + pause_interval
 
-            interval_time = interval_time + pause_interval
+                # print('Recieved Vel Vector: ', velocity_vector)
+                # print('Calculated Tgt Pos: ', tgtx, tgty)
+                # print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
+                # print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
+                # print('Interval Time: ', interval_time)
+                # print('')
 
-            # print('Recieved Vel Vector: ', velocity_vector)
-            # print('Calculated Tgt Pos: ', tgtx, tgty)
-            # print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
-            # print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
-            # print('Interval Time: ', interval_time)
-            # print('')
+                # dbinsert(cardata, dronename)
 
-            plt.pause(pause_interval)
+                plt.pause(pause_interval)
 
-        q0 = q1
+            q0 = q1
 
 
 def stop(client_ip, port):
