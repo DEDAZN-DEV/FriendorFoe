@@ -391,6 +391,7 @@ def dbinsert(data, dronename):
     db = sql.connect(host='localhost', user='FriendorFoe@localhost', passwd='password', db='DRONES')
     cursor = db.cursor()
 
+    # noinspection SqlNoDataSourceInspection
     query = """INSERT INTO DRONES.POS(DRONENAME, GPSX, GPSY, XPOS, YPOS, SPEED, HEADING, TURN_ANGLE, DIST_TRAVELED) VALUES ("%s", %f, %f, %f, %f, %f, %f, %f, %f)"""
 
     try:
