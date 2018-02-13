@@ -7,7 +7,6 @@ import sys
 import time
 from multiprocessing import Process
 
-import dubins
 import matplotlib.pyplot as plt
 import pymysql as sql
 
