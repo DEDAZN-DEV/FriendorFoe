@@ -1,13 +1,10 @@
+import os
 import socket
 import sys
 import time
 
-import serial
-import serial.tools.list_ports
-
 import global_cfg as cfg
-import ip_mailerv2
-import maestro
+import maestro as maestro
 
 
 def main():
@@ -20,17 +17,11 @@ def main():
 
     sock.listen(5)
 
-    print('SERIAL TESTING....Please Wait.')
-
-    print(serial_debug())
-
-    test_controller(COM_PORT)
+    test_controller('/dev/ttyACM1')
 
     print('TESTING COMPLETE....')
 
     print('SERVER ESTABLISHED....')
-
-    ip_mailerv2.sendIP('stilwea1@my.erau.edu')
 
     while True:
         try:
@@ -43,6 +34,14 @@ def main():
             # else:
             data = conn.recv(64)
             print('Received data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
+
+            os.system('grep --line-buffered -m 1 GGA /dev/ttyACM0 > gps.txt')
+            myfile = open('gps.txt', 'r')
+            message = myfile.read()
+            myfile.close()
+            print(message)
+            conn.sendall(message.encode())
+
             test_run(data)
 
         # except TimeoutError as nosig:
@@ -51,19 +50,6 @@ def main():
         except TypeError as emsg2:
             print(emsg2)
             sys.exit()
-
-
-def serial_debug():
-    global COM_PORT
-
-    list = serial.tools.list_ports.comports()
-    available = []
-    for port in list:
-        available.append(port.device)
-
-    COM_PORT = available[1]
-
-    return available
 
 
 def test_controller(port):
@@ -100,9 +86,9 @@ def test_controller(port):
 
 
 def servo_ctl(servo_num, val):
-    servo = maestro.Controller(COM_PORT)
+    servo = maestro.Controller('/dev/ttyACM1')
 
-    # TODO: Modify this to accomadate for speed
+    # TODO: Modify this to accommodate for speed
     servo.setAccel(cfg.STEERING, 50)
     servo.setAccel(cfg.ESC, 100)
 
@@ -132,5 +118,4 @@ def test_run(arg):
         if 4000 <= data2 <= 8000:
             servo_ctl(data1, data2)
 
-
-main()
+# main()
