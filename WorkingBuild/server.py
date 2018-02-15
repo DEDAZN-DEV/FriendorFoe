@@ -1,17 +1,18 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
-import dubins
 import math
-import multiprocessing
 import random
 import socket
 import sys
 import time
+from multiprocessing import Process
+
+import dubins
+import matplotlib.pyplot as plt
+import pymysql as sql
 
 import global_cfg as cfg
 import gps_ops as gps
-import matplotlib.pyplot as plt
-import pymysql as sql
 import vector_ops as vec
 
 
@@ -41,6 +42,16 @@ class CarData:
     DIST_TRAVELED = 0.0
 
 
+class Drone:
+    """
+    """
+
+    def __init__(self, func, ip, port, droneid):
+        self.name = droneid
+        self.process = Process(target=func, args=('Drone ' + str(droneid), ip, port,))
+        print('Drone ID: ' + str(self.name))
+
+
 def main():
     """
     Driver function for the entire program. Spawns sub-processes to control each drone and then terminates.
@@ -57,33 +68,43 @@ def main():
         else:
             test_type = sys.argv[1]
         if test_type == 'run':
-            droneId = random.randint(000, 999)
-            print('Session ID: ' + str(droneId))
-            proclst.append(
-                multiprocessing.Process(target=run, args=('Drone ' + str(droneId), cfg.CLIENT_IP_A, cfg.PORT,)).start())
-        # proclst.append(multiprocessing.Process(target=run, args=('Drone 2', cfg.CLIENT_IP_A, cfg.PORT,)).start())
+            a = Drone(run, cfg.CLIENT_IP_A, cfg.PORT, random.randint(0, 999))
+            proclst.append(a)
+
+            # b = Drone(run, cfg.CLIENT_IP_A, cfg.PORT, random.randint(0, 999))
+            # proclst.append(b)
+            #
+            # c = Drone(run, cfg.CLIENT_IP_A, cfg.PORT, random.randint(0, 999))
+            # proclst.append(c)
+
+            a.process.start()
+            # b.process.start()
+            # c.process.start()
+
+            a.process.join()
+            # b.process.join()
+            # c.process.join()
+
         elif test_type == 'debug_circle':
             if len(sys.argv) < 3:
                 print("Missing argument...\nUsage: python server.py debug_circle <time in seconds>")
             else:
                 length = int(sys.argv[2])
-                a = multiprocessing.Process(target=force_circle, args=(cfg.CLIENT_IP_A, cfg.PORT, length,))
+                a = Process(target=force_circle, args=(cfg.CLIENT_IP_A, cfg.PORT, length,))
                 a.start()
                 # subprocesses.append(a)
                 a.join()
         elif test_type == 'debug_random':
-            a = multiprocessing.Process(target=rand_run, args=(cfg.CLIENT_IP_A, cfg.PORT,))
+            a = Process(target=rand_run, args=(cfg.CLIENT_IP_A, cfg.PORT,))
             a.start()
-            # subprocesses.append(a)
             a.join()
         elif test_type == 'stop':
             stop(cfg.CLIENT_IP_A, cfg.PORT)
         elif test_type == 'debug_gps':
             gps.gps_debug()
         elif test_type == 'test_run':
-            a = multiprocessing.Process(target=test_run, args=None)
+            a = Process(target=test_run, args=None)
             a.start()
-            # subprocesses.append(a)
             a.join()
         else:
             print(
@@ -92,12 +113,12 @@ def main():
             sys.exit()
 
     except KeyboardInterrupt:
-        print('Early Termination...Killing alive processes')
+        print('Keyboard Interrupt....Killing live processes')
         for i in range(0, len(proclst)):
-            while proclst[i].isalive():
-                proclst[i].terminate()
-                print(str(proclst[i]) + '....Killed')
-
+            if proclst[i].process.is_alive():
+                print('Killing Drone ID: ' + str(proclst[i].name))
+                proclst[i].process.terminate()
+        print('....Done\n')
     return 0
 
 
@@ -111,10 +132,6 @@ def run(dronename, ip, port):
     """
     cardata = CarData()
 
-    # cardata.XPOS, cardata.YPOS = gps.get_coords()
-    # velocity_vector = vec.call_sim()
-    # [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS)
-
     plt.figure(num=1, figsize=(6, 8))
     plt.ion()
 
@@ -122,35 +139,57 @@ def run(dronename, ip, port):
     ypos = []
 
     q0 = (cardata.XPOS, cardata.YPOS, 0)
-    qs = []
-
-    init_flag = True
-    old_heading = cardata.HEADING
 
     step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
 
-    # for n in range(cfg.TEST_ITERATIONS):
     while True:
-        if init_flag is True:
-            q1 = (random.randint(10, cfg.LENGTH_X - 10), random.randint(10, cfg.LENGTH_Y) - 10, 0)
-            # q1 = (tgtx, tgty, 0)
-            init_flag = False
-        else:
-            q1 = (random.randint(10, cfg.LENGTH_X - 10), random.randint(10, cfg.LENGTH_Y - 10), cardata.HEADING)
-        # q1 = (tgtx, tgty, 0)
+        # cardata.XPOS, cardata.YPOS = gps.get_coords()
+        # velocity_vector = vec.call_sim()
+        # [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS)
 
-        qs, _ = dubins.path_sample(q0, q1, cfg.TURNRADIUS, step_size)
-        path_length = dubins.path_length(q0, q1, cfg.TURNRADIUS)
+        seed1 = random.uniform(0, 1)
+        seed2 = random.uniform(0, 1)
+
+        if seed1 >= 0.5:
+            tgty = cardata.YPOS + random.randint(3, 7)
+        else:
+            tgty = cardata.YPOS - random.randint(3, 7)
+
+        if seed2 >= 0.5:
+            tgtx = cardata.XPOS + random.randint(3, 7)
+        else:
+            tgtx = cardata.XPOS - random.randint(3, 7)
+
+        while tgty < 0 or tgty > cfg.LENGTH_Y or tgtx < 0 or tgtx > cfg.LENGTH_X:
+            seed1 = random.uniform(0, 1)
+            seed2 = random.uniform(0, 1)
+
+            if seed1 >= 0.5:
+                tgty = cardata.YPOS + random.randint(3, 7)
+            else:
+                tgty = cardata.YPOS - random.randint(3, 7)
+
+            if seed2 >= 0.5:
+                tgtx = cardata.XPOS + random.randint(3, 7)
+            else:
+                tgtx = cardata.XPOS - random.randint(3, 7)
+
+        desired_heading = math.atan2((tgty - cardata.YPOS), (tgtx - cardata.XPOS))
+
+        q1 = (tgtx, tgty, desired_heading)
+
+        qs, _ = dubins.path_sample(q0, q1, cfg.TURNDIAMETER, step_size)
+        path_length = dubins.path_length(q0, q1, cfg.TURNDIAMETER)
 
         for i in range(len(qs) - 1):
 
-            prev_XPOS = cardata.XPOS
-            prev_YPOS = cardata.YPOS
+            prev_xpos = cardata.XPOS
+            prev_ypos = cardata.YPOS
 
             cardata.XPOS = qs[i][0]
             cardata.YPOS = qs[i][1]
 
-            dist_traveled = math.sqrt((cardata.XPOS - prev_XPOS) ** 2 + (cardata.YPOS - prev_YPOS) ** 2)
+            dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
             cardata.DIST_TRAVELED = dist_traveled
             path_length = path_length - dist_traveled
 
@@ -165,12 +204,14 @@ def run(dronename, ip, port):
 
             cardata.HEADING = math.degrees(qs[i][2])
 
-            # TODO: Insert speed modification function here
-            # Speed Modification Stub
             if abs(cardata.TURNANGLE) < 1.0:
                 cardata.SPEED = cfg.MAXVELOCITY
             else:
-                cardata.SPEED = cfg.TURNSPEED  # <-- Relate this to the angle in which its turning, higher angle == slower speed
+                cardata.SPEED = cfg.TURNSPEED
+                # ^ Relate this to the angle in which its turning, higher angle == slower speed
+
+            # gen_turn_signal(cardata.TURNANGLE, ip, port)
+            # gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port)
 
             pause_interval = dist_traveled / cardata.SPEED
 
@@ -187,7 +228,7 @@ def run(dronename, ip, port):
             tgtxstorage = q1[0]
             tgtystorage = q1[1]
 
-            dbinsert(cardata, dronename)
+            # dbinsert(cardata, dronename)
 
             plt.clf()
             plt.title(dronename)
@@ -196,7 +237,7 @@ def run(dronename, ip, port):
             plt.plot(tgtxstorage, tgtystorage, 'rx')
             plt.grid(True)
 
-            plt.pause(pause_interval)  # <- TODO: Update this to reflect car speed (distance / current speed)?
+            plt.pause(pause_interval)
 
         q0 = q1
 
@@ -286,7 +327,7 @@ def test_run():
         xposstorage.append(cardata[0])
         yposstorage.append(cardata[1])
 
-        # TODO: Get output vector from simulation
+        # TODO: Get output vector from simulation (API Function HERE)
         temp_data = cardata[:]
 
         tgt = vec.new_pos(stage, cardata)  # dummy input from algorithm
@@ -340,7 +381,7 @@ def printf(layout, *args):
     return 0
 
 
-def gen_turn_signal(angle, client):
+def gen_turn_signal(angle, client, port):
     """
     Generates turn signal for MSC and transmits to drone
     :param angle: Float, angle of turn for drone
@@ -358,12 +399,12 @@ def gen_turn_signal(angle, client):
     elif ang < 4000:
         ang = cfg.MAX_RIGHT
 
-    socket_tx(str(cfg.TURNING) + str(ang), client, cfg.PORT)
+    socket_tx(str(cfg.STEERING) + str(ang), client, port)
 
     return 0
 
 
-def gen_spd_signal(speed, angle, client):
+def gen_spd_signal(speed, angle, client, port):
     """
     Generates speed signal for MSC and transmits to drone
     :param speed: Float, speed to be reached
@@ -372,7 +413,7 @@ def gen_spd_signal(speed, angle, client):
     :return: 0 on successful completion
     """
 
-    if abs(angle - cfg.CENTER) > 0.5:
+    if abs(angle) > 1.0:
         spd = int(round((cfg.TEST_SPEED + (speed * cfg.SPDSCALE)) / (abs(angle) * cfg.TURNFACTOR)))
     else:
         spd = int(round(cfg.TEST_SPEED + (speed * cfg.SPDSCALE)))
@@ -382,7 +423,7 @@ def gen_spd_signal(speed, angle, client):
     elif spd < cfg.TEST_SPEED:
         spd = cfg.TEST_SPEED
 
-    socket_tx(str(cfg.SPEED) + str(speed), client, cfg.PORT)
+    socket_tx(str(cfg.SPEED) + str(spd), client, port)
 
     return 0
 
