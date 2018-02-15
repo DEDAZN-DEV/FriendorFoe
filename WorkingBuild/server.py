@@ -139,6 +139,8 @@ def run(dronename, ip, port):
 
     step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
 
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
     while True:
         ###########################################################################################
         [cardata.LAT, cardata.LONG] = gps.xy_to_gps(cardata.XPOS, cardata.YPOS)
@@ -213,8 +215,14 @@ def run(dronename, ip, port):
                     # ^ Relate this to the angle in which its turning, higher angle == slower speed
 
                 ################################################################
-                # gen_turn_signal(cardata.TURNANGLE, ip, port)
-                # gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port)
+                # gen_turn_signal(cardata.TURNANGLE, ip, port, sock)
+                message = sock.recv(128)
+
+                # gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port, sock)
+                message = sock.recv(128)
+
+                cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
+                cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
                 ################################################################
 
                 pause_interval = dist_traveled / cardata.SPEED
@@ -292,7 +300,7 @@ def printf(layout, *args):
     return 0
 
 
-def gen_turn_signal(angle, client, port):
+def gen_turn_signal(angle, client, port, sock):
     """
     Generates turn signal for MSC and transmits to drone
     :param angle: Float, angle of turn for drone
@@ -311,12 +319,12 @@ def gen_turn_signal(angle, client, port):
     elif ang < 4000:
         ang = cfg.MAX_RIGHT
 
-    socket_tx(str(cfg.STEERING) + str(ang), client, port)
+    socket_tx(str(cfg.STEERING) + str(ang), client, port, sock)
 
     return 0
 
 
-def gen_spd_signal(speed, angle, client, port):
+def gen_spd_signal(speed, angle, client, port, sock):
     """
     Generates speed signal for MSC and transmits to drone
     :param speed: Float, speed to be reached
@@ -336,12 +344,12 @@ def gen_spd_signal(speed, angle, client, port):
     elif spd < cfg.TEST_SPEED:
         spd = cfg.TEST_SPEED
 
-    socket_tx(str(cfg.ESC) + str(spd), client, port)
+    socket_tx(str(cfg.ESC) + str(spd), client, port, sock)
 
     return 0
 
 
-def socket_tx(data, client_ip, port):
+def socket_tx(data, client_ip, port, sock):
     """
     Transmits specified data to drone through sockets
     :param data: String, data to be transmitted
@@ -349,8 +357,6 @@ def socket_tx(data, client_ip, port):
     :param port: Port of drone
     :return: 0 on successful completion
     """
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.connect((client_ip, port))
         sock.sendall(data.encode())
