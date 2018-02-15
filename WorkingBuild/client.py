@@ -17,7 +17,7 @@ def main():
 
     sock.listen(5)
 
-    test_controller('/dev/ttyACM1')
+    test_controller('/dev/ttyACM0')
 
     print('TESTING COMPLETE....')
 
@@ -114,7 +114,7 @@ def test_run(arg, conn):
 
 
 def get_gps(conn):
-    os.system('grep --line-buffered -m 1 GGA /dev/ttyACM0 > gps.txt')
+    os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
     myfile = open('gps.txt', 'r')
     message = myfile.read()
     myfile.close()
@@ -122,4 +122,4 @@ def get_gps(conn):
     conn.sendall(message.encode())
     print('GPS SENT')
 
-# main()
+main()
