@@ -44,30 +44,36 @@ def check_right_turn(current_heading, desired_heading):
         return False
 
 
-def choose_wheel_turn_angle(current_heading, desired_heading, turn_angles):
+def choose_wheel_turn_angle(current_heading, desired_heading, turn_angles, speed_coefficients):
     tolerance_for_small_turn = 5
     tolerance_for_large_turn = 45
 
     if check_if_within_heading(current_heading, desired_heading, tolerance=tolerance_for_small_turn):
         print("\nWithin 5 degrees")
-        return turn_angles[0]
+        return turn_angles[0], speed_coefficients[0]
+
     elif check_if_within_heading(current_heading, desired_heading, tolerance=tolerance_for_large_turn):
         print("\nWithin 45 degrees")
-        return turn_angles[1]
+        return turn_angles[1], speed_coefficients[1]
+
     else:
         print("\nMore than 45 degrees")
-        return turn_angles[2]
+        return turn_angles[2], speed_coefficients[2]
 
 
 def choose_wheel_turn_angle_and_direction(current_heading, desired_heading):
     left_turns = (1.4, 1.0, 0.5)
     right_turns = (1.6, 2.0, 2.5)
+    speed_coefficients = (0.75, 0.50, 0.25)
 
     if check_right_turn(current_heading, desired_heading):
         chosen_direction = right_turns
     else:
         chosen_direction = left_turns
-    turn_angle = choose_wheel_turn_angle(current_heading, desired_heading, chosen_direction)
+    turn_angle, speed_coefficient = choose_wheel_turn_angle(current_heading,
+                                                            desired_heading,
+                                                            chosen_direction,
+                                                            speed_coefficients)
     return turn_angle
 
 
