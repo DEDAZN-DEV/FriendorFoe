@@ -62,8 +62,8 @@ def choose_wheel_turn_angle(current_heading, desired_heading, turn_angles, speed
 
 
 def choose_wheel_turn_angle_and_direction(current_heading, desired_heading):
-    left_turns = (1.4, 1.0, 0.5)
-    right_turns = (1.6, 2.0, 2.5)
+    left_turns = (-5, -10, -15)
+    right_turns = (5, 10, 15)
     speed_coefficients = (0.75, 0.50, 0.25)
 
     if check_right_turn(current_heading, desired_heading):
@@ -74,17 +74,17 @@ def choose_wheel_turn_angle_and_direction(current_heading, desired_heading):
                                                             desired_heading,
                                                             chosen_direction,
                                                             speed_coefficients)
-    return turn_angle
+    return turn_angle, speed_coefficient
 
 
 def simple_turning_algorithm(current_heading, desired_heading):
     no_turn = 1.5
 
     if not check_if_within_heading(current_heading, desired_heading, tolerance=0.1):
-        turning_servo_command = choose_wheel_turn_angle_and_direction(current_heading, desired_heading)
-        return turning_servo_command
+        turning_servo_command, speed_coefficient = choose_wheel_turn_angle_and_direction(current_heading, desired_heading)
+        return turning_servo_command, speed_coefficient
     else:
-        return no_turn
+        return no_turn, 1
 
 
 if __name__ == "__main__":
