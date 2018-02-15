@@ -34,15 +34,7 @@ def main():
             # else:
             data = conn.recv(64)
             print('Received data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
-
-            os.system('grep --line-buffered -m 1 GGA /dev/ttyACM0 > gps.txt')
-            myfile = open('gps.txt', 'r')
-            message = myfile.read()
-            myfile.close()
-            print(message)
-            conn.sendall(message.encode())
-
-            test_run(data)
+            test_run(data, conn)
 
         # except TimeoutError as nosig:
         #     servo_ctl(ESC, NEUTRAL)
@@ -95,7 +87,7 @@ def servo_ctl(servo_num, val):
     servo.setTarget(servo_num, val)
 
 
-def test_run(arg):
+def test_run(arg, conn):
     # arg = arg[2:len(arg)-1]
     print(arg)
 
@@ -109,6 +101,8 @@ def test_run(arg):
     elif arg == 'stop':
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
         servo_ctl(cfg.STEERING, cfg.CENTER)
+    elif arg == 'gps':
+        get_gps(conn)
     else:
         print('No test prompt received, Switching to raw input....')
 
@@ -117,5 +111,15 @@ def test_run(arg):
 
         if 4000 <= data2 <= 8000:
             servo_ctl(data1, data2)
+
+
+def get_gps(conn):
+    os.system('grep --line-buffered -m 1 GGA /dev/ttyACM0 > gps.txt')
+    myfile = open('gps.txt', 'r')
+    message = myfile.read()
+    myfile.close()
+    print(message)
+    conn.sendall(message.encode())
+    print('GPS SENT')
 
 # main()

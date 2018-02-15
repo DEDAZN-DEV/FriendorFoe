@@ -121,6 +121,8 @@ def run(dronename, ip, port):
     init = True
     cardata = CarData()
 
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
     plt.figure(num=1, figsize=(6, 8))
     plt.ion()
 
@@ -130,24 +132,28 @@ def run(dronename, ip, port):
     gps.calc_originxy()
     gps.set_xy_ratio()
 
-    [cardata.LAT, cardata.LONG] = gps.test_poll_gps(True, cardata)
-    print(cardata.LAT, cardata.LONG)
-    [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
+    # GPS
+    socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
+    message = sock.recv(128)
+
+    cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
+    cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
+    # END GPS
+
     print(cardata.XPOS, cardata.YPOS)
 
     q0 = (cardata.XPOS, cardata.YPOS, 0)
 
     step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
     while True:
-        ###########################################################################################
-        [cardata.LAT, cardata.LONG] = gps.xy_to_gps(cardata.XPOS, cardata.YPOS)
-        # [cardata.LAT, cardata.LONG] = gps.test_poll_gps(False, cardata) # <- Disabled for testing
-        ###########################################################################################
+        # GPS
+        socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
+        message = sock.recv(128)
 
-        [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
+        cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
+        cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
+        # END GPS
 
         seed1 = random.random()
 
@@ -186,12 +192,13 @@ def run(dronename, ip, port):
                 cardata.XPOS = qs[i][0]
                 cardata.YPOS = qs[i][1]
 
-                ###########################################################################################
-                [cardata.LAT, cardata.LONG] = gps.xy_to_gps(cardata.XPOS, cardata.YPOS)
-                # [cardata.LAT, cardata.LONG] = gps.test_poll_gps(False, cardata) # <- Disabled for testing
-                ###########################################################################################
+                # GPS
+                socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
+                message = sock.recv(128)
 
-                [cardata.XPOS, cardata.YPOS] = gps.scale_xy(gps.gps_to_xy(cardata.LAT, cardata.LONG))
+                cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
+                cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
+                # END GPS
 
                 dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
                 cardata.DIST_TRAVELED = dist_traveled
@@ -215,14 +222,9 @@ def run(dronename, ip, port):
                     # ^ Relate this to the angle in which its turning, higher angle == slower speed
 
                 ################################################################
-                # gen_turn_signal(cardata.TURNANGLE, ip, port, sock)
-                message = sock.recv(128)
+                gen_turn_signal(cardata.TURNANGLE, ip, port, sock)
 
-                # gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port, sock)
-                message = sock.recv(128)
-
-                cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
-                cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
+                gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port, sock)
                 ################################################################
 
                 pause_interval = dist_traveled / cardata.SPEED
