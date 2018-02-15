@@ -1,12 +1,12 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
+import dubins
 import math
 import random
 import socket
 import sys
 from multiprocessing import Process, freeze_support
 
-import dubins
 import matplotlib.pyplot as plt
 import pymysql as sql
 
@@ -132,7 +132,7 @@ def run(dronename, ip, port):
     gps.calc_originxy()
     gps.set_xy_ratio()
 
-    # GPS
+    # GPS Initialization
     socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
     message = sock.recv(128)
 
