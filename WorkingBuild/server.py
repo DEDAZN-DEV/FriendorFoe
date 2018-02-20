@@ -10,6 +10,7 @@ from multiprocessing import Process, freeze_support
 import matplotlib.pyplot as plt
 import pymysql as sql
 
+import stepped_turning.py as turning
 import global_cfg as cfg
 import gps_ops as gps
 import vector_ops as vec
@@ -179,85 +180,87 @@ def run(dronename, ip, port):
             q1 = (tgtx, tgty, desired_heading)  # maintain original heading to target
         ##########################################################################
 
-            qs, _ = dubins.path_sample(q0, q1, cfg.TURNDIAMETER, step_size)
-            path_length = dubins.path_length(q0, q1, cfg.TURNDIAMETER)
+            # qs, _ = dubins.path_sample(q0, q1, cfg.TURNDIAMETER, step_size)
+            turn_data = {
+                "current_heading": cardata.HEADING,
+                "desired_heading": desired_heading,
+                "speed": cardata.SPEED,
+                "initial_x_position": cardata.XPOS,
+                "initial_y_position": cardata.YPOS,
+                "time_step": cfg.UPDATE_INTERVAL
+            }
+            turn_data = turning.simple_turning_algorithm(turn_data)
+
+            # path_length = dubins.path_length(q0, q1, cfg.TURNDIAMETER)
 
             interval_time = 0.0
 
-            for i in range(0, len(qs) - 1):
+            # for i in range(0, len(qs) - 1):
 
-                prev_xpos = cardata.XPOS
-                prev_ypos = cardata.YPOS
+            prev_xpos = cardata.XPOS
+            prev_ypos = cardata.YPOS
 
-                cardata.XPOS = qs[i][0]
-                cardata.YPOS = qs[i][1]
+            ############ GPS
+            socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
+            message = sock.recv(128)
 
-                # GPS
-                socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
-                message = sock.recv(128)
+            cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
+            cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
+            ######## END GPS
 
-                cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
-                cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
-                # END GPS
+            dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
+            cardata.DIST_TRAVELED = dist_traveled
+            path_length = path_length - dist_traveled
 
-                dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
-                cardata.DIST_TRAVELED = dist_traveled
-                path_length = path_length - dist_traveled
+            old_heading = cardata.HEADING
 
-                old_heading = cardata.HEADING
+            cardata.TURNANGLE = turn_data["turning_angle"]
 
-                cardata.TURNANGLE = math.degrees(qs[i][2]) - old_heading
+            cardata.HEADING = turn_data["final_direction"]
 
-                if cardata.TURNANGLE <= -180:
-                    cardata.TURNANGLE = cardata.TURNANGLE + 360
-                elif cardata.TURNANGLE >= 180:
-                    cardata.TURNANGLE = cardata.TURNANGLE - 360
+            if abs(cardata.TURNANGLE) < 1.0:
+                cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2)
+            else:
+                cardata.SPEED = 5
+                # ^ Relate this to the angle in which its turning, higher angle == slower speed
 
-                cardata.HEADING = math.degrees(qs[i][2])
+            ################################################################
+            gen_turn_signal(cardata.TURNANGLE, ip, port, sock)
 
-                if abs(cardata.TURNANGLE) < 1.0:
-                    cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2)
-                else:
-                    cardata.SPEED = 5
-                    # ^ Relate this to the angle in which its turning, higher angle == slower speed
+            gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port, sock)
+            ################################################################
 
-                ################################################################
-                gen_turn_signal(cardata.TURNANGLE, ip, port, sock)
+            pause_interval = dist_traveled / cardata.SPEED
 
-                gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port, sock)
-                ################################################################
+            if pause_interval == 0:
+                pause_interval = 1e-6  # <-- This is a starter to the program for the initial draw
 
-                pause_interval = dist_traveled / cardata.SPEED
+            if len(xpos) > BUFFERSIZE:
+                xpos.pop(0)
+                ypos.pop(0)
 
-                if pause_interval == 0:
-                    pause_interval = 1e-6  # <-- This is a starter to the program for the initial draw
+            xpos.append(cardata.XPOS)
+            ypos.append(cardata.YPOS)
 
-                if len(xpos) > BUFFERSIZE:
-                    xpos.pop(0)
-                    ypos.pop(0)
+            plt.clf()
+            plt.title(dronename)
+            plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
+            plt.plot(xpos, ypos, 'k-')
+            plt.plot(tgtx, tgty, 'rx')
+            plt.grid(True)
 
-                xpos.append(cardata.XPOS)
-                ypos.append(cardata.YPOS)
+            interval_time = interval_time + pause_interval
 
-                plt.clf()
-                plt.title(dronename)
-                plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
-                plt.plot(xpos, ypos, 'k-')
-                plt.plot(tgtx, tgty, 'rx')
-                plt.grid(True)
+            # print('Recieved Vel Vector: ', velocity_vector)
+            # print('Calculated Tgt Pos: ', tgtx, tgty)
+            # print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
+            # print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
+            # print('Interval Time: ', interval_time)
+            # print('')
 
-                interval_time = interval_time + pause_interval
+            # dbinsert(cardata, dronename)
 
-                # print('Recieved Vel Vector: ', velocity_vector)
-                # print('Calculated Tgt Pos: ', tgtx, tgty)
-                # print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
-                # print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
-                # print('Interval Time: ', interval_time)
-                # print('')
-
-                # dbinsert(cardata, dronename)
-
-                plt.pause(pause_interval)
+            plt.pause(pause_interval)
 
             q0 = q1
 
