@@ -1,7 +1,7 @@
 ACCELERATION = 15  # of car in m/s**2
 
 CENTER = 5800
-CLIENT_IP_A = "10.33.30.135"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
+CLIENT_IP_A = "192.168.1.10"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
 COM_PORT = ''
 CORNER_LAT = 29.190643
 CORNER_LONG = -81.045049
@@ -30,7 +30,7 @@ ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
 ORIGIN_LATITUDE = 29.190110
 ORIGIN_LONGITUDE = -81.046302
 
-PORT = 7779
+PORT = 7878
 
 RADIUS_OF_EARTH = 6378137  # m
 ROTATION_ANGLE = -45

@@ -82,10 +82,6 @@ def main():
                 a.process.start()
                 a.process.join()
 
-            elif test_type == 'stop':
-
-                stop(cfg.CLIENT_IP_A, cfg.PORT)
-
             elif test_type == 'debug_gps':
 
                 gps.gps_debug()
@@ -107,8 +103,6 @@ def main():
 
         print('....Done\n')
 
-    return 0
-
 
 def run(dronename, ip, port):
     """
@@ -121,8 +115,6 @@ def run(dronename, ip, port):
     init = True
     cardata = CarData()
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
     plt.figure(num=1, figsize=(6, 8))
     plt.ion()
 
@@ -132,15 +124,26 @@ def run(dronename, ip, port):
     gps.calc_originxy()
     gps.set_xy_ratio()
 
+    # IP Initialization
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((ip, port))
+    # End IP Stuff
+
     # GPS Initialization
-    socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
-    message = sock.recv(128)
+    socket_tx('gps', sock)
+    message = socket_rx(sock)
 
-    cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
-    cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
-    # END GPS
+    print(message)
 
+    try:
+        cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
+        cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
+    except TypeError:
+        print('Invalid GPS Message...Exiting')
+        socket_tx('stop', sock)
+        sys.exit()
     print(cardata.XPOS, cardata.YPOS)
+    # END GPS
 
     q0 = (cardata.XPOS, cardata.YPOS, 0)
 
@@ -148,11 +151,16 @@ def run(dronename, ip, port):
 
     while True:
         # GPS
-        socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
-        message = sock.recv(128)
+        socket_tx('gps', sock)
+        message = socket_rx(sock)
 
-        cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
-        cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
+        try:
+            cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
+            cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
+        except TypeError:
+            print('Invalid GPS Message...Exiting')
+            socket_tx('stop', sock)
+            sys.exit()
         # END GPS
 
         seed1 = random.random()
@@ -177,7 +185,7 @@ def run(dronename, ip, port):
             print('Code For Dampened Turn Here')
         else:
             q1 = (tgtx, tgty, desired_heading)  # maintain original heading to target
-        ##########################################################################
+            ##########################################################################
 
             qs, _ = dubins.path_sample(q0, q1, cfg.TURNDIAMETER, step_size)
             path_length = dubins.path_length(q0, q1, cfg.TURNDIAMETER)
@@ -193,11 +201,16 @@ def run(dronename, ip, port):
                 cardata.YPOS = qs[i][1]
 
                 # GPS
-                socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
-                message = sock.recv(128)
+                socket_tx('gps', sock)
+                message = socket_rx(sock)
 
-                cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
-                cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
+                try:
+                    cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
+                    cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
+                except TypeError:
+                    print('Invalid GPS Message...Exiting')
+                    socket_tx('stop', sock)
+                    sys.exit()
                 # END GPS
 
                 dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
@@ -222,9 +235,9 @@ def run(dronename, ip, port):
                     # ^ Relate this to the angle in which its turning, higher angle == slower speed
 
                 ################################################################
-                gen_turn_signal(cardata.TURNANGLE, ip, port, sock)
+                gen_turn_signal(cardata.TURNANGLE, sock)
 
-                gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port, sock)
+                gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, sock)
                 ################################################################
 
                 pause_interval = dist_traveled / cardata.SPEED
@@ -262,33 +275,6 @@ def run(dronename, ip, port):
             q0 = q1
 
 
-def stop(client_ip, port):
-    """
-    Emergency override of current operation for car.
-    :param client_ip: IP of target client
-    :param port: PORT of target client
-    :return: 0 on successful completion
-    """
-
-    socket_tx('stop', client_ip, port)
-    print('Stopping')
-
-    return 0
-
-
-def force_circle(client_ip, port):
-    """
-    Forces the specified drone to run in a continuous circle for a designated period of time.
-    :param client_ip: String, LAN IP of drone to be controlled
-    :param port: String, LAN Port of drone to be controlled
-    :return: 0 on successful completion
-    """
-
-    socket_tx('start', client_ip, port)
-
-    return 0
-
-
 def printf(layout, *args):
     """
     Printf implementation from C using system calls
@@ -299,15 +285,12 @@ def printf(layout, *args):
 
     sys.stdout.write(layout % args)
 
-    return 0
 
-
-def gen_turn_signal(angle, client, port, sock):
+def gen_turn_signal(angle, sock):
     """
     Generates turn signal for MSC and transmits to drone
     :param angle: Float, angle of turn for drone
-    :param client: String, LAN IP for drone to be controlled
-    :param port:
+    :param sock:
     :return: 0 on successful completion
     """
 
@@ -321,18 +304,15 @@ def gen_turn_signal(angle, client, port, sock):
     elif ang < 4000:
         ang = cfg.MAX_RIGHT
 
-    socket_tx(str(cfg.STEERING) + str(ang), client, port, sock)
-
-    return 0
+    socket_tx(str(cfg.STEERING) + str(ang), sock)
 
 
-def gen_spd_signal(speed, angle, client, port, sock):
+def gen_spd_signal(speed, angle, sock):
     """
     Generates speed signal for MSC and transmits to drone
     :param speed: Float, speed to be reached
     :param angle: Float, current angle of turn
-    :param client: LAN IP address of drone
-    :param port:
+    :param sock:
     :return: 0 on successful completion
     """
 
@@ -346,29 +326,36 @@ def gen_spd_signal(speed, angle, client, port, sock):
     elif spd < cfg.TEST_SPEED:
         spd = cfg.TEST_SPEED
 
-    socket_tx(str(cfg.ESC) + str(spd), client, port, sock)
-
-    return 0
+    socket_tx(str(cfg.ESC) + str(spd), sock)
 
 
-def socket_tx(data, client_ip, port, sock):
+def socket_tx(data, sock):
     """
     Transmits specified data to drone through sockets
     :param data: String, data to be transmitted
-    :param client_ip: LAN IP of drone
-    :param port: Port of drone
+    :param sock:
     :return: 0 on successful completion
     """
+
     try:
-        sock.connect((client_ip, port))
         sock.sendall(data.encode())
+        print(data)
         print(BColors.OKGREEN + "Data Sent Successfully..." + BColors.ENDC)
     except socket.herror:
         print(BColors.FAIL + "Connection refused...." + BColors.ENDC)
     except socket.timeout:
         print(BColors.FAIL + "Connection timed out...." + BColors.ENDC)
 
-    return 0
+
+def socket_rx(sock):
+    try:
+        message = sock.recv(64)
+        print(BColors.OKGREEN + "Data Received Successfully..." + BColors.ENDC)
+        return message
+    except socket.herror:
+        print(BColors.FAIL + "Connection refused...." + BColors.ENDC)
+    except socket.timeout:
+        print(BColors.FAIL + "Connection timed out...." + BColors.ENDC)
 
 
 def disable(self):
@@ -384,8 +371,6 @@ def disable(self):
     self.WARNING = ''
     self.FAIL = ''
     self.ENDC = ''
-
-    return 0
 
 
 def dbinsert(data, dronename):
@@ -412,8 +397,6 @@ def dbinsert(data, dronename):
         print(e1)
 
     db.close()
-
-    return 0
 
 
 if __name__ == '__main__':
