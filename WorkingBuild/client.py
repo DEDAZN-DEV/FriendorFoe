@@ -8,6 +8,7 @@ import maestro as maestro
 
 
 def main():
+    os.system('service firewalld stop')
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.bind((cfg.HOST, cfg.PORT))
