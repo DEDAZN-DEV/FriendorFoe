@@ -89,11 +89,26 @@ def find_advanced_position(car_data):
     car_data["advanced_x_position"] = car_data["initial_x_position"] + \
         car_data["time_step"] * car_data["x_speed_component"]
     car_data["advanced_y_position"] = car_data["initial_y_position"] + \
-                                      car_data["time_step"] * car_data["y_speed_component"]
+        car_data["time_step"] * car_data["y_speed_component"]
+
     if debug:
         print(str(car_data) + "\n")
 
     return car_data
+
+
+# Direction must be a string with either 'x' or 'y'
+def find_distance_component(car_data, direction):
+    initial_position = "initial_" + direction + "_position"
+    advanced_position = "advanced_" + direction + "_position"
+    distance_component = car_data[advanced_position] - car_data[initial_position]
+    return distance_component
+
+
+def find_distance_travelled(car_data):
+    x_distance_travelled = find_distance_component(car_data, 'x')
+    y_distance_travelled = find_distance_component(car_data, 'y')
+    car_data["distance_travelled"] = math.sqrt(x_distance_travelled**2 + y_distance_travelled**2)  # Pythagorean Theorem
 
 
 def stepped_turning_algorithm(car_data):
@@ -107,6 +122,7 @@ def stepped_turning_algorithm(car_data):
 
     car_data["speed"] *= speed_coefficient
     car_data = find_advanced_position(car_data)
+    find_distance_travelled(car_data)
 
     return car_data
 
