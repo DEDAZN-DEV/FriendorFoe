@@ -5,10 +5,11 @@ Purpose: To provide an alternative algorithm to the dubins path algorithm for de
     three levels of angle differences between the current heading and the desired heading and assigns a specific servo
     command for each of them.
 
-Usage: turn_signals <current heading> <desired heading> <speed in mph> <current x pos> <current y pos>
+Usage: turn_signals <current heading> <desired heading> <speed in mph> <current x pos> <current y pos> <time step>
 """
 import sys
 import math
+import pprint
 
 
 def find_angular_difference(heading_1, heading_2):
@@ -79,12 +80,16 @@ def choose_wheel_turn_angle_and_direction(current_heading, desired_heading):
 
 
 def find_advanced_position(car_data):
-    car_data["final_direction"] = car_data["current_heading"] + car_data["turning_angle"]
-    if car_data["final_direction"] < 0:
-        car_data["final_direction"] += 360
+    car_data["final_heading"] = car_data["current_heading"] + car_data["turning_angle"]
+    if car_data["final_heading"] < 0:
+        car_data["final_heading"] += 360
 
-    car_data["x_speed_component"] = car_data["speed"] * math.sin(car_data["final_direction"])
-    car_data["y_speed_component"] = car_data["speed"] * math.cos(car_data["final_direction"])
+    if debug:
+        print("\nSpeed: " + str(car_data["speed"]) + "\nFinal Heading: " + str(car_data["final_heading"]) + "\n" +
+              str(7.5 * math.sin(math.radians(10))))
+
+    car_data["x_speed_component"] = car_data["speed"] * math.sin(math.radians(car_data["final_heading"]))
+    car_data["y_speed_component"] = car_data["speed"] * math.cos(math.radians(car_data["final_heading"]))
 
     car_data["advanced_x_position"] = car_data["initial_x_position"] + \
         car_data["time_step"] * car_data["x_speed_component"]
@@ -92,7 +97,9 @@ def find_advanced_position(car_data):
         car_data["time_step"] * car_data["y_speed_component"]
 
     if debug:
-        print(str(car_data) + "\n")
+        pp = pprint.PrettyPrinter(indent=4)
+        pp.pprint(car)
+        print("\n")
 
     return car_data
 
@@ -147,7 +154,8 @@ if __name__ == "__main__":
     car = stepped_turning_algorithm(car)
 
     if debug:
-        print(str(car) + "\n")
+        pp = pprint.PrettyPrinter(indent=4)
+        pp.pprint(car)
         print("Next Position: (" + str(car["advanced_x_position"]) + ", " + str(car["advanced_y_position"]) + ")")
         print("Turning Angle: " + str(car["turning_angle"]))
         print("Turn Speed: " + str(car["speed"]))
