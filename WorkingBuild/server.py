@@ -140,7 +140,8 @@ def run(dronename, ip, port):
         cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
     except TypeError:
         print('Invalid GPS Message...Exiting')
-        socket_tx('stop', sock)
+        socket_tx('disconnect', sock)
+        sock.close()
         sys.exit()
     print(cardata.XPOS, cardata.YPOS)
     # END GPS
@@ -159,7 +160,8 @@ def run(dronename, ip, port):
             cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
         except TypeError:
             print('Invalid GPS Message...Exiting')
-            socket_tx('stop', sock)
+            socket_tx('disconnect', sock)
+            sock.close()
             sys.exit()
         # END GPS
 
@@ -209,7 +211,8 @@ def run(dronename, ip, port):
                     cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
                 except TypeError:
                     print('Invalid GPS Message...Exiting')
-                    socket_tx('stop', sock)
+                    socket_tx('disconnect', sock)
+                    sock.close()
                     sys.exit()
                 # END GPS
 
