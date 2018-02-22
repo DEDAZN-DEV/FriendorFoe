@@ -8,10 +8,9 @@ import maestro as maestro
 
 
 def main():
-    os.system('service firewalld stop')
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.bind((cfg.HOST, cfg.PORT))
+        sock.bind(('', cfg.PORT))
     except socket.error as emsg1:
         print(emsg1)
         sys.exit()
@@ -23,17 +22,33 @@ def main():
     print('TESTING COMPLETE....')
 
     print('SERVER ESTABLISHED....')
-
     while True:
-        try:
-            (conn, address) = sock.accept()
-            data = conn.recv(64)
-            print('Received data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
-            test_run(data, conn)
+        (conn, address) = sock.accept()
+        while True:
+            try:
+        # if len(conn.recv()) <= 0:  # ping server to see if connection is still valid, should return 0 on error
+        #     servo_ctl(ESC, NEUTRAL)
+        #     servo_ctl(STEERING, CENTER)
+        #     print('Lost Connection...Idling....')
+        #     sock.close()
+        # else: 
+                data = conn.recv(64)
+                if data:
+                    print('Recieved data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
+                    result = test_run(data, conn)
 
-        except TypeError as emsg2:
-            print(emsg2)
-            sys.exit()
+                    if result == 404:
+                        break
+
+        # except TimeoutError as nosig:
+        #     servo_ctl(ESC, NEUTRAL)
+        #     servo_ctl(STEERING, CENTER)
+            except TypeError as emsg2:
+                print(emsg2)
+                conn.close()
+                sys.exit()
+            except socket.error:
+                break
 
 
 def test_controller(port):
@@ -68,6 +83,8 @@ def test_controller(port):
     print('MOTOR ARMED....')
     time.sleep(1)
 
+    print('Exiting test_controller function')
+
 
 def servo_ctl(servo_num, val):
     servo = maestro.Controller('/dev/ttyACM1')
@@ -77,7 +94,7 @@ def servo_ctl(servo_num, val):
     servo.setAccel(cfg.ESC, 100)
 
     servo.setTarget(servo_num, val)
-
+    print('Exiting servo_ctl function')
 
 def test_run(arg, conn):
     # arg = arg[2:len(arg)-1]
@@ -86,15 +103,28 @@ def test_run(arg, conn):
     if arg == 'kill':
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
         servo_ctl(cfg.STEERING, cfg.CENTER)
+        conn.close()
+        print('Terminating Client')
         sys.exit()
     elif arg == 'start':
         servo_ctl(cfg.STEERING, cfg.MAX_RIGHT)
         servo_ctl(cfg.ESC, cfg.TEST_SPEED)
+        return 1
     elif arg == 'stop':
+        print('***** Stopping')
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
         servo_ctl(cfg.STEERING, cfg.CENTER)
+        return 0
     elif arg == 'gps':
         get_gps(conn)
+        return 1
+    elif arg == 'disconnect':
+        servo_ctl(cfg.ESC, cfg.NEUTRAL)
+        servo_ctl(cfg.STEERING, cfg.CENTER)
+        print('Disconnect')
+        time.sleep(10)
+        conn.close()
+        return 404
     else:
         print('No test prompt received, Switching to raw input....')
 
@@ -103,7 +133,8 @@ def test_run(arg, conn):
 
         if 4000 <= data2 <= 8000:
             servo_ctl(data1, data2)
-
+        return 2
+    print('Exiting test_run function')
 
 def get_gps(conn):
     os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
@@ -111,8 +142,9 @@ def get_gps(conn):
     message = myfile.read()
     myfile.close()
     print(message)
-    conn.sendall(message)
+    conn.sendall(message.encode())
     print('GPS SENT')
+    print('Exiting get_gps function')
 
 
 main()

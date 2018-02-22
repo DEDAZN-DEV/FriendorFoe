@@ -32,66 +32,63 @@ def parse_gps_msg(message):
 
     # message = poll_gps()
 
-    # message = "$GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65"
+    message = "$GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65"
     # message = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.5,M,46.9,M,,*47"
 
-    print('#########################################################################')
+    separator = []
 
-    try:
-        separator = []
+    for char in range(0, len(message)):
+        if message[char] == ',':
+            separator.append(char)
 
-        for char in range(0, len(message)):
-            if message[char] == ',':
-                separator.append(char)
+    print(separator)
 
-        print(separator)
+    dlat = ''
+    mlat = ''
+    dlong = ''
+    mlong = ''
+    # altitude = ''
 
-        dlat = ''
-        mlat = ''
-        dlong = ''
-        mlong = ''
-        # altitude = ''
+    # bytes 17 - 26
+    print(message)
+    for i in range(separator[1] + 1, separator[1] + 3):
+        dlat = dlat + message[i]
+    for j in range(separator[1] + 3, separator[2]):
+        mlat = mlat + message[j]
 
-        # bytes 17 - 26
-        print(message)
-        for i in range(separator[1] + 1, separator[1] + 3):
-            dlat = dlat + message[i]
-        for j in range(separator[1] + 3, separator[2]):
-            mlat = mlat + message[j]
+    dlat = int(dlat)
+    mlat = float(mlat)
+    mlat = mlat / 60
+    latitude = dlat + mlat
 
-        dlat = int(dlat)
-        mlat = float(mlat)
-        mlat = mlat / 60
-        latitude = dlat + mlat
+    if message[separator[2] + 1] == 'S':
+        latitude = -latitude
 
-        if message[separator[2] + 1] == 'S':
-            latitude = -latitude
+    print(latitude)
 
-        print(latitude)
+    # bytes 30 - 40
+    for k in range(separator[3] + 1, separator[3] + 4):
+        dlong = dlong + message[k]
+    for n in range(separator[3] + 4, separator[4]):
+        mlong = mlong + message[n]
 
-        # bytes 30 - 40
-        for k in range(separator[3] + 1, separator[3] + 4):
-            dlong = dlong + message[k]
-        for n in range(separator[3] + 4, separator[4]):
-            mlong = mlong + message[n]
+    dlong = int(dlong)
+    mlong = float(mlong)
+    mlong = mlong / 60
+    longitude = dlong + mlong
 
-        dlong = int(dlong)
-        mlong = float(mlong)
-        mlong = mlong / 60
-        longitude = dlong + mlong
+    if message[separator[4] + 1] == 'W':
+        longitude = -longitude
 
-        if message[separator[4] + 1] == 'W':
-            longitude = -longitude
+    print(longitude)
 
-        print(longitude)
+    data = scale_xy(gps_to_xy(latitude, longitude))
 
-        data = scale_xy(gps_to_xy(latitude, longitude))
+    return data
 
-        return data
-    except ValueError:
-        print('!!! Null GPS Message !!!')
 
-    print('#########################################################################')
+def poll_gps():
+    print("Polling car....")
 
 
 def gps_to_xy(lat, long):
@@ -110,7 +107,7 @@ def gps_to_xy(lat, long):
     rot_x = x * math.cos(math.radians(cfg.ROTATION_ANGLE)) - y * math.sin(math.radians(cfg.ROTATION_ANGLE))
     rot_y = y * math.cos(math.radians(cfg.ROTATION_ANGLE)) + x * math.sin(math.radians(cfg.ROTATION_ANGLE))
 
-    xy = [rot_x - cfg.BASE_X, rot_y - cfg.BASE_Y]
+    xy = [rot_x - BASE_X, rot_y - BASE_Y]
     # xy = [x - BASE_X, y - BASE_Y]
 
     return xy
@@ -131,7 +128,7 @@ def gps_debug():
     calc_originxy()
     set_xy_ratio()
 
-    # print(parse_gps_msg())
+    print(parse_gps_msg())
     print("----------------")
 
     corner = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
