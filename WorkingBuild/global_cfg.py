@@ -1,10 +1,10 @@
 ACCELERATION = 15  # of car in m/s**2
 
 CENTER = 5800
-CLIENT_IP_A = "192.168.1.10"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
+CLIENT_IP_A = "10.33.30.135"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
 COM_PORT = ''
-CORNER_LAT = 29.1892154
-CORNER_LONG = -81.0462737
+CORNER_LAT = 29.190643
+CORNER_LONG = -81.045049
 
 DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input for testing
 
@@ -27,8 +27,8 @@ MAXVELOCITY = 13.4  # m/s
 NEUTRAL = 6000
 
 ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
-ORIGIN_LATITUDE = 29.1895198
-ORIGIN_LONGITUDE = -81.0464738
+ORIGIN_LATITUDE = 29.190110
+ORIGIN_LONGITUDE = -81.046302
 
 PORT = 7878
 
