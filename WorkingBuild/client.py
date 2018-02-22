@@ -27,19 +27,10 @@ def main():
     while True:
         try:
             (conn, address) = sock.accept()
-            # if len(conn.recv()) <= 0:  # ping server to see if connection is still valid, should return 0 on error
-            #     servo_ctl(ESC, NEUTRAL)
-            #     servo_ctl(STEERING, CENTER)
-            #     print('Lost Connection...Idling....')
-            #     sock.close()
-            # else:
             data = conn.recv(64)
             print('Received data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
             test_run(data, conn)
 
-        # except TimeoutError as nosig:
-        #     servo_ctl(ESC, NEUTRAL)
-        #     servo_ctl(STEERING, CENTER)
         except TypeError as emsg2:
             print(emsg2)
             sys.exit()
@@ -122,5 +113,6 @@ def get_gps(conn):
     print(message)
     conn.sendall(message)
     print('GPS SENT')
+
 
 main()
