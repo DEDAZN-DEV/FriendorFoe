@@ -146,4 +146,5 @@ def get_gps(conn):
     print('GPS SENT')
     print('Exiting get_gps function')
 
+
 main()
