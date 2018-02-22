@@ -132,7 +132,7 @@ def run(dronename, ip, port):
     step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
 
     while True:
-        # GPS Initialization ###################################
+        # GPS Initialization for Position ###################################
         socket_tx('gps', sock)
         message = socket_rx(sock)
 
