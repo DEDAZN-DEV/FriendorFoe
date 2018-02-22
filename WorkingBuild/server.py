@@ -129,41 +129,27 @@ def run(dronename, ip, port):
     sock.connect((ip, port))
     # End IP Stuff
 
-    # GPS Initialization
-    socket_tx('gps', sock)
-    message = socket_rx(sock)
-
-    print(message)
-
-    try:
-        cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
-        cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
-    except TypeError:
-        print('Invalid GPS Message...Exiting')
-        socket_tx('disconnect', sock)
-        sock.close()
-        sys.exit()
-    print(cardata.XPOS, cardata.YPOS)
-    # END GPS
-
-    q0 = (cardata.XPOS, cardata.YPOS, 0)
-
     step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
 
     while True:
-        # GPS
+        # GPS Initialization ###################################
         socket_tx('gps', sock)
         message = socket_rx(sock)
 
+        print(message)
+
         try:
-            cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
-            cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
+            cardata.XPOS = gps.parse_gps_msg(str(message))[0]
+            cardata.YPOS = gps.parse_gps_msg(str(message))[1]
         except TypeError:
             print('Invalid GPS Message...Exiting')
-            socket_tx('disconnect', sock)
+            # socket_tx('disconnect', sock)
             sock.close()
             sys.exit()
-        # END GPS
+        print(cardata.XPOS, cardata.YPOS)
+        # END GPS ###################################
+
+        q0 = (cardata.XPOS, cardata.YPOS, 0)
 
         seed1 = random.random()
 
@@ -174,10 +160,10 @@ def run(dronename, ip, port):
         [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS,
                                    cardata.HEADING)
 
-        while tgtx < cfg.TURNDIAMETER or tgtx > cfg.LENGTH_X - cfg.TURNDIAMETER or tgty < cfg.TURNDIAMETER or tgty > cfg.LENGTH_Y - cfg.TURNDIAMETER:
-            velocity_vector = vec.call_sim()
-            [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS,
-                                       cardata.HEADING)
+        # while tgtx < cfg.TURNDIAMETER or tgtx > cfg.LENGTH_X - cfg.TURNDIAMETER or tgty < cfg.TURNDIAMETER or tgty > cfg.LENGTH_Y - cfg.TURNDIAMETER:
+        #     velocity_vector = vec.call_sim()
+        #     [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS,
+        #                                cardata.HEADING)
 
         ##########################################################################
         desired_heading = math.atan2((tgty - cardata.YPOS), (tgtx - cardata.XPOS))
@@ -199,22 +185,22 @@ def run(dronename, ip, port):
                 prev_xpos = cardata.XPOS
                 prev_ypos = cardata.YPOS
 
-                cardata.XPOS = qs[i][0]
-                cardata.YPOS = qs[i][1]
+                # cardata.XPOS = qs[i][0]
+                # cardata.YPOS = qs[i][1]
 
-                # GPS
+                # GPS ###################################
                 socket_tx('gps', sock)
                 message = socket_rx(sock)
 
                 try:
-                    cardata.XPOS = gps.parse_gps_msg(str(message.decode()))[0]
-                    cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
+                    cardata.XPOS = gps.parse_gps_msg(str(message))[0]
+                    cardata.YPOS = gps.parse_gps_msg(str(message))[1]
                 except TypeError:
                     print('Invalid GPS Message...Exiting')
-                    socket_tx('disconnect', sock)
+                    # socket_tx('disconnect', sock)
                     sock.close()
                     sys.exit()
-                # END GPS
+                # END GPS ###################################
 
                 dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
                 cardata.DIST_TRAVELED = dist_traveled
@@ -274,8 +260,6 @@ def run(dronename, ip, port):
                 # dbinsert(cardata, dronename)
 
                 plt.pause(pause_interval)
-
-            q0 = q1
 
 
 def printf(layout, *args):
@@ -342,7 +326,7 @@ def socket_tx(data, sock):
 
     try:
         sock.sendall(data.encode())
-        print(data)
+        print('SERVER SENT: ' + data)
         print(BColors.OKGREEN + "Data Sent Successfully..." + BColors.ENDC)
     except socket.herror:
         print(BColors.FAIL + "Connection refused...." + BColors.ENDC)
@@ -352,7 +336,7 @@ def socket_tx(data, sock):
 
 def socket_rx(sock):
     try:
-        message = sock.recv(64)
+        message = sock.recv(128)
         print(BColors.OKGREEN + "Data Received Successfully..." + BColors.ENDC)
         return message
     except socket.herror:

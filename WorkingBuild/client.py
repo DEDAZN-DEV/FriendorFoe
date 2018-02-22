@@ -120,7 +120,7 @@ def get_gps(conn):
     message = myfile.read()
     myfile.close()
     print(message)
-    conn.sendall(message.encode())
+    conn.sendall(message)
     print('GPS SENT')
 
 main()
