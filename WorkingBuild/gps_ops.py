@@ -32,7 +32,7 @@ def parse_gps_msg(message):
 
     # message = poll_gps()
 
-    message = "$GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65"
+    # message = "$GPGGA,162254.00,3723.02837,N,12159.39853,W,1,03,2.36,525.6,M,-25.6,M,,*65"
     # message = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.5,M,46.9,M,,*47"
 
     separator = []
@@ -91,15 +91,15 @@ def poll_gps():
     print("Polling car....")
 
 
-def gps_to_xy(lat, long):
+def gps_to_xy(lat, lon):
     """
 
     @param lat:
-    @param long:
+    @param lon:
     @return:
     """
     radlat = math.radians(lat)
-    radlong = math.radians(long)
+    radlong = math.radians(lon)
 
     x = radlong - math.radians(cfg.ORIGIN_LONGITUDE)
     y = math.log(math.tan(radlat) + (1 / math.cos(radlat)))
@@ -128,7 +128,7 @@ def gps_debug():
     calc_originxy()
     set_xy_ratio()
 
-    print(parse_gps_msg())
+    print(parse_gps_msg(''))
     print("----------------")
 
     corner = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)

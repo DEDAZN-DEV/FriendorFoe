@@ -1,4 +1,4 @@
-### CAR VALUES ###
+# CAR VALUES #
 ACCELERATION = 15  # of car in m/s**2
 CENTER = 5800
 ESC = 3
@@ -17,13 +17,13 @@ TURNFACTOR = 0.001
 DEGPERPOINT = 2000 / TURNDIAMETER
 SPDSCALE = 2000 / MAXVELOCITY
 
-### NETWORK VALUES ###
+# NETWORK VALUES #
 CLIENT_IP_A = "192.168.1.10"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
 COM_PORT = ''
 HOST = ''
 PORT = 7878
 
-### GPS VALUES ###
+# GPS VALUES #
 ORIGIN = [0, 0]
 ORIGIN_LATITUDE = 29.190110
 ORIGIN_LONGITUDE = -81.046302
@@ -33,7 +33,7 @@ ROTATION_ANGLE = -45
 RADIUS_OF_EARTH = 6378137  # m
 NOISE = 0.0000005
 
-### MOCK SIM VALUES ###
+# MOCK SIM VALUES #
 DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input for testing
 TEST_ITERATIONS = 25
 LENGTH_X = 90
