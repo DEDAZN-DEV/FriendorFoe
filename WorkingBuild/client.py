@@ -109,15 +109,12 @@ def test_run(arg, conn):
     elif arg == 'start':
         servo_ctl(cfg.STEERING, cfg.MAX_RIGHT)
         servo_ctl(cfg.ESC, cfg.TEST_SPEED)
-        return 1
     elif arg == 'stop':
         print('***** Stopping')
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
         servo_ctl(cfg.STEERING, cfg.CENTER)
-        return 0
     elif arg == 'gps':
         get_gps(conn)
-        return 1
     elif arg == 'disconnect':
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
         servo_ctl(cfg.STEERING, cfg.CENTER)
@@ -128,12 +125,13 @@ def test_run(arg, conn):
     else:
         print('No test prompt received, Switching to raw input....')
 
-        data1 = int(arg[0])
-        data2 = int(arg[1:len(arg)])
+        tgt = int(arg[0])
+        val = int(arg[1:len(arg)])
 
-        if 4000 <= data2 <= 8000:
-            servo_ctl(data1, data2)
-        return 2
+        # Guard statement to protect servos
+        if 4000 <= val <= 8000:
+            servo_ctl(tgt, val)
+
     print('Exiting test_run function')
 
 def get_gps(conn):

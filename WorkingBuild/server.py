@@ -169,97 +169,97 @@ def run(dronename, ip, port):
         desired_heading = math.atan2((tgty - cardata.YPOS), (tgtx - cardata.XPOS))
         print('Last Angle Orientation: ', math.degrees(desired_heading))
 
-        if abs(math.degrees(desired_heading)) >= cfg.MAX_TURN_RADIUS:
-            print('Code For Dampened Turn Here')
-        else:
-            q1 = (tgtx, tgty, desired_heading)  # maintain original heading to target
-            ##########################################################################
+        # if abs(math.degrees(desired_heading)) >= cfg.MAX_TURN_RADIUS:
+        #     print('Code For Dampened Turn Here')
+        # else:
+        q1 = (tgtx, tgty, desired_heading)  # maintain original heading to target
+        ##########################################################################
 
-            qs, _ = dubins.path_sample(q0, q1, cfg.TURNDIAMETER, step_size)
-            path_length = dubins.path_length(q0, q1, cfg.TURNDIAMETER)
+        qs, _ = dubins.path_sample(q0, q1, cfg.TURNDIAMETER, step_size)
+        path_length = dubins.path_length(q0, q1, cfg.TURNDIAMETER)
 
-            interval_time = 0.0
+        interval_time = 0.0
 
-            for i in range(0, len(qs) - 1):
+        for i in range(0, len(qs) - 1):
 
-                prev_xpos = cardata.XPOS
-                prev_ypos = cardata.YPOS
+            prev_xpos = cardata.XPOS
+            prev_ypos = cardata.YPOS
 
-                # cardata.XPOS = qs[i][0]
-                # cardata.YPOS = qs[i][1]
+            # cardata.XPOS = qs[i][0]
+            # cardata.YPOS = qs[i][1]
 
-                # GPS ###################################
-                socket_tx('gps', sock)
-                message = socket_rx(sock)
+            # GPS ###################################
+            socket_tx('gps', sock)
+            message = socket_rx(sock)
 
-                try:
-                    cardata.XPOS = gps.parse_gps_msg(str(message))[0]
-                    cardata.YPOS = gps.parse_gps_msg(str(message))[1]
-                except TypeError:
-                    print('Invalid GPS Message...Exiting')
-                    # socket_tx('disconnect', sock)
-                    sock.close()
-                    sys.exit()
-                # END GPS ###################################
+            try:
+                cardata.XPOS = gps.parse_gps_msg(str(message))[0]
+                cardata.YPOS = gps.parse_gps_msg(str(message))[1]
+            except TypeError:
+                print('Invalid GPS Message...Exiting')
+                # socket_tx('disconnect', sock)
+                sock.close()
+                sys.exit()
+            # END GPS ###################################
 
-                dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
-                cardata.DIST_TRAVELED = dist_traveled
-                path_length = path_length - dist_traveled
+            dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
+            cardata.DIST_TRAVELED = dist_traveled
+            path_length = path_length - dist_traveled
 
-                old_heading = cardata.HEADING
+            old_heading = cardata.HEADING
 
-                cardata.TURNANGLE = math.degrees(qs[i][2]) - old_heading
+            cardata.TURNANGLE = math.degrees(qs[i][2]) - old_heading
 
-                if cardata.TURNANGLE <= -180:
-                    cardata.TURNANGLE = cardata.TURNANGLE + 360
-                elif cardata.TURNANGLE >= 180:
-                    cardata.TURNANGLE = cardata.TURNANGLE - 360
+            if cardata.TURNANGLE <= -180:
+                cardata.TURNANGLE = cardata.TURNANGLE + 360
+            elif cardata.TURNANGLE >= 180:
+                cardata.TURNANGLE = cardata.TURNANGLE - 360
 
-                cardata.HEADING = math.degrees(qs[i][2])
+            cardata.HEADING = math.degrees(qs[i][2])
 
-                if abs(cardata.TURNANGLE) < 1.0:
-                    cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2)
-                else:
-                    cardata.SPEED = 5
-                    # ^ Relate this to the angle in which its turning, higher angle == slower speed
+            if abs(cardata.TURNANGLE) < 1.0:
+                cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2)
+            else:
+                cardata.SPEED = 5
+                # ^ Relate this to the angle in which its turning, higher angle == slower speed
 
-                ################################################################
-                gen_turn_signal(cardata.TURNANGLE, sock)
+            ################################################################
+            gen_turn_signal(cardata.TURNANGLE, sock)
 
-                gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, sock)
-                ################################################################
+            gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, sock)
+            ################################################################
 
-                pause_interval = dist_traveled / cardata.SPEED
+            pause_interval = dist_traveled / cardata.SPEED
 
-                if pause_interval == 0:
-                    pause_interval = 1e-6  # <-- This is a starter to the program for the initial draw
+            if pause_interval == 0:
+                pause_interval = 1e-6  # <-- This is a starter to the program for the initial draw
 
-                if len(xpos) > BUFFERSIZE:
-                    xpos.pop(0)
-                    ypos.pop(0)
+            if len(xpos) > BUFFERSIZE:
+                xpos.pop(0)
+                ypos.pop(0)
 
-                xpos.append(cardata.XPOS)
-                ypos.append(cardata.YPOS)
+            xpos.append(cardata.XPOS)
+            ypos.append(cardata.YPOS)
 
-                plt.clf()
-                plt.title(dronename)
-                plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
-                plt.plot(xpos, ypos, 'k-')
-                plt.plot(tgtx, tgty, 'rx')
-                plt.grid(True)
+            plt.clf()
+            plt.title(dronename)
+            plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
+            plt.plot(xpos, ypos, 'k-')
+            plt.plot(tgtx, tgty, 'rx')
+            plt.grid(True)
 
-                interval_time = interval_time + pause_interval
+            interval_time = interval_time + pause_interval
 
-                # print('Recieved Vel Vector: ', velocity_vector)
-                # print('Calculated Tgt Pos: ', tgtx, tgty)
-                # print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
-                # print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
-                # print('Interval Time: ', interval_time)
-                # print('')
+            # print('Recieved Vel Vector: ', velocity_vector)
+            # print('Calculated Tgt Pos: ', tgtx, tgty)
+            # print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
+            # print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
+            # print('Interval Time: ', interval_time)
+            # print('')
 
-                # dbinsert(cardata, dronename)
+            # dbinsert(cardata, dronename)
 
-                plt.pause(pause_interval)
+            plt.pause(pause_interval)
 
 
 def printf(layout, *args):
