@@ -26,12 +26,6 @@ def main():
         (conn, address) = sock.accept()
         while True:
             try:
-        # if len(conn.recv()) <= 0:  # ping server to see if connection is still valid, should return 0 on error
-        #     servo_ctl(ESC, NEUTRAL)
-        #     servo_ctl(STEERING, CENTER)
-        #     print('Lost Connection...Idling....')
-        #     sock.close()
-        # else: 
                 data = conn.recv(64)
                 if data:
                     print('Recieved data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
@@ -40,9 +34,6 @@ def main():
                     if result == 404:
                         break
 
-        # except TimeoutError as nosig:
-        #     servo_ctl(ESC, NEUTRAL)
-        #     servo_ctl(STEERING, CENTER)
             except TypeError as emsg2:
                 print(emsg2)
                 conn.close()
@@ -59,7 +50,7 @@ def test_controller(port):
 
     servo.setAccel(cfg.STEERING, 50)
     servo.setAccel(cfg.ESC, 100)
-    # print(servo.getMin(STEERING), servo.getMax(STEERING))
+    print(servo.getMin(cfg.STEERING), servo.getMax(cfg.STEERING))
 
     print('SENT SIGNAL....')
 
