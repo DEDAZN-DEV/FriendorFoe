@@ -53,13 +53,13 @@ class Drone:
     """
     """
 
-    def __init__(self, func, ip, port, droneid):
+    def __init__(self, func, ip, port, droneid, debug):
         self.name = droneid
-        self.process = Process(target=func, args=('Drone ' + str(droneid), ip, port))
+        self.process = Process(target=func, args=('Drone ' + str(droneid), ip, port, debug))
         print('Drone ID: ' + str(self.name))
 
 
-def main():
+def main(debug_mode):
     """
     Driver function for the entire program. Spawns sub-processes to control each drone and then terminates.
     :return: 0 on successful completion
@@ -80,7 +80,7 @@ def main():
 
             if test_type == 'run':
 
-                a = Drone(run, cfg.CLIENT_IP_A, cfg.PORT, random.randint(0, 999))
+                a = Drone(run, cfg.CLIENT_IP_A, cfg.PORT, random.randint(0, 999), debug_mode)
                 proclst.append(a)
                 a.process.start()
                 a.process.join()
@@ -107,9 +107,10 @@ def main():
         print('....Done\n')
 
 
-def run(dronename, ip, port):
+def run(dronename, ip, port, debug):
     """
     Default drone control algorithm. Uses input from ATE-3 Sim to control drones.
+    :param debug:
     :param dronename: String, name of drone
     :param ip: String, LAN IP address of drone
     :param port: LAN Port of drone to be controlled, not necessary but can be changed.
@@ -139,17 +140,21 @@ def run(dronename, ip, port):
         socket_tx('gps', sock)
         message = socket_rx(sock)
 
-        print(message)
+        if debug:
+            print(message)
 
         try:
             cardata.XPOS = gps.parse_gps_msg(str(message))[0]
             cardata.YPOS = gps.parse_gps_msg(str(message))[1]
         except TypeError:
-            print('Invalid GPS Message...Exiting')
+            if debug:
+                print('Invalid GPS Message...Exiting')
             # socket_tx('disconnect', sock)
             sock.close()
             sys.exit()
-        print(cardata.XPOS, cardata.YPOS)
+
+        if debug:
+            print(cardata.XPOS, cardata.YPOS)
         # END GPS ###################################
 
         q0 = (cardata.XPOS, cardata.YPOS, 0)
@@ -170,7 +175,8 @@ def run(dronename, ip, port):
 
         ##########################################################################
         desired_heading = math.atan2((tgty - cardata.YPOS), (tgtx - cardata.XPOS))
-        print('Last Angle Orientation: ', math.degrees(desired_heading))
+        if debug:
+            print('Last Angle Orientation: ', math.degrees(desired_heading))
 
         # if abs(math.degrees(desired_heading)) >= cfg.MAX_TURN_RADIUS:
         #     print('Code For Dampened Turn Here')
@@ -199,7 +205,8 @@ def run(dronename, ip, port):
                 cardata.XPOS = gps.parse_gps_msg(str(message))[0]
                 cardata.YPOS = gps.parse_gps_msg(str(message))[1]
             except TypeError:
-                print('Invalid GPS Message...Exiting')
+                if debug:
+                    print('Invalid GPS Message...Exiting')
                 # socket_tx('disconnect', sock)
                 sock.close()
                 sys.exit()
@@ -253,12 +260,13 @@ def run(dronename, ip, port):
 
             interval_time = interval_time + pause_interval
 
-            # print('Recieved Vel Vector: ', velocity_vector)
-            # print('Calculated Tgt Pos: ', tgtx, tgty)
-            # print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
-            # print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
-            # print('Interval Time: ', interval_time)
-            # print('')
+            if debug:
+                print('Recieved Vel Vector: ', velocity_vector)
+                print('Calculated Tgt Pos: ', tgtx, tgty)
+                print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
+                print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
+                print('Interval Time: ', interval_time)
+                print('')
 
             # dbinsert(cardata, dronename)
 
@@ -391,4 +399,4 @@ def dbinsert(data, dronename):
 
 if __name__ == '__main__':
     freeze_support()
-    main()
+    main(True)
