@@ -253,7 +253,10 @@ def run(dronename, ip, port, debug):
 
             plt.clf()
             plt.title(dronename)
-            plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
+
+            if not debug:
+                plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
+
             plt.plot(xpos, ypos, 'k-')
             plt.plot(tgtx, tgty, 'rx')
             plt.grid(True)
