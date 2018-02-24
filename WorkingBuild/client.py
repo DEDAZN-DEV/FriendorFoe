@@ -40,6 +40,7 @@ def main():
                 conn.close()
                 sys.exit()
             except socket.error:
+                print('[WARN][NETWORK] Socket error')
                 break
 
 
