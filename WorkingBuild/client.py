@@ -25,23 +25,27 @@ def main():
 
     while True:
         (conn, address) = sock.accept()
-        while True:
-            try:
-                data = conn.recv(64)
-                if data:
-                    print('[DEBUG] Recieved data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
-                    result = test_run(data, conn)
+        try:
+            while True:
+                try:
+                    data = conn.recv(64)
+                    if data:
+                        print('[DEBUG] Recieved data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
+                        result = test_run(data, conn)
 
-                    if result == 404:
-                        break
+                        if result == 404:
+                            break
 
-            except TypeError as emsg2:
-                print('[WARN] ' + str(emsg2))
-                conn.close()
-                sys.exit()
-            except socket.error:
-                print('[WARN][NETWORK] Socket error')
-                break
+                except TypeError as emsg2:
+                    print('[WARN] ' + str(emsg2))
+                    conn.close()
+                    sys.exit()
+                except socket.error:
+                    print('[WARN][NETWORK] Socket error')
+                    break
+        except KeyboardInterrupt:
+            test_run('stop', conn)
+
 
 
 def test_controller(port):
