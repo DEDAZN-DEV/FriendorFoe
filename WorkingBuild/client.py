@@ -17,18 +17,19 @@ def main():
 
     sock.listen(5)
 
+    print('[NETWORK] SERVER ESTABLISHED....')
+
     test_controller('/dev/ttyACM0')
 
-    print('TESTING COMPLETE....')
+    print('[SERVO] TESTING COMPLETE....')
 
-    print('SERVER ESTABLISHED....')
     while True:
         (conn, address) = sock.accept()
         while True:
             try:
                 data = conn.recv(64)
                 if data:
-                    print('Recieved data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
+                    print('[DEBUG] Recieved data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
                     result = test_run(data, conn)
 
                     if result == 404:
@@ -44,7 +45,7 @@ def main():
 
 def test_controller(port):
     servo = maestro.Controller(port)
-    print('SERVO CONNECTION ESTABLISHED....')
+    print('[SERVO] SERVO CONNECTION ESTABLISHED....')
 
     # 3 ESC, 5 STEERING
 
@@ -52,7 +53,7 @@ def test_controller(port):
     servo.setAccel(cfg.ESC, 100)
     print(servo.getMin(cfg.STEERING), servo.getMax(cfg.STEERING))
 
-    print('SENT SIGNAL....')
+    print('[SERVO] SENT SIGNAL....')
 
     servo.setTarget(cfg.STEERING, cfg.MAX_RIGHT)
     print(servo.getPosition(cfg.STEERING))
@@ -64,28 +65,28 @@ def test_controller(port):
     print(servo.getPosition(cfg.STEERING))
     time.sleep(1)
     servo.setTarget(cfg.STEERING, cfg.CENTER)
-    print('STEERING ARMED....')
+    print('[SERVO] STEERING ARMED....')
     time.sleep(1)
 
     print(servo.getPosition(cfg.ESC))
     servo.setTarget(cfg.ESC, 8000)
     servo.setTarget(cfg.ESC, cfg.NEUTRAL)
     print(servo.getPosition(cfg.ESC))
-    print('MOTOR ARMED....')
+    print('[SERVO] MOTOR ARMED....')
     time.sleep(1)
 
-    print('Exiting test_controller function')
+    print('[DEBUG] Exiting test_controller function')
 
 
 def servo_ctl(servo_num, val):
-    servo = maestro.Controller('/dev/ttyACM1')
+    servo = maestro.Controller('/dev/ttyACM0')
 
     # TODO: Modify this to accommodate for speed
     servo.setAccel(cfg.STEERING, 50)
     servo.setAccel(cfg.ESC, 100)
 
     servo.setTarget(servo_num, val)
-    print('Exiting servo_ctl function')
+    print('[DEBUG] Exiting servo_ctl function')
 
 def test_run(arg, conn):
     # arg = arg[2:len(arg)-1]
@@ -95,13 +96,13 @@ def test_run(arg, conn):
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
         servo_ctl(cfg.STEERING, cfg.CENTER)
         conn.close()
-        print('Terminating Client')
+        print('[DEBUG] Terminating Client')
         sys.exit()
     elif arg == 'start':
         servo_ctl(cfg.STEERING, cfg.MAX_RIGHT)
         servo_ctl(cfg.ESC, cfg.TEST_SPEED)
     elif arg == 'stop':
-        print('***** Stopping')
+        print('[DEBUG] ***** Stopping')
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
         servo_ctl(cfg.STEERING, cfg.CENTER)
     elif arg == 'gps':
@@ -109,31 +110,31 @@ def test_run(arg, conn):
     elif arg == 'disconnect':
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
         servo_ctl(cfg.STEERING, cfg.CENTER)
-        print('Disconnect')
+        print('[NETWORK] Disconnect')
         time.sleep(10)
         conn.close()
         return 404
     else:
-        print('No test prompt received, Switching to raw input....')
 
         tgt = int(arg[0])
         val = int(arg[1:len(arg)])
 
         # Guard statement to protect servos
         if 4000 <= val <= 8000:
+            print('[SERVO] Entering servo_ctl function with value of: ' + str(val))
             servo_ctl(tgt, val)
 
-    print('Exiting test_run function')
+    print('[DEBUG] Exiting test_run function')
 
 def get_gps(conn):
     os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
     myfile = open('gps.txt', 'r')
     message = myfile.read()
     myfile.close()
-    print(message)
+    print('[GPS] ' + message)
     conn.sendall(message.encode())
-    print('GPS SENT')
-    print('Exiting get_gps function')
+    print('[GPS] GPS SENT')
+    print('[DEBUG] Exiting get_gps function')
 
 
 main()
