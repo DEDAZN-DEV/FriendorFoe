@@ -36,7 +36,7 @@ def main():
                         break
 
             except TypeError as emsg2:
-                print(emsg2)
+                print('[WARN] ' + str(emsg2))
                 conn.close()
                 sys.exit()
             except socket.error:
@@ -119,7 +119,7 @@ def test_run(arg, conn):
         tgt = int(arg[0])
         val = int(arg[1:len(arg)])
 
-        # Guard statement to protect servos
+        # Guard statement to protect servossy
         if tgt == cfg.ESC and val > cfg.MAX_TEST_SPEED:
             print('[WARN] Speed would exceed testing limits!')
         else:
