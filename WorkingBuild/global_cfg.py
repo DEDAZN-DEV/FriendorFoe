@@ -17,6 +17,8 @@ TURNFACTOR = 0.001
 DEGPERPOINT = 2000 / TURNDIAMETER
 SPDSCALE = 2000 / MAXVELOCITY
 
+MAX_TEST_SPEED = 5500
+
 # NETWORK VALUES #
 CLIENT_IP_A = "192.168.1.10"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
 COM_PORT = ''

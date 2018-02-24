@@ -120,9 +120,12 @@ def test_run(arg, conn):
         val = int(arg[1:len(arg)])
 
         # Guard statement to protect servos
-        if 4000 <= val <= 8000:
-            print('[SERVO] Entering servo_ctl function with value of: ' + str(val))
-            servo_ctl(tgt, val)
+        if tgt == cfg.ESC and val > cfg.MAX_TEST_SPEED:
+            print('[WARN] Speed would exceed testing limits!')
+        else:
+            if 4000 <= val <= 8000:
+                print('[SERVO] Entering servo_ctl function with value of: ' + str(val))
+                servo_ctl(tgt, val)
 
     print('[DEBUG] Exiting test_run function')
 
