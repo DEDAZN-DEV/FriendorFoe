@@ -191,11 +191,7 @@ def run(dronename, ip, port):
             }
             turn_data = turning.simple_turning_algorithm(turn_data)
 
-            # path_length = dubins.path_length(q0, q1, cfg.TURNDIAMETER)
-
             interval_time = 0.0
-
-            # for i in range(0, len(qs) - 1):
 
             prev_xpos = cardata.XPOS
             prev_ypos = cardata.YPOS
@@ -208,15 +204,13 @@ def run(dronename, ip, port):
             cardata.YPOS = gps.parse_gps_msg(str(message.decode()))[1]
             ######## END GPS
 
-            dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
-            cardata.DIST_TRAVELED = dist_traveled
-            path_length = path_length - dist_traveled
+            cardata.DIST_TRAVELED = turn_data["distance_travelled"]
 
             old_heading = cardata.HEADING
 
             cardata.TURNANGLE = turn_data["turning_angle"]
 
-            cardata.HEADING = turn_data["final_direction"]
+            cardata.HEADING = turn_data["final_heading"]
 
             if abs(cardata.TURNANGLE) < 1.0:
                 cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2)
@@ -230,7 +224,7 @@ def run(dronename, ip, port):
             gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, ip, port, sock)
             ################################################################
 
-            pause_interval = dist_traveled / cardata.SPEED
+            pause_interval = cardata.DIST_TRAVELED / cardata.SPEED
 
             if pause_interval == 0:
                 pause_interval = 1e-6  # <-- This is a starter to the program for the initial draw
