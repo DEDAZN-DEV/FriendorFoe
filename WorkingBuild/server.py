@@ -1,6 +1,6 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
-import dubins
+# import dubins
 import math
 import random
 import socket
