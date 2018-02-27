@@ -1,13 +1,10 @@
+import os
 import socket
 import sys
 import time
 
-import serial
-import serial.tools.list_ports
-
 import global_cfg as cfg
-import ip_mailerv2
-import maestro
+import maestro as maestro
 
 
 def main():
@@ -20,17 +17,11 @@ def main():
 
     sock.listen(5)
 
-    print('SERIAL TESTING....Please Wait.')
-
-    print(serial_debug())
-
-    test_controller(COM_PORT)
+    test_controller('/dev/ttyACM0')
 
     print('TESTING COMPLETE....')
 
     print('SERVER ESTABLISHED....')
-
-    ip_mailerv2.sendIP('stilwea1@my.erau.edu')
 
     while True:
         try:
@@ -43,7 +34,7 @@ def main():
             # else:
             data = conn.recv(64)
             print('Received data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
-            test_run(data)
+            test_run(data, conn)
 
         # except TimeoutError as nosig:
         #     servo_ctl(ESC, NEUTRAL)
@@ -51,19 +42,6 @@ def main():
         except TypeError as emsg2:
             print(emsg2)
             sys.exit()
-
-
-def serial_debug():
-    global COM_PORT
-
-    list = serial.tools.list_ports.comports()
-    available = []
-    for port in list:
-        available.append(port.device)
-
-    COM_PORT = available[1]
-
-    return available
 
 
 def test_controller(port):
@@ -100,16 +78,16 @@ def test_controller(port):
 
 
 def servo_ctl(servo_num, val):
-    servo = maestro.Controller(COM_PORT)
+    servo = maestro.Controller('/dev/ttyACM1')
 
-    # TODO: Modify this to accomadate for speed
+    # TODO: Modify this to accommodate for speed
     servo.setAccel(cfg.STEERING, 50)
     servo.setAccel(cfg.ESC, 100)
 
     servo.setTarget(servo_num, val)
 
 
-def test_run(arg):
+def test_run(arg, conn):
     # arg = arg[2:len(arg)-1]
     print(arg)
 
@@ -123,6 +101,8 @@ def test_run(arg):
     elif arg == 'stop':
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
         servo_ctl(cfg.STEERING, cfg.CENTER)
+    elif arg == 'gps':
+        get_gps(conn)
     else:
         print('No test prompt received, Switching to raw input....')
 
@@ -132,5 +112,14 @@ def test_run(arg):
         if 4000 <= data2 <= 8000:
             servo_ctl(data1, data2)
 
+
+def get_gps(conn):
+    os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
+    myfile = open('gps.txt', 'r')
+    message = myfile.read()
+    myfile.close()
+    print(message)
+    conn.sendall(message.encode())
+    print('GPS SENT')
 
 main()

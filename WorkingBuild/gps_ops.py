@@ -3,7 +3,7 @@ import math
 import global_cfg as cfg
 
 
-def parse_gps_msg():
+def parse_gps_msg(message):
     """
     Gets the current GPS coordinates from the RC car. Currently generates a random GPS coordinate +/- error factor
     @return: Returns the lat, long, and altitude.
