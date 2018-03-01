@@ -12,7 +12,8 @@ def gen_random_vector():
     @return: Returns a two element vector consisting of the x and y component of a velocity.
     """
 
-    newvector = [random.uniform(-cfg.MAXVELOCITY, cfg.MAXVELOCITY), random.uniform(-cfg.MAXVELOCITY, cfg.MAXVELOCITY)]
+    newvector = [random.uniform(-cfg.MAXVELOCITY, cfg.UPDATE_INTERVAL, cfg.MAXVELOCITY),
+                 random.uniform(-cfg.MAXVELOCITY, cfg.MAXVELOCITY)]
     return newvector
 
 
@@ -35,13 +36,11 @@ def gen_targeted_vector(cardata, tgtxpos, tgtypos):
     if zdiff > cfg.MAXVELOCITY / (cfg.UPDATE_INTERVAL / 1000):
         ratio = cfg.MAXVELOCITY / zdiff
 
-        xcom = xdiff * ratio
-        ycom = ydiff * ratio
     else:
         ratio = zdiff
 
-        xcom = xdiff
-        ycom = ydiff
+    xcom = xdiff * ratio
+    ycom = ydiff * ratio
 
     print("HDG: " + str(newhdg))
     print(xdiff, ydiff, zdiff)
@@ -64,8 +63,6 @@ def update_pos(vector, data):
 
     newdata[0] = newdata[0] + xdelta  # xpos
     newdata[1] = newdata[1] + ydelta  # ypos
-
-    newhdg = 0
 
     print(xdelta, ydelta)
 
@@ -115,13 +112,19 @@ def new_pos(stage, cardata):
         return [75, 110]
 
 
-def calc_xy(vx, xy, curx, cury):
-    xdistance = (vx * cfg.UPDATE_INTERVAL) + (0.5 * cfg.ACCELERATION * (cfg.UPDATE_INTERVAL ** 2.0))
-    ydistance = (xy * cfg.UPDATE_INTERVAL) + (0.5 * cfg.ACCELERATION + (cfg.UPDATE_INTERVAL ** 2.0))
+def calc_xy(vx, vy, curx, cury, heading):
+    xdistance = (vx * cfg.UPDATE_INTERVAL) + (
+            0.5 * math.cos(math.radians(heading)) * cfg.ACCELERATION * (cfg.UPDATE_INTERVAL ** 2.0))
+    ydistance = (vy * cfg.UPDATE_INTERVAL) + (
+            0.5 * math.sin(math.radians(heading)) * cfg.ACCELERATION * (cfg.UPDATE_INTERVAL ** 2.0))
+
+    print('********************************************')
+    print('Calculated XY Deltas: ', xdistance, ydistance)
 
     return [curx + xdistance, cury + ydistance]
 
 
 def call_sim():
     # TODO: Create method call for ATE-3 Simulation
-    print("Code Stub")
+    return (random.uniform(-math.sqrt(cfg.MAXVELOCITY), math.sqrt(cfg.MAXVELOCITY)),
+            random.uniform(-math.sqrt(cfg.MAXVELOCITY), math.sqrt(cfg.MAXVELOCITY)))

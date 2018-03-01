@@ -1,82 +1,64 @@
+import os
 import socket
 import sys
 import time
 
-import serial
-import serial.tools.list_ports
-
 import global_cfg as cfg
-import ip_mailerv2
-import maestro
+import maestro as maestro
 
 
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.bind((cfg.HOST, cfg.PORT))
+        sock.bind(('', cfg.PORT))
     except socket.error as emsg1:
         print(emsg1)
         sys.exit()
 
     sock.listen(5)
 
-    print('SERIAL TESTING....Please Wait.')
+    print('[NETWORK] SERVER ESTABLISHED....')
 
-    print(serial_debug())
+    test_controller('/dev/ttyACM0')
 
-    test_controller(COM_PORT)
-
-    print('TESTING COMPLETE....')
-
-    print('SERVER ESTABLISHED....')
-
-    ip_mailerv2.sendIP('stilwea1@my.erau.edu')
+    print('[SERVO] TESTING COMPLETE....')
 
     while True:
+        (conn, address) = sock.accept()
         try:
-            (conn, address) = sock.accept()
-            # if len(conn.recv()) <= 0:  # ping server to see if connection is still valid, should return 0 on error
-            #     servo_ctl(ESC, NEUTRAL)
-            #     servo_ctl(STEERING, CENTER)
-            #     print('Lost Connection...Idling....')
-            #     sock.close()
-            # else:
-            data = conn.recv(64)
-            print('Received data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
-            test_run(data)
+            while True:
+                try:
+                    data = conn.recv(64)
+                    if data:
+                        print('[DEBUG] Recieved data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
+                        result = test_run(data, conn)
 
-        # except TimeoutError as nosig:
-        #     servo_ctl(ESC, NEUTRAL)
-        #     servo_ctl(STEERING, CENTER)
-        except TypeError as emsg2:
-            print(emsg2)
-            sys.exit()
+                        if result == 404:
+                            break
 
+                except TypeError as emsg2:
+                    print('[WARN] ' + str(emsg2))
+                    conn.close()
+                    sys.exit()
+                except socket.error:
+                    print('[WARN][NETWORK] Socket error')
+                    break
+        except KeyboardInterrupt:
+            test_run('stop', conn)
 
-def serial_debug():
-    global COM_PORT
-
-    list = serial.tools.list_ports.comports()
-    available = []
-    for port in list:
-        available.append(port.device)
-
-    COM_PORT = available[1]
-
-    return available
 
 
 def test_controller(port):
     servo = maestro.Controller(port)
-    print('SERVO CONNECTION ESTABLISHED....')
+    print('[SERVO] SERVO CONNECTION ESTABLISHED....')
 
     # 3 ESC, 5 STEERING
 
     servo.setAccel(cfg.STEERING, 50)
     servo.setAccel(cfg.ESC, 100)
-    # print(servo.getMin(STEERING), servo.getMax(STEERING))
+    print(servo.getMin(cfg.STEERING), servo.getMax(cfg.STEERING))
 
-    print('SENT SIGNAL....')
+    print('[SERVO] SENT SIGNAL....')
 
     servo.setTarget(cfg.STEERING, cfg.MAX_RIGHT)
     print(servo.getPosition(cfg.STEERING))
@@ -88,49 +70,79 @@ def test_controller(port):
     print(servo.getPosition(cfg.STEERING))
     time.sleep(1)
     servo.setTarget(cfg.STEERING, cfg.CENTER)
-    print('STEERING ARMED....')
+    print('[SERVO] STEERING ARMED....')
     time.sleep(1)
 
     print(servo.getPosition(cfg.ESC))
     servo.setTarget(cfg.ESC, 8000)
     servo.setTarget(cfg.ESC, cfg.NEUTRAL)
     print(servo.getPosition(cfg.ESC))
-    print('MOTOR ARMED....')
+    print('[SERVO] MOTOR ARMED....')
     time.sleep(1)
+
+    print('[DEBUG] Exiting test_controller function')
 
 
 def servo_ctl(servo_num, val):
-    servo = maestro.Controller(COM_PORT)
+    servo = maestro.Controller('/dev/ttyACM0')
 
-    # TODO: Modify this to accomadate for speed
+    # TODO: Modify this to accommodate for speed
     servo.setAccel(cfg.STEERING, 50)
     servo.setAccel(cfg.ESC, 100)
 
     servo.setTarget(servo_num, val)
+    print('[DEBUG] Exiting servo_ctl function')
 
-
-def test_run(arg):
+def test_run(arg, conn):
     # arg = arg[2:len(arg)-1]
     print(arg)
 
     if arg == 'kill':
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
         servo_ctl(cfg.STEERING, cfg.CENTER)
+        conn.close()
+        print('[DEBUG] Terminating Client')
         sys.exit()
     elif arg == 'start':
         servo_ctl(cfg.STEERING, cfg.MAX_RIGHT)
         servo_ctl(cfg.ESC, cfg.TEST_SPEED)
     elif arg == 'stop':
+        print('[DEBUG] ***** Stopping')
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
         servo_ctl(cfg.STEERING, cfg.CENTER)
+    elif arg == 'gps':
+        get_gps(conn)
+    elif arg == 'disconnect':
+        servo_ctl(cfg.ESC, cfg.NEUTRAL)
+        servo_ctl(cfg.STEERING, cfg.CENTER)
+        print('[NETWORK] Disconnect')
+        time.sleep(10)
+        conn.close()
+        return 404
     else:
-        print('No test prompt received, Switching to raw input....')
 
-        data1 = int(arg[0])
-        data2 = int(arg[1:len(arg)])
+        tgt = int(arg[0])
+        val = int(arg[1:len(arg)])
 
-        if 4000 <= data2 <= 8000:
-            servo_ctl(data1, data2)
+        # Guard statement to protect servossy
+        if tgt == cfg.ESC and val > cfg.MAX_TEST_SPEED:
+            print('[WARN] Speed would exceed testing limits!')
+        else:
+            if 4000 <= val <= 8000:
+                print('[SERVO] Entering servo_ctl function with value of: ' + str(val))
+                servo_ctl(tgt, val)
+
+    print('[DEBUG] Exiting test_run function')
+
+def get_gps(conn):
+    os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
+    myfile = open('gps.txt', 'r')
+    message = myfile.read()
+    myfile.close()
+    print('[GPS] ' + message)
+    conn.sendall(message.encode())
+    print('[GPS] GPS SENT')
+    print('[DEBUG] Exiting get_gps function')
 
 
 main()
