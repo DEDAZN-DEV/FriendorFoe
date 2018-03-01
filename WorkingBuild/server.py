@@ -1,6 +1,5 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
-# import dubins
 import math
 import random
 import socket
@@ -54,15 +53,15 @@ class Drone:
     """
     """
 
-    def __init__(self, func, ip, port, droneid, debug):
+    def __init__(self, func, ip, port, droneid, debug, shared_gps_data, shared_velocity_vector):
         self.name = droneid
         self.process = Process(target=func,
-                               args=('Drone ' + str(droneid), ip, port, debug))
+                               args=('Drone ' + str(droneid), ip, port, debug, shared_gps_data, shared_velocity_vector))
 
         print('Drone ID: ' + str(self.name))
 
 
-def main(debug_mode):
+def main(debug_mode, test_type, shared_gps_data, shared_velocity_vector):
     """
     Driver function for the entire program. Spawns sub-processes to control
     each drone and then terminates.
@@ -72,27 +71,23 @@ def main(debug_mode):
     proclst = []
 
     try:
-        if len(sys.argv) < 2:
-            print("Missing argument...\nUsage: python server.py\
-                   [stop, run, debug_circle [time in seconds], "
-                  "debug_random, debug_gps]")
-            sys.exit()
-        else:
-            test_type = sys.argv[1]
-            if test_type == 'run':
-                a = Drone(run, cfg.CLIENT_IP_A,
-                          cfg.PORT,
-                          random.randint(0, 999), debug_mode)
-                proclst.append(a)
-                a.process.start()
-                a.process.join()
+        if test_type == 'run':
+            a = Drone(run, cfg.CLIENT_IP_A,
+                      cfg.PORT,
+                      random.randint(0, 999),
+                      debug_mode,
+                      shared_gps_data,
+                      shared_velocity_vector)
+            proclst.append(a)
+            a.process.start()
+            a.process.join()
 
-            elif test_type == 'debug_gps':
-                gps.gps_debug()
-            else:
-                print(
-                    "Invalid argument...\nUsage: python server.py [stop, run]")
-                sys.exit()
+        elif test_type == 'debug_gps':
+            gps.gps_debug()
+        else:
+            print(
+                "Invalid argument...\nUsage: python server.py [stop, run]")
+            sys.exit()
 
     except KeyboardInterrupt:
         print('Keyboard Interrupt....Killing live processes')
@@ -103,7 +98,12 @@ def main(debug_mode):
         print('....Done\n')
 
 
-def run(dronename, ip, port, debug):
+def update_shared_gps_data(shared_gps_data, cardata):
+    with shared_gps_data.get_lock():
+        shared_gps_data = [cardata.XPOS, cardata.YPOS]
+
+
+def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
     """
     Default drone control algorithm. Uses input from ATE-3 Sim to control
     drones.
@@ -112,6 +112,8 @@ def run(dronename, ip, port, debug):
     :param ip: String, LAN IP address of drone
     :param port: LAN Port of drone to be controlled, not necessary but can be
     changed.
+    :param shared_gps_data: GPS data shared with the simulation
+    :param shared_velocity_vector: Velocity vectors that are shared between the sim and the server
     :return: Nothing
     """
     init = True
@@ -134,6 +136,7 @@ def run(dronename, ip, port, debug):
     # step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
 
     while True:
+
         # GPS Initialization for Position ###################################
         socket_tx('gps', sock)
         message = socket_rx(sock)
@@ -144,6 +147,7 @@ def run(dronename, ip, port, debug):
         try:
             cardata.XPOS = gps.parse_gps_msg(str(message))[0]
             cardata.YPOS = gps.parse_gps_msg(str(message))[1]
+            update_shared_gps_data(shared_gps_data, cardata)
         except TypeError:
             if debug:
                 print('Invalid GPS Message...Exiting')
@@ -161,7 +165,9 @@ def run(dronename, ip, port, debug):
 
         if seed1 <= cfg.DIRCHANGEFACTOR or init:
             init = False
-            velocity_vector = vec.call_sim()
+            with shared_velocity_vector.get_lock():
+                velocity_vector[0] = shared_velocity_vector[0]  # vec.call_sim()
+                velocity_vector[1] = shared_velocity_vector[1]
 
         [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1],
                                    cardata.XPOS, cardata.YPOS,
@@ -225,6 +231,7 @@ def run(dronename, ip, port, debug):
         try:
             cardata.XPOS = gps.parse_gps_msg(str(message))[0]
             cardata.YPOS = gps.parse_gps_msg(str(message))[1]
+            update_shared_gps_data(shared_gps_data, cardata)
         except TypeError:
             if debug:
                 print('Invalid GPS Message...Exiting')
@@ -427,4 +434,12 @@ def dbinsert(data, dronename):
 
 if __name__ == '__main__':
     freeze_support()
-    main(True)
+    if len(sys.argv) < 2:
+        print("Missing argument...\nUsage: python server.py\
+               [stop, run, debug_circle [time in seconds], "
+              "debug_random, debug_gps]")
+        sys.exit()
+    else:
+        test_type = sys.argv[1]
+
+    # main(True, test_type)

@@ -86,6 +86,10 @@ def parse_gps_msg(message):
 
     print(longitude)
 
+    ##### TESTING #####
+    latitude = 48
+    longitude = 123
+
     data = scale_xy(gps_to_xy(latitude, longitude))
 
     return data
