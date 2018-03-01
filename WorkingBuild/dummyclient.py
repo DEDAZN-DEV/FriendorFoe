@@ -30,8 +30,14 @@ def main():
                 try:
                     data = conn.recv(64)
                     if data:
-                        print('[DEBUG] Recieved data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
+                        print('[DEBUG] Recieved data from: ' +
+                              conn.getpeername().__str__() +
+                              '\t\t' + data.__str__())
                         # result = test_run(data, conn)
+                        if data == "gps":
+                            conn.sendall("<GPS Message>")
+                        else:
+                            conn.sendall("Moving car...")
 
                         # if result == 404:
                         # break
@@ -45,7 +51,6 @@ def main():
                     break
         except KeyboardInterrupt:
             test_run('stop', conn)
-
 
 
 def test_controller(port):
@@ -93,6 +98,7 @@ def servo_ctl(servo_num, val):
     servo.setTarget(servo_num, val)
     print('[DEBUG] Exiting servo_ctl function')
 
+
 def test_run(arg, conn):
     # arg = arg[2:len(arg)-1]
     print(arg)
@@ -112,6 +118,7 @@ def test_run(arg, conn):
         servo_ctl(cfg.STEERING, cfg.CENTER)
     elif arg == 'gps':
         get_gps(conn)
+        conn.sendall("<GPS Message>")
     elif arg == 'disconnect':
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
         servo_ctl(cfg.STEERING, cfg.CENTER)
@@ -129,10 +136,12 @@ def test_run(arg, conn):
             print('[WARN] Speed would exceed testing limits!')
         else:
             if 4000 <= val <= 8000:
-                print('[SERVO] Entering servo_ctl function with value of: ' + str(val))
+                print('[SERVO] Entering servo_ctl function with value of: '
+                      + str(val))
                 servo_ctl(tgt, val)
 
     print('[DEBUG] Exiting test_run function')
+
 
 def get_gps(conn):
     os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
@@ -143,7 +152,6 @@ def get_gps(conn):
     conn.sendall(message.encode())
     print('[GPS] GPS SENT')
     print('[DEBUG] Exiting get_gps function')
-
 
 
 if __name__ == "__main__":

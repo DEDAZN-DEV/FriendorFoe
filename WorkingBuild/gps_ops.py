@@ -53,46 +53,56 @@ def parse_gps_msg(message):
     mlong = ''
     # altitude = ''
 
-    # bytes 17 - 26
-    print(message)
-    for i in range(separator[1] + 1, separator[1] + 3):
-        dlat = dlat + message[i]
-    for j in range(separator[1] + 3, separator[2]):
-        mlat = mlat + message[j]
-
-    dlat = int(dlat)
-    mlat = float(mlat)
-    mlat = mlat / 60
-    latitude = dlat + mlat
-
-    if message[separator[2] + 1] == 'S':
-        latitude = -latitude
-
-    print(latitude)
-
-    # bytes 30 - 40
-    for k in range(separator[3] + 1, separator[3] + 4):
-        dlong = dlong + message[k]
-    for n in range(separator[3] + 4, separator[4]):
-        mlong = mlong + message[n]
-
-    dlong = int(dlong)
-    mlong = float(mlong)
-    mlong = mlong / 60
-    longitude = dlong + mlong
-
-    if message[separator[4] + 1] == 'W':
-        longitude = -longitude
-
-    print(longitude)
-
     ##### TESTING #####
     latitude = 48
     longitude = 123
 
-    data = scale_xy(gps_to_xy(latitude, longitude))
+    #data = scale_xy(gps_to_xy(latitude, longitude))
+    data = [latitude, longitude]
 
     return data
+
+#    # bytes 17 - 26
+#    print(message)
+#    for i in range(separator[1] + 1, separator[1] + 3):
+#        dlat = dlat + message[i]
+#    for j in range(separator[1] + 3, separator[2]):
+#        mlat = mlat + message[j]
+#
+#    dlat = int(dlat)
+#    mlat = float(mlat)
+#    mlat = mlat / 60
+#    latitude = dlat + mlat
+#
+#    if message[separator[2] + 1] == 'S':
+#        latitude = -latitude
+#
+#    print(latitude)
+#
+#    # bytes 30 - 40
+#    for k in range(separator[3] + 1, separator[3] + 4):
+#        dlong = dlong + message[k]
+#    for n in range(separator[3] + 4, separator[4]):
+#        mlong = mlong + message[n]
+#
+#    dlong = int(dlong)
+#    mlong = float(mlong)
+#    mlong = mlong / 60
+#    longitude = dlong + mlong
+#
+#    if message[separator[4] + 1] == 'W':
+#        longitude = -longitude
+#
+#    print(longitude)
+#
+#    ##### TESTING #####
+#    latitude = 48
+#    longitude = 123
+#
+#    #data = scale_xy(gps_to_xy(latitude, longitude))
+#    data = [latitude, longitude]
+#
+#    return data
 
 
 def poll_gps():

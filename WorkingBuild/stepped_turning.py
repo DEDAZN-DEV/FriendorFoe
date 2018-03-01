@@ -11,6 +11,7 @@ import sys
 import math
 import pprint
 
+debug = False
 
 def find_angular_difference(heading_1, heading_2):
     angular_difference = heading_2 - heading_1
@@ -98,7 +99,7 @@ def find_advanced_position(car_data):
 
     if debug:
         printer = pprint.PrettyPrinter(indent=4)
-        printer.pprint(car)
+        printer.pprint(car_data)
         print("\n")
 
     return car_data
@@ -120,9 +121,9 @@ def find_distance_travelled(car_data):
 
 def stepped_turning_algorithm(car_data):
     no_turn = 0
-    if not check_if_within_heading(car_data["speed"], car["desired_heading"], tolerance=0.1):
+    if not check_if_within_heading(car_data["speed"], car_data["desired_heading"], tolerance=0.1):
         car_data["turning_angle"], speed_coefficient = choose_wheel_turn_angle_and_direction(
-            car["current_heading"], car_data["desired_heading"])
+            car_data["current_heading"], car_data["desired_heading"])
     else:
         car_data["turning_angle"] = no_turn
         speed_coefficient = 1
@@ -135,9 +136,6 @@ def stepped_turning_algorithm(car_data):
 
 
 if __name__ == "__main__":
-    global debug
-    debug = True
-
     if debug:
         print("Current Heading: " + sys.argv[1] + "\nDesired Heading: " + sys.argv[2] + "\nSpeed: " + sys.argv[3] +
               "\nCurrent Position: (" + sys.argv[4] + ", " + sys.argv[5] + ")\nTime step: " + sys.argv[6])

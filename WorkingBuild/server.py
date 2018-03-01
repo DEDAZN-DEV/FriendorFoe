@@ -80,7 +80,7 @@ def main(debug_mode, test_type, shared_gps_data, shared_velocity_vector):
                       shared_velocity_vector)
             proclst.append(a)
             a.process.start()
-            a.process.join()
+            # a.process.join()
 
         elif test_type == 'debug_gps':
             gps.gps_debug()
@@ -100,7 +100,17 @@ def main(debug_mode, test_type, shared_gps_data, shared_velocity_vector):
 
 def update_shared_gps_data(shared_gps_data, cardata):
     with shared_gps_data.get_lock():
-        shared_gps_data = [cardata.XPOS, cardata.YPOS]
+        shared_gps_data[0] = cardata.XPOS
+        shared_gps_data[1] = cardata.YPOS
+
+
+def update_velocity_vector(shared_velocity_vector):
+    velocity_vector = [0, 0]
+    with shared_velocity_vector.get_lock():
+        velocity_vector[0] = shared_velocity_vector[0]
+        velocity_vector[1] = shared_velocity_vector[1]
+
+    return velocity_vector
 
 
 def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
@@ -136,18 +146,22 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
     # step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
 
     while True:
-
+        print("This should run a lot of times")
+        print("Debug Mode: " + str(debug))
         # GPS Initialization for Position ###################################
         socket_tx('gps', sock)
         message = socket_rx(sock)
 
         if debug:
-            print(message)
+            print("Socket Message: " + str(message))
 
         try:
             cardata.XPOS = gps.parse_gps_msg(str(message))[0]
             cardata.YPOS = gps.parse_gps_msg(str(message))[1]
             update_shared_gps_data(shared_gps_data, cardata)
+            with shared_gps_data.get_lock():
+                print("shared x position: " + str(shared_gps_data[0]) +
+                      "\nshared y position: " + str(shared_gps_data[1]))
         except TypeError:
             if debug:
                 print('Invalid GPS Message...Exiting')
@@ -159,28 +173,27 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
             print(cardata.XPOS, cardata.YPOS)
         # END GPS ###################################
 
-    # q0 = (cardata.XPOS, cardata.YPOS, 0)
-
         seed1 = random.random()
 
-        if seed1 <= cfg.DIRCHANGEFACTOR or init:
-            init = False
-            with shared_velocity_vector.get_lock():
-                velocity_vector[0] = shared_velocity_vector[0]  # vec.call_sim()
-                velocity_vector[1] = shared_velocity_vector[1]
+        velocity_vector = [0, 0]
+
+#        if seed1 <= cfg.DIRCHANGEFACTOR or init:
+#            init = False
+
+        velocity_vector = update_velocity_vector(shared_velocity_vector)
 
         [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1],
                                    cardata.XPOS, cardata.YPOS,
                                    cardata.HEADING)
 
-        while tgtx < cfg.TURNDIAMETER or \
-                tgtx > cfg.LENGTH_X - cfg.TURNDIAMETER or \
-                tgty < cfg.TURNDIAMETER or \
-                tgty > cfg.LENGTH_Y - cfg.TURNDIAMETER:
-            velocity_vector = vec.call_sim()
-            [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1],
-                                       cardata.XPOS, cardata.YPOS,
-                                       cardata.HEADING)
+#        while tgtx < cfg.TURNDIAMETER or \
+#                tgtx > cfg.LENGTH_X - cfg.TURNDIAMETER or \
+#                tgty < cfg.TURNDIAMETER or \
+#                tgty > cfg.LENGTH_Y - cfg.TURNDIAMETER:
+#            velocity_vector = update_velocity_vector(shared_velocity_vector)
+#            [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1],
+#                                       cardata.XPOS, cardata.YPOS,
+#                                       cardata.HEADING)
 
         # while tgtx < cfg.TURNDIAMETER or
         # tgtx > cfg.LENGTH_X - cfg.TURNDIAMETER or
@@ -267,6 +280,7 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
         ################################################################
 
         pause_interval = cardata.DIST_TRAVELED / cardata.SPEED
+        print("Pause Interval: " + str(pause_interval))
 
         if pause_interval == 0:
             pause_interval = 1e-6  # <-- This is a starter to the program

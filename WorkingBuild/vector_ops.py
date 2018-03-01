@@ -118,8 +118,8 @@ def calc_xy(vx, vy, curx, cury, heading):
     ydistance = (vy * cfg.UPDATE_INTERVAL) + (
             0.5 * math.sin(math.radians(heading)) * cfg.ACCELERATION * (cfg.UPDATE_INTERVAL ** 2.0))
 
-    print('********************************************')
-    print('Calculated XY Deltas: ', xdistance, ydistance)
+    # print('********************************************')
+    # print('Calculated XY Deltas: ', xdistance, ydistance)
 
     return [curx + xdistance, cury + ydistance]
 
