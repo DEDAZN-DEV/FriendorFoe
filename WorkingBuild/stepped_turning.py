@@ -97,8 +97,8 @@ def find_advanced_position(car_data):
         car_data["time_step"] * car_data["y_speed_component"]
 
     if debug:
-        pp = pprint.PrettyPrinter(indent=4)
-        pp.pprint(car)
+        printer = pprint.PrettyPrinter(indent=4)
+        printer.pprint(car)
         print("\n")
 
     return car_data
