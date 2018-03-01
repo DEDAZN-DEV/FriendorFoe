@@ -1,7 +1,7 @@
 import math
 import random
 
-import global_cfg as cfg
+import WorkingBuild.global_cfg as cfg
 
 CIRCLETGTANGLE = 0
 
