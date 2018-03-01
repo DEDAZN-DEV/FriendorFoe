@@ -1,6 +1,6 @@
 import math
 
-import global_cfg as cfg
+import WorkingBuild.global_cfg as cfg
 
 
 def parse_gps_msg(message):
@@ -98,6 +98,9 @@ def gps_to_xy(lat, long):
     @param long:
     @return:
     """
+
+    BASE_X, BASE_Y = calc_originxy()
+
     radlat = math.radians(lat)
     radlong = math.radians(long)
 
@@ -114,6 +117,7 @@ def gps_to_xy(lat, long):
 
 
 def scale_xy(xy):
+    X_RATIO, Y_RATIO = set_xy_ratio()
     xy[0] = xy[0] / X_RATIO
     xy[1] = xy[1] / Y_RATIO
 
@@ -155,16 +159,22 @@ def gps_debug():
 
 
 def calc_originxy():
-    global BASE_X, BASE_Y
 
-    temp = gps_to_xy(cfg.ORIGIN_LATITUDE, cfg.ORIGIN_LONGITUDE)
-    BASE_X = temp[0]
-    BASE_Y = temp[1]
+    BASE_X = 0
+    BASE_Y = 0
+
+    return BASE_X, BASE_Y
+#   temp = gps_to_xy(cfg.ORIGIN_LATITUDE, cfg.ORIGIN_LONGITUDE)
+#   BASE_X = temp[0]
+#   BASE_Y = temp[1]
 
 
 def set_xy_ratio():
-    global X_RATIO, Y_RATIO
 
-    temp = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
-    Y_RATIO = temp[1] / cfg.LENGTH_Y
-    X_RATIO = temp[0] / cfg.LENGTH_X
+    X_RATIO = 1
+    Y_RATIO = 1
+
+#   temp = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
+#   Y_RATIO = temp[1] / cfg.LENGTH_Y
+#   X_RATIO = temp[0] / cfg.LENGTH_X
+    return X_RATIO, Y_RATIO
