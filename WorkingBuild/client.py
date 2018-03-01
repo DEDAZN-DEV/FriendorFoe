@@ -3,8 +3,8 @@ import socket
 import sys
 import time
 
-import global_cfg as cfg
-import maestro as maestro
+import WorkingBuild.global_cfg as cfg
+import WorkingBuild.maestro as maestro
 
 
 def main():
@@ -122,4 +122,6 @@ def get_gps(conn):
     conn.sendall(message.encode())
     print('GPS SENT')
 
-main()
+
+if __name__ == "__main__":
+    main()
