@@ -1,7 +1,7 @@
 import math
 import random
 
-import global_cfg as cfg
+import WorkingBuild.global_cfg as cfg
 
 CIRCLETGTANGLE = 0
 
@@ -36,13 +36,11 @@ def gen_targeted_vector(cardata, tgtxpos, tgtypos):
     if zdiff > cfg.MAXVELOCITY / (cfg.UPDATE_INTERVAL / 1000):
         ratio = cfg.MAXVELOCITY / zdiff
 
-        xcom = xdiff * ratio
-        ycom = ydiff * ratio
     else:
         ratio = zdiff
 
-        xcom = xdiff
-        ycom = ydiff
+    xcom = xdiff * ratio
+    ycom = ydiff * ratio
 
     print("HDG: " + str(newhdg))
     print(xdiff, ydiff, zdiff)
@@ -65,8 +63,6 @@ def update_pos(vector, data):
 
     newdata[0] = newdata[0] + xdelta  # xpos
     newdata[1] = newdata[1] + ydelta  # ypos
-
-    newhdg = 0
 
     print(xdelta, ydelta)
 
