@@ -26,14 +26,16 @@ def main():
     while True:
         try:
             (conn, address) = sock.accept()
-            # if len(conn.recv()) <= 0:  # ping server to see if connection is still valid, should return 0 on error
+            # if len(conn.recv()) <= 0:  # ping server to see if connection is
+            #       still valid, should return 0 on error
             #     servo_ctl(ESC, NEUTRAL)
             #     servo_ctl(STEERING, CENTER)
             #     print('Lost Connection...Idling....')
             #     sock.close()
             # else:
             data = conn.recv(64)
-            print('Received data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
+            print('Received data from: ' + conn.getpeername().__str__() +
+                  '\t\t' + data.__str__())
             test_run(data, conn)
 
         # except TimeoutError as nosig:
@@ -78,13 +80,14 @@ def test_controller(port):
 
 
 def servo_ctl(servo_num, val):
-    servo = maestro.Controller('/dev/ttyACM1')
+    pass
+    # servo = maestro.Controller('/dev/ttyACM1')
 
     # TODO: Modify this to accommodate for speed
-    servo.setAccel(cfg.STEERING, 50)
-    servo.setAccel(cfg.ESC, 100)
+    # servo.setAccel(cfg.STEERING, 50)
+    # servo.setAccel(cfg.ESC, 100)
 
-    servo.setTarget(servo_num, val)
+    # servo.setTarget(servo_num, val)
 
 
 def test_run(arg, conn):
@@ -121,5 +124,6 @@ def get_gps(conn):
     print(message)
     conn.sendall(message.encode())
     print('GPS SENT')
+
 
 main()
