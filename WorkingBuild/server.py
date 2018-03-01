@@ -131,7 +131,7 @@ def run(dronename, ip, port, debug):
     sock.connect((ip, port))
     # End IP Stuff
 
-    step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
+    # step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
 
     while True:
         # GPS Initialization for Position ###################################
@@ -155,7 +155,7 @@ def run(dronename, ip, port, debug):
             print(cardata.XPOS, cardata.YPOS)
         # END GPS ###################################
 
-    #q0 = (cardata.XPOS, cardata.YPOS, 0)
+    # q0 = (cardata.XPOS, cardata.YPOS, 0)
 
         seed1 = random.random()
 
@@ -176,7 +176,10 @@ def run(dronename, ip, port, debug):
                                        cardata.XPOS, cardata.YPOS,
                                        cardata.HEADING)
 
-        # while tgtx < cfg.TURNDIAMETER or tgtx > cfg.LENGTH_X - cfg.TURNDIAMETER or tgty < cfg.TURNDIAMETER or tgty > cfg.LENGTH_Y - cfg.TURNDIAMETER:
+        # while tgtx < cfg.TURNDIAMETER or
+        # tgtx > cfg.LENGTH_X - cfg.TURNDIAMETER or
+        # tgty < cfg.TURNDIAMETER or
+        # tgty > cfg.LENGTH_Y - cfg.TURNDIAMETER:
         #     velocity_vector = vec.call_sim()
         #     [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS,
         #                                cardata.HEADING)
@@ -189,7 +192,7 @@ def run(dronename, ip, port, debug):
         # if abs(math.degrees(desired_heading)) >= cfg.MAX_TURN_RADIUS:
         #     print('Code For Dampened Turn Here')
         # else:
-        q1 = (tgtx, tgty, desired_heading)  # maintain original heading to target
+        # q1 = (tgtx, tgty, desired_heading)  # maintain original heading to target
         ##########################################################################
 
         turn_data = {
@@ -206,12 +209,12 @@ def run(dronename, ip, port, debug):
 
         # interval_time = 0.0
 
-        prev_xpos = cardata.XPOS
-        prev_ypos = cardata.YPOS
+        # prev_xpos = cardata.XPOS
+        # prev_ypos = cardata.YPOS
 
         # #######  GPS ##########
-        #socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
-        #message = sock.recv(128)
+        # socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
+        # message = sock.recv(128)
         # cardata.XPOS = qs[i][0]
         # cardata.YPOS = qs[i][1]
 
@@ -230,9 +233,9 @@ def run(dronename, ip, port, debug):
             sys.exit()
         # END GPS ###################################
 
-        #dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 +
+        # dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 +
         #                         (cardata.YPOS - prev_ypos) ** 2)
-        #cardata.DIST_TRAVELED = dist_traveled
+        # cardata.DIST_TRAVELED = dist_traveled
         # path_length = path_length - dist_traveled
         cardata.DIST_TRAVELED = turn_data["distance_travelled"]
 
@@ -278,14 +281,14 @@ def run(dronename, ip, port, debug):
         plt.plot(tgtx, tgty, 'rx')
         plt.grid(True)
 
-        interval_time = interval_time + pause_interval
+        # interval_time = interval_time + pause_interval
 
         if debug:
             print('Recieved Vel Vector: ', velocity_vector)
             print('Calculated Tgt Pos: ', tgtx, tgty)
             print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
             print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
-            print('Interval Time: ', interval_time)
+            # print('Interval Time: ', interval_time)
             print('')
 
         # dbinsert(cardata, dronename)
