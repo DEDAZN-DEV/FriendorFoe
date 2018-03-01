@@ -1,53 +1,44 @@
+# CAR VALUES #
 ACCELERATION = 15  # of car in m/s**2
-
 CENTER = 5800
-CLIENT_IP_A = "10.33.30.135"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
-COM_PORT = ''
-CORNER_LAT = 29.190643
-CORNER_LONG = -81.045049
-
-DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input for testing
-
 ESC = 3
-
-GMAIL_USER = 'stilwell.andrewk@gmail.com'
-GMAIL_PASSWORD = 'whnqwmnpojxeqkyc'  # Plotting variables
-
-HOST = ''
-
-LENGTH_X = 90
-LENGTH_Y = 120
-
 MAX_RIGHT = 8000
+NEUTRAL = 6000
 MAX_LEFT = 4000
 MAX_SPEED = 9000
 MAX_TURN_RADIUS = 30  # degrees
 MAXVELOCITY = 13.4  # m/s
-
-NEUTRAL = 6000
-
-ORIGIN = [0, 0]  # ADJUSTABLE VARIABLES (GLOBAL)
-ORIGIN_LATITUDE = 29.190110
-ORIGIN_LONGITUDE = -81.046302
-
-PORT = 7779
-
-RADIUS_OF_EARTH = 6378137  # m
-ROTATION_ANGLE = -45
-
-SPDLIMITER = 250
 STEERING = 5
-
-TEST_ITERATIONS = 25
 TEST_SPEED = 6320
 TURNDELAY = 30
 TURNDIAMETER = 1.5
 TURNFACTOR = 0.001
-
-UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
-
 DEGPERPOINT = 2000 / TURNDIAMETER
 SPDSCALE = 2000 / MAXVELOCITY
 
+# TEST VALUES #
+MAX_TEST_SPEED = 6500
+SPDLIMITER = MAX_SPEED - MAX_TEST_SPEED
 
+# NETWORK VALUES #
+CLIENT_IP_A = "192.168.1.10"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
+COM_PORT = ''
+HOST = ''
+PORT = 7878
+
+# GPS VALUES #
+ORIGIN = [0, 0]
+ORIGIN_LATITUDE = 29.190110
+ORIGIN_LONGITUDE = -81.046302
+CORNER_LAT = 29.190643
+CORNER_LONG = -81.045049
+ROTATION_ANGLE = -45
+RADIUS_OF_EARTH = 6378137  # m
 NOISE = 0.0000005
+
+# MOCK SIM VALUES #
+DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input for testing
+TEST_ITERATIONS = 25
+LENGTH_X = 90
+LENGTH_Y = 120
+UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
