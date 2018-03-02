@@ -1,9 +1,10 @@
 # Senior Design Project
 
-Used Python Libraries:
+---
 
-PyPlot -> http://matplotlib.org/Matplotlib.pdf
+### Python Libraries:
 
-MSC -> 
+- PyPlot -> http://matplotlib.org/Matplotlib.pdf
+- MSC -> https://github.com/FRC4564/Maestro
 
-IP Mailer -> 
+---
