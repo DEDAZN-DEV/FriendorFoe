@@ -1,18 +1,19 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
-import dubins
 import math
 import random
 import socket
 import sys
 from multiprocessing import Process, freeze_support
 
+import dubins
 import matplotlib.pyplot as plt
-import pymysql as sql
 
-import global_cfg as cfg
-import gps_ops as gps
-import vector_ops as vec
+import WorkingBuild.global_cfg as cfg
+import WorkingBuild.gps_ops as gps
+import WorkingBuild.vector_ops as vec
+
+# import pymysql as sql
 
 BUFFERSIZE = 50
 
@@ -374,30 +375,30 @@ def disable(self):
     self.ENDC = ''
 
 
-def dbinsert(data, dronename):
-    """
-    Craft SQL querry and insert data into database to store test results.
-    :param data: Data to be inserted (CARDATA obj)
-    :param dronename: String, name of drone
-    :return: 0 on successful completion
-    """
-
-    db = sql.connect(host='localhost', user='FriendorFoe@localhost', passwd='password', db='DRONES')
-    cursor = db.cursor()
-
-    # noinspection SqlNoDataSourceInspection
-    query = """INSERT INTO DRONES.POS(DRONENAME, GPSX, GPSY, XPOS, YPOS, SPEED, HEADING, TURN_ANGLE, DIST_TRAVELED) VALUES ("%s", %f, %f, %f, %f, %f, %f, %f, %f)"""
-
-    try:
-        cursor.execute(query % (
-            dronename, data.LONG, data.LAT, data.XPOS, data.YPOS, data.SPEED, data.HEADING, data.TURNANGLE,
-            data.DIST_TRAVELED))
-        db.commit()
-    except Exception as e1:
-        db.rollback()
-        print(e1)
-
-    db.close()
+# def dbinsert(data, dronename):
+#     """
+#     Craft SQL querry and insert data into database to store test results.
+#     :param data: Data to be inserted (CARDATA obj)
+#     :param dronename: String, name of drone
+#     :return: 0 on successful completion
+#     """
+#
+#     db = sql.connect(host='localhost', user='FriendorFoe@localhost', passwd='password', db='DRONES')
+#     cursor = db.cursor()
+#
+#     # noinspection SqlNoDataSourceInspection
+#     query = """INSERT INTO DRONES.POS(DRONENAME, GPSX, GPSY, XPOS, YPOS, SPEED, HEADING, TURN_ANGLE, DIST_TRAVELED) VALUES ("%s", %f, %f, %f, %f, %f, %f, %f, %f)"""
+#
+#     try:
+#         cursor.execute(query % (
+#             dronename, data.LONG, data.LAT, data.XPOS, data.YPOS, data.SPEED, data.HEADING, data.TURNANGLE,
+#             data.DIST_TRAVELED))
+#         db.commit()
+#     except Exception as e1:
+#         db.rollback()
+#         print(e1)
+#
+#     db.close()
 
 
 if __name__ == '__main__':
