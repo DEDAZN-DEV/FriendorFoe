@@ -65,10 +65,6 @@ def parse_gps_msg(message):
     return data
 
 
-def poll_gps():
-    print("Polling car....")
-
-
 def gps_to_xy(lat, lon):
     """
 
