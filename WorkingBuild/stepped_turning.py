@@ -7,13 +7,19 @@ Purpose: To provide an alternative algorithm to the dubins path algorithm for de
 
 Usage: turn_signals <current heading> <desired heading> <speed in mph> <current x pos> <current y pos> <time step>
 """
-import sys
 import math
 import pprint
+import sys
 
 debug = False
 
 def find_angular_difference(heading_1, heading_2):
+    """
+
+    :param heading_1:
+    :param heading_2:
+    :return:
+    """
     angular_difference = heading_2 - heading_1
     print("Wide Angular Difference: " + str(angular_difference))
     if angular_difference >= 180:
@@ -25,6 +31,13 @@ def find_angular_difference(heading_1, heading_2):
 
 
 def check_if_within_heading(current_heading, desired_heading, tolerance):
+    """
+
+    :param current_heading:
+    :param desired_heading:
+    :param tolerance:
+    :return:
+    """
     angular_difference = find_angular_difference(current_heading, desired_heading)
     within_tolerance = abs(angular_difference) <= tolerance
 
@@ -36,6 +49,12 @@ def check_if_within_heading(current_heading, desired_heading, tolerance):
 
 
 def check_right_turn(current_heading, desired_heading):
+    """
+
+    :param current_heading:
+    :param desired_heading:
+    :return:
+    """
     angular_difference = find_angular_difference(current_heading, desired_heading)
     if angular_difference >= 0:
         if debug:
@@ -48,6 +67,14 @@ def check_right_turn(current_heading, desired_heading):
 
 
 def choose_wheel_turn_angle(current_heading, desired_heading, turn_angles, speed_coefficients):
+    """
+
+    :param current_heading:
+    :param desired_heading:
+    :param turn_angles:
+    :param speed_coefficients:
+    :return:
+    """
     tolerance_for_small_turn = 5
     tolerance_for_large_turn = 45
 
@@ -65,6 +92,12 @@ def choose_wheel_turn_angle(current_heading, desired_heading, turn_angles, speed
 
 
 def choose_wheel_turn_angle_and_direction(current_heading, desired_heading):
+    """
+
+    :param current_heading:
+    :param desired_heading:
+    :return:
+    """
     left_turns = (-5, -10, -15)
     right_turns = (5, 10, 15)
     speed_coefficients = (0.75, 0.50, 0.25)
@@ -81,6 +114,11 @@ def choose_wheel_turn_angle_and_direction(current_heading, desired_heading):
 
 
 def find_advanced_position(car_data):
+    """
+
+    :param car_data:
+    :return:
+    """
     car_data["final_heading"] = car_data["current_heading"] + car_data["turning_angle"]
     if car_data["final_heading"] < 0:
         car_data["final_heading"] += 360
@@ -107,6 +145,12 @@ def find_advanced_position(car_data):
 
 # Direction must be a string with either 'x' or 'y'
 def find_distance_component(car_data, direction):
+    """
+
+    :param car_data:
+    :param direction:
+    :return:
+    """
     initial_position = "initial_" + direction + "_position"
     advanced_position = "advanced_" + direction + "_position"
     distance_component = car_data[advanced_position] - car_data[initial_position]
@@ -114,12 +158,22 @@ def find_distance_component(car_data, direction):
 
 
 def find_distance_travelled(car_data):
+    """
+
+    :param car_data:
+    :return:
+    """
     x_distance_travelled = find_distance_component(car_data, 'x')
     y_distance_travelled = find_distance_component(car_data, 'y')
     car_data["distance_travelled"] = math.sqrt(x_distance_travelled**2 + y_distance_travelled**2)  # Pythagorean Theorem
 
 
 def stepped_turning_algorithm(car_data):
+    """
+
+    :param car_data:
+    :return:
+    """
     no_turn = 0
     if not check_if_within_heading(car_data["speed"], car_data["desired_heading"], tolerance=0.1):
         car_data["turning_angle"], speed_coefficient = choose_wheel_turn_angle_and_direction(
