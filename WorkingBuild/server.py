@@ -6,14 +6,12 @@ import socket
 import sys
 from multiprocessing import Process, freeze_support
 
-import dubins
 import matplotlib.pyplot as plt
 
+import WorkingBuild.stepped_turning as turning
 import WorkingBuild.global_cfg as cfg
 import WorkingBuild.gps_ops as gps
 import WorkingBuild.vector_ops as vec
-
-# import pymysql as sql
 
 BUFFERSIZE = 50
 
@@ -54,67 +52,77 @@ class Drone:
     """
     """
 
-    def __init__(self, func, ip, port, droneid, debug):
+    def __init__(self, func, ip, port, droneid, debug, shared_gps_data, shared_velocity_vector):
         self.name = droneid
-        self.process = Process(target=func, args=('Drone ' + str(droneid), ip, port, debug))
+        self.process = Process(target=func,
+                               args=('Drone ' + str(droneid), ip, port, debug, shared_gps_data, shared_velocity_vector))
+
         print('Drone ID: ' + str(self.name))
 
 
-def main(debug_mode):
+def main(debug_mode, test_type, shared_gps_data, shared_velocity_vector):
     """
-    Driver function for the entire program. Spawns sub-processes to control each drone and then terminates.
+    Driver function for the entire program. Spawns sub-processes to control
+    each drone and then terminates.
     :return: 0 on successful completion
     """
 
     proclst = []
 
     try:
-        if len(sys.argv) < 2:
+        if test_type == 'run':
+            a = Drone(run, cfg.CLIENT_IP_A,
+                      cfg.PORT,
+                      random.randint(0, 999),
+                      debug_mode,
+                      shared_gps_data,
+                      shared_velocity_vector)
+            proclst.append(a)
+            a.process.start()
+            # a.process.join()
 
-            print("Missing argument...\nUsage: python server.py [stop, run, debug_circle [time in seconds], "
-                  "debug_random, debug_gps]")
+        elif test_type == 'debug_gps':
+            gps.gps_debug()
+        else:
+            print(
+                "Invalid argument...\nUsage: python server.py [stop, run]")
             sys.exit()
 
-        else:
-
-            test_type = sys.argv[1]
-
-            if test_type == 'run':
-
-                a = Drone(run, cfg.CLIENT_IP_A, cfg.PORT, random.randint(0, 999), debug_mode)
-                proclst.append(a)
-                a.process.start()
-                a.process.join()
-
-            elif test_type == 'debug_gps':
-
-                gps.gps_debug()
-
-            else:
-                print(
-                    "Invalid argument...\nUsage: python server.py [stop, run]")
-                sys.exit()
-
     except KeyboardInterrupt:
-
         print('Keyboard Interrupt....Killing live processes')
-
         for i in range(0, len(proclst)):
-
             if proclst[i].process.is_alive():
                 print('Killing Drone ID: ' + str(proclst[i].name))
                 proclst[i].process.terminate()
-
         print('....Done\n')
 
 
-def run(dronename, ip, port, debug):
+def update_shared_gps_data(shared_gps_data, cardata):
+    with shared_gps_data.get_lock():
+        shared_gps_data[0] = cardata.XPOS
+        shared_gps_data[1] = cardata.YPOS
+
+
+def update_velocity_vector(shared_velocity_vector):
+    velocity_vector = [0, 0]
+    with shared_velocity_vector.get_lock():
+        velocity_vector[0] = shared_velocity_vector[0]
+        velocity_vector[1] = shared_velocity_vector[1]
+
+    return velocity_vector
+
+
+def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
     """
-    Default drone control algorithm. Uses input from ATE-3 Sim to control drones.
+    Default drone control algorithm. Uses input from ATE-3 Sim to control
+    drones.
     :param debug:
     :param dronename: String, name of drone
     :param ip: String, LAN IP address of drone
-    :param port: LAN Port of drone to be controlled, not necessary but can be changed.
+    :param port: LAN Port of drone to be controlled, not necessary but can be
+    changed.
+    :param shared_gps_data: GPS data shared with the simulation
+    :param shared_velocity_vector: Velocity vectors that are shared between the sim and the server
     :return: Nothing
     """
     init = True
@@ -134,23 +142,27 @@ def run(dronename, ip, port, debug):
     sock.connect((ip, port))
     # End IP Stuff
 
-    step_size = cfg.UPDATE_INTERVAL  # 2HZ refresh rate for turn calculation
-
     while True:
+        print("This should run a lot of times")
+        print("Debug Mode: " + str(debug))
         # GPS Initialization for Position ###################################
         socket_tx('gps', sock)
         message = socket_rx(sock)
 
         if debug:
-            print(message)
+            print("Socket Message: " + str(message))
 
         try:
             cardata.XPOS = gps.parse_gps_msg(str(message))[0]
             cardata.YPOS = gps.parse_gps_msg(str(message))[1]
+            update_shared_gps_data(shared_gps_data, cardata)
+            with shared_gps_data.get_lock():
+                print("shared x position: " + str(shared_gps_data[0]) +
+                      "\nshared y position: " + str(shared_gps_data[1]))
         except TypeError:
             if debug:
                 print('Invalid GPS Message...Exiting')
-            # socket_tx('disconnect', sock)
+            socket_tx('disconnect', sock)
             sock.close()
             sys.exit()
 
@@ -158,123 +170,105 @@ def run(dronename, ip, port, debug):
             print(cardata.XPOS, cardata.YPOS)
         # END GPS ###################################
 
-        q0 = (cardata.XPOS, cardata.YPOS, 0)
+        velocity_vector = [0, 0]
 
-        seed1 = random.random()
+        velocity_vector = update_velocity_vector(shared_velocity_vector)
 
-        if seed1 <= cfg.DIRCHANGEFACTOR or init:
-            init = False
-            velocity_vector = vec.call_sim()
-
-        [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS,
+        [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1],
+                                   cardata.XPOS, cardata.YPOS,
                                    cardata.HEADING)
-
-        # while tgtx < cfg.TURNDIAMETER or tgtx > cfg.LENGTH_X - cfg.TURNDIAMETER or tgty < cfg.TURNDIAMETER or tgty > cfg.LENGTH_Y - cfg.TURNDIAMETER:
-        #     velocity_vector = vec.call_sim()
-        #     [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1], cardata.XPOS, cardata.YPOS,
-        #                                cardata.HEADING)
 
         ##########################################################################
         desired_heading = math.atan2((tgty - cardata.YPOS), (tgtx - cardata.XPOS))
         if debug:
             print('Last Angle Orientation: ', math.degrees(desired_heading))
-
-        # if abs(math.degrees(desired_heading)) >= cfg.MAX_TURN_RADIUS:
-        #     print('Code For Dampened Turn Here')
-        # else:
-        q1 = (tgtx, tgty, desired_heading)  # maintain original heading to target
         ##########################################################################
 
-        qs, _ = dubins.path_sample(q0, q1, cfg.TURNDIAMETER, step_size)
-        path_length = dubins.path_length(q0, q1, cfg.TURNDIAMETER)
+        turn_data = {
+            "current_heading": cardata.HEADING,
+            "desired_heading": desired_heading,
+            "speed": cardata.SPEED,
+            "initial_x_position": cardata.XPOS,
+            "initial_y_position": cardata.YPOS,
+            "time_step": cfg.UPDATE_INTERVAL
+        }
+        turn_data = turning.stepped_turning_algorithm(turn_data)
 
-        interval_time = 0.0
 
-        for i in range(0, len(qs) - 1):
+        # #######  GPS ##########
+        # socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
+        # message = sock.recv(128)
+        # cardata.XPOS = qs[i][0]
+        # cardata.YPOS = qs[i][1]
 
-            prev_xpos = cardata.XPOS
-            prev_ypos = cardata.YPOS
+        # GPS ###################################
+        socket_tx('gps', sock)
+        message = socket_rx(sock)
 
-            # cardata.XPOS = qs[i][0]
-            # cardata.YPOS = qs[i][1]
-
-            # GPS ###################################
-            socket_tx('gps', sock)
-            message = socket_rx(sock)
-
-            try:
-                cardata.XPOS = gps.parse_gps_msg(str(message))[0]
-                cardata.YPOS = gps.parse_gps_msg(str(message))[1]
-            except TypeError:
-                if debug:
-                    print('Invalid GPS Message...Exiting')
-                # socket_tx('disconnect', sock)
-                sock.close()
-                sys.exit()
-            # END GPS ###################################
-
-            dist_traveled = math.sqrt((cardata.XPOS - prev_xpos) ** 2 + (cardata.YPOS - prev_ypos) ** 2)
-            cardata.DIST_TRAVELED = dist_traveled
-            path_length = path_length - dist_traveled
-
-            old_heading = cardata.HEADING
-
-            cardata.TURNANGLE = math.degrees(qs[i][2]) - old_heading
-
-            if cardata.TURNANGLE <= -180:
-                cardata.TURNANGLE = cardata.TURNANGLE + 360
-            elif cardata.TURNANGLE >= 180:
-                cardata.TURNANGLE = cardata.TURNANGLE - 360
-
-            cardata.HEADING = math.degrees(qs[i][2])
-
-            if abs(cardata.TURNANGLE) < 1.0:
-                cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2)
-            else:
-                cardata.SPEED = 5
-                # ^ Relate this to the angle in which its turning, higher angle == slower speed
-
-            ################################################################
-            gen_turn_signal(cardata.TURNANGLE, sock)
-
-            gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, sock)
-            ################################################################
-
-            pause_interval = dist_traveled / cardata.SPEED
-
-            if pause_interval == 0:
-                pause_interval = 1e-6  # <-- This is a starter to the program for the initial draw
-
-            if len(xpos) > BUFFERSIZE:
-                xpos.pop(0)
-                ypos.pop(0)
-
-            xpos.append(cardata.XPOS)
-            ypos.append(cardata.YPOS)
-
-            plt.clf()
-            plt.title(dronename)
-
-            if not debug:
-                plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
-
-            plt.plot(xpos, ypos, 'k-')
-            plt.plot(tgtx, tgty, 'rx')
-            plt.grid(True)
-
-            interval_time = interval_time + pause_interval
-
+        try:
+            cardata.XPOS = gps.parse_gps_msg(str(message))[0]
+            cardata.YPOS = gps.parse_gps_msg(str(message))[1]
+            update_shared_gps_data(shared_gps_data, cardata)
+        except TypeError:
             if debug:
-                print('Recieved Vel Vector: ', velocity_vector)
-                print('Calculated Tgt Pos: ', tgtx, tgty)
-                print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
-                print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
-                print('Interval Time: ', interval_time)
-                print('')
+                print('Invalid GPS Message...Exiting')
+            socket_tx('disconnect', sock)
+            sock.close()
+            sys.exit()
+        # END GPS ###################################
 
-            # dbinsert(cardata, dronename)
+        cardata.DIST_TRAVELED = turn_data["distance_travelled"]
 
-            plt.pause(pause_interval)
+        cardata.TURNANGLE = turn_data["turning_angle"]
+
+        cardata.HEADING = turn_data["final_heading"]
+
+        if abs(cardata.TURNANGLE) < 1.0:
+            cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 +
+                                      velocity_vector[1] ** 2)
+        else:
+            cardata.SPEED = 5
+            # ^ Relate this to the angle in which its turning,
+            # higher angle == slower speed
+
+        ################################################################
+        gen_turn_signal(cardata.TURNANGLE, sock)
+
+        gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, sock)
+        ################################################################
+
+        pause_interval = cardata.DIST_TRAVELED / cardata.SPEED
+        print("Pause Interval: " + str(pause_interval))
+
+        if pause_interval == 0:
+            pause_interval = 1e-6  # <-- This is a starter to the program
+
+        if len(xpos) > BUFFERSIZE:
+            xpos.pop(0)
+            ypos.pop(0)
+
+        xpos.append(cardata.XPOS)
+        ypos.append(cardata.YPOS)
+
+        plt.clf()
+        plt.title(dronename)
+
+        if not debug:
+            plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
+
+        plt.plot(xpos, ypos, 'k-')
+        plt.plot(tgtx, tgty, 'rx')
+        plt.grid(True)
+
+        if debug:
+            print('Recieved Vel Vector: ', velocity_vector)
+            print('Calculated Tgt Pos: ', tgtx, tgty)
+            print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
+            print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
+            # print('Interval Time: ', interval_time)
+            print('')
+
+        plt.pause(pause_interval)
 
 
 def printf(layout, *args):
@@ -319,7 +313,8 @@ def gen_spd_signal(speed, angle, sock):
     """
 
     if abs(angle) > 1.0:
-        spd = int(round((cfg.TEST_SPEED + (speed * cfg.SPDSCALE)) / (abs(angle) * cfg.TURNFACTOR)))
+        spd = int(round((cfg.TEST_SPEED + (speed * cfg.SPDSCALE)) /
+                        (abs(angle) * cfg.TURNFACTOR)))
     else:
         spd = int(round(cfg.TEST_SPEED + (speed * cfg.SPDSCALE)))
 
@@ -375,32 +370,14 @@ def disable(self):
     self.ENDC = ''
 
 
-# def dbinsert(data, dronename):
-#     """
-#     Craft SQL querry and insert data into database to store test results.
-#     :param data: Data to be inserted (CARDATA obj)
-#     :param dronename: String, name of drone
-#     :return: 0 on successful completion
-#     """
-#
-#     db = sql.connect(host='localhost', user='FriendorFoe@localhost', passwd='password', db='DRONES')
-#     cursor = db.cursor()
-#
-#     # noinspection SqlNoDataSourceInspection
-#     query = """INSERT INTO DRONES.POS(DRONENAME, GPSX, GPSY, XPOS, YPOS, SPEED, HEADING, TURN_ANGLE, DIST_TRAVELED) VALUES ("%s", %f, %f, %f, %f, %f, %f, %f, %f)"""
-#
-#     try:
-#         cursor.execute(query % (
-#             dronename, data.LONG, data.LAT, data.XPOS, data.YPOS, data.SPEED, data.HEADING, data.TURNANGLE,
-#             data.DIST_TRAVELED))
-#         db.commit()
-#     except Exception as e1:
-#         db.rollback()
-#         print(e1)
-#
-#     db.close()
-
-
 if __name__ == '__main__':
     freeze_support()
-    main(True)
+    if len(sys.argv) < 2:
+        print("Missing argument...\nUsage: python server.py\
+               [stop, run, debug_circle [time in seconds], "
+              "debug_random, debug_gps]")
+        sys.exit()
+    else:
+        test_type = sys.argv[1]
+
+    # main(True, test_type)

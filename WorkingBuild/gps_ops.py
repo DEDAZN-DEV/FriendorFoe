@@ -1,6 +1,6 @@
 import math
 
-import global_cfg as cfg
+import WorkingBuild.global_cfg as cfg
 
 BASE_X = 0
 BASE_Y = 0
@@ -53,42 +53,56 @@ def parse_gps_msg(message):
     mlong = ''
     # altitude = ''
 
-    # bytes 17 - 26
-    print(message)
-    for i in range(separator[1] + 1, separator[1] + 3):
-        dlat = dlat + message[i]
-    for j in range(separator[1] + 3, separator[2]):
-        mlat = mlat + message[j]
+    ##### TESTING #####
+    latitude = 48
+    longitude = 123
 
-    dlat = int(dlat)
-    mlat = float(mlat)
-    mlat = mlat / 60
-    latitude = dlat + mlat
-
-    if message[separator[2] + 1] == 'S':
-        latitude = -latitude
-
-    print(latitude)
-
-    # bytes 30 - 40
-    for k in range(separator[3] + 1, separator[3] + 4):
-        dlong = dlong + message[k]
-    for n in range(separator[3] + 4, separator[4]):
-        mlong = mlong + message[n]
-
-    dlong = int(dlong)
-    mlong = float(mlong)
-    mlong = mlong / 60
-    longitude = dlong + mlong
-
-    if message[separator[4] + 1] == 'W':
-        longitude = -longitude
-
-    print(longitude)
-
-    data = scale_xy(gps_to_xy(latitude, longitude))
+    #data = scale_xy(gps_to_xy(latitude, longitude))
+    data = [latitude, longitude]
 
     return data
+
+#    # bytes 17 - 26
+#    print(message)
+#    for i in range(separator[1] + 1, separator[1] + 3):
+#        dlat = dlat + message[i]
+#    for j in range(separator[1] + 3, separator[2]):
+#        mlat = mlat + message[j]
+#
+#    dlat = int(dlat)
+#    mlat = float(mlat)
+#    mlat = mlat / 60
+#    latitude = dlat + mlat
+#
+#    if message[separator[2] + 1] == 'S':
+#        latitude = -latitude
+#
+#    print(latitude)
+#
+#    # bytes 30 - 40
+#    for k in range(separator[3] + 1, separator[3] + 4):
+#        dlong = dlong + message[k]
+#    for n in range(separator[3] + 4, separator[4]):
+#        mlong = mlong + message[n]
+#
+#    dlong = int(dlong)
+#    mlong = float(mlong)
+#    mlong = mlong / 60
+#    longitude = dlong + mlong
+#
+#    if message[separator[4] + 1] == 'W':
+#        longitude = -longitude
+#
+#    print(longitude)
+#
+#    ##### TESTING #####
+#    latitude = 48
+#    longitude = 123
+#
+#    #data = scale_xy(gps_to_xy(latitude, longitude))
+#    data = [latitude, longitude]
+#
+#    return data
 
 
 def poll_gps():
@@ -102,6 +116,9 @@ def gps_to_xy(lat, lon):
     @param lon:
     @return:
     """
+
+    BASE_X, BASE_Y = calc_originxy()
+
     radlat = math.radians(lat)
     radlong = math.radians(lon)
 
@@ -118,6 +135,7 @@ def gps_to_xy(lat, lon):
 
 
 def scale_xy(xy):
+    X_RATIO, Y_RATIO = set_xy_ratio()
     xy[0] = xy[0] / X_RATIO
     xy[1] = xy[1] / Y_RATIO
 
@@ -159,16 +177,22 @@ def gps_debug():
 
 
 def calc_originxy():
-    global BASE_X, BASE_Y
 
-    temp = gps_to_xy(cfg.ORIGIN_LATITUDE, cfg.ORIGIN_LONGITUDE)
-    BASE_X = temp[0]
-    BASE_Y = temp[1]
+    BASE_X = 0
+    BASE_Y = 0
+
+    return BASE_X, BASE_Y
+#   temp = gps_to_xy(cfg.ORIGIN_LATITUDE, cfg.ORIGIN_LONGITUDE)
+#   BASE_X = temp[0]
+#   BASE_Y = temp[1]
 
 
 def set_xy_ratio():
-    global X_RATIO, Y_RATIO
 
-    temp = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
-    Y_RATIO = temp[1] / cfg.LENGTH_Y
-    X_RATIO = temp[0] / cfg.LENGTH_X
+    X_RATIO = 1
+    Y_RATIO = 1
+
+#   temp = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
+#   Y_RATIO = temp[1] / cfg.LENGTH_Y
+#   X_RATIO = temp[0] / cfg.LENGTH_X
+    return X_RATIO, Y_RATIO
