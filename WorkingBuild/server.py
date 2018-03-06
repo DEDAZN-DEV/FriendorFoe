@@ -123,14 +123,10 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
     """
     cardata = CarData()
     xpos, ypos = initialize_plot()
-
-    gps.calc_originxy()
-    gps.set_xy_ratio()
-    sock = method_name(ip, port)
+    initialize_gps()
+    sock = initialize_connection(ip, port)
 
     while True:
-        print("This should run a lot of times")
-        print("Debug Mode: " + str(debug))
         request_gps_fix(cardata, debug, shared_gps_data, sock)
 
         velocity_vector = [0, 0]
@@ -210,7 +206,12 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
         plt.pause(pause_interval)
 
 
-def method_name(ip, port):
+def initialize_gps():
+    gps.calc_originxy()
+    gps.set_xy_ratio()
+
+
+def initialize_connection(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((ip, port))
     return sock
@@ -222,6 +223,7 @@ def initialize_plot():
     xpos = []
     ypos = []
     return xpos, ypos
+
 
 def request_gps_fix(cardata, debug, shared_gps_data, sock):
     socket_tx('gps', sock)
