@@ -90,6 +90,11 @@ def gps_to_xy(lat, lon):
 
 
 def scale_xy(xy):
+    """
+
+    :param xy:
+    :return:
+    """
     set_xy_ratio()
 
     xy[0] = xy[0] / X_RATIO
@@ -99,10 +104,19 @@ def scale_xy(xy):
 
 
 def deg_to_seconds(val):
+    """
+
+    :param val:
+    :return:
+    """
     return val * 60 * 60
 
 
 def gps_debug():
+    """
+
+    :return:
+    """
     calc_originxy()
     set_xy_ratio()
 
@@ -133,6 +147,10 @@ def gps_debug():
 
 
 def calc_originxy():
+    """
+
+    :return:
+    """
     global BASE_X
     global BASE_Y
 
@@ -144,6 +162,10 @@ def calc_originxy():
 
 
 def set_xy_ratio():
+    """
+
+    :return:
+    """
     global X_RATIO
     global Y_RATIO
 
