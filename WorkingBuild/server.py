@@ -121,53 +121,19 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
     :param shared_velocity_vector: Velocity vectors that are shared between the sim and the server
     :return: Nothing
     """
-    init = True
     cardata = CarData()
-
-    plt.figure(num=1, figsize=(6, 8))
-    plt.ion()
-
-    xpos = []
-    ypos = []
+    xpos, ypos = initialize_plot()
 
     gps.calc_originxy()
     gps.set_xy_ratio()
-
-    # IP Initialization
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((ip, port))
-    # End IP Stuff
+    sock = method_name(ip, port)
 
     while True:
         print("This should run a lot of times")
         print("Debug Mode: " + str(debug))
-        # GPS Initialization for Position ###################################
-        socket_tx('gps', sock)
-        message = socket_rx(sock)
-
-        if debug:
-            print("Socket Message: " + str(message))
-
-        try:
-            cardata.XPOS = gps.parse_gps_msg(str(message))[0]
-            cardata.YPOS = gps.parse_gps_msg(str(message))[1]
-            update_shared_gps_data(shared_gps_data, cardata)
-            with shared_gps_data.get_lock():
-                print("shared x position: " + str(shared_gps_data[0]) +
-                      "\nshared y position: " + str(shared_gps_data[1]))
-        except TypeError:
-            if debug:
-                print('Invalid GPS Message...Exiting')
-            socket_tx('disconnect', sock)
-            sock.close()
-            sys.exit()
-
-        if debug:
-            print(cardata.XPOS, cardata.YPOS)
-        # END GPS ###################################
+        request_gps_fix(cardata, debug, shared_gps_data, sock)
 
         velocity_vector = [0, 0]
-
         velocity_vector = update_velocity_vector(shared_velocity_vector)
 
         [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1],
@@ -190,28 +156,7 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
         }
         turn_data = turning.stepped_turning_algorithm(turn_data)
 
-
-        # #######  GPS ##########
-        # socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
-        # message = sock.recv(128)
-        # cardata.XPOS = qs[i][0]
-        # cardata.YPOS = qs[i][1]
-
-        # GPS ###################################
-        socket_tx('gps', sock)
-        message = socket_rx(sock)
-
-        try:
-            cardata.XPOS = gps.parse_gps_msg(str(message))[0]
-            cardata.YPOS = gps.parse_gps_msg(str(message))[1]
-            update_shared_gps_data(shared_gps_data, cardata)
-        except TypeError:
-            if debug:
-                print('Invalid GPS Message...Exiting')
-            socket_tx('disconnect', sock)
-            sock.close()
-            sys.exit()
-        # END GPS ###################################
+        request_gps_fix(cardata, debug, shared_gps_data, sock)
 
         cardata.DIST_TRAVELED = turn_data["distance_travelled"]
 
@@ -263,6 +208,34 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
             print('')
 
         plt.pause(pause_interval)
+
+
+def method_name(ip, port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((ip, port))
+    return sock
+
+
+def initialize_plot():
+    plt.figure(num=1, figsize=(6, 8))
+    plt.ion()
+    xpos = []
+    ypos = []
+    return xpos, ypos
+
+def request_gps_fix(cardata, debug, shared_gps_data, sock):
+    socket_tx('gps', sock)
+    message = socket_rx(sock)
+    try:
+        cardata.XPOS = gps.parse_gps_msg(str(message))[0]
+        cardata.YPOS = gps.parse_gps_msg(str(message))[1]
+        update_shared_gps_data(shared_gps_data, cardata)
+    except TypeError:
+        if debug:
+            print('Invalid GPS Message...Exiting')
+        socket_tx('disconnect', sock)
+        sock.close()
+        sys.exit()
 
 
 def printf(layout, *args):
