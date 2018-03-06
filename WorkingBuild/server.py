@@ -83,10 +83,6 @@ def main(debug_mode, test_type, shared_gps_data, shared_velocity_vector):
 
         elif test_type == 'debug_gps':
             gps.gps_debug()
-        else:
-            print(
-                "Invalid argument...\nUsage: python server.py [stop, run]")
-            sys.exit()
 
     except KeyboardInterrupt:
         print('Keyboard Interrupt....Killing live processes')
