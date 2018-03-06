@@ -227,11 +227,9 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
             # ^ Relate this to the angle in which its turning,
             # higher angle == slower speed
 
-        ################################################################
         gen_turn_signal(cardata.TURNANGLE, sock)
 
         gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, sock)
-        ################################################################
 
         pause_interval = cardata.DIST_TRAVELED / cardata.SPEED
         print("Pause Interval: " + str(pause_interval))
