@@ -181,10 +181,12 @@ def calc_originxy():
     BASE_X = 0
     BASE_Y = 0
 
+    temp = gps_to_xy(cfg.ORIGIN_LATITUDE, cfg.ORIGIN_LONGITUDE)
+    BASE_X = temp[0]
+    BASE_Y = temp[1]
+
     return BASE_X, BASE_Y
-#   temp = gps_to_xy(cfg.ORIGIN_LATITUDE, cfg.ORIGIN_LONGITUDE)
-#   BASE_X = temp[0]
-#   BASE_Y = temp[1]
+
 
 
 def set_xy_ratio():
@@ -192,7 +194,8 @@ def set_xy_ratio():
     X_RATIO = 1
     Y_RATIO = 1
 
-#   temp = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
-#   Y_RATIO = temp[1] / cfg.LENGTH_Y
-#   X_RATIO = temp[0] / cfg.LENGTH_X
+    temp = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
+    Y_RATIO = temp[1] / cfg.LENGTH_Y
+    X_RATIO = temp[0] / cfg.LENGTH_X
+
     return X_RATIO, Y_RATIO
