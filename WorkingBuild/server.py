@@ -128,19 +128,7 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
 
     while True:
         request_gps_fix(cardata, debug, shared_gps_data, sock)
-
-        velocity_vector = [0, 0]
-        velocity_vector = update_velocity_vector(shared_velocity_vector)
-
-        [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1],
-                                   cardata.XPOS, cardata.YPOS,
-                                   cardata.HEADING)
-
-        ##########################################################################
-        desired_heading = math.atan2((tgty - cardata.YPOS), (tgtx - cardata.XPOS))
-        if debug:
-            print('Last Angle Orientation: ', math.degrees(desired_heading))
-        ##########################################################################
+        desired_heading, tgtx, tgty, velocity_vector = get_new_heading(cardata, debug, shared_velocity_vector)
 
         turn_data = {
             "current_heading": cardata.HEADING,
@@ -204,6 +192,22 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
             print('')
 
         plt.pause(pause_interval)
+
+
+def get_new_heading(cardata, debug, shared_velocity_vector):
+    velocity_vector = update_velocity_vector(shared_velocity_vector)
+    [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1],
+                               cardata.XPOS, cardata.YPOS,
+                               cardata.HEADING)
+    desired_heading = calculate_desired_heading(cardata, debug, tgtx, tgty)
+    return desired_heading, tgtx, tgty, velocity_vector
+
+
+def calculate_desired_heading(cardata, debug, tgtx, tgty):
+    desired_heading = math.atan2((tgty - cardata.YPOS), (tgtx - cardata.XPOS))
+    if debug:
+        print('Last Angle Orientation: ', math.degrees(desired_heading))
+    return desired_heading
 
 
 def initialize_gps():
