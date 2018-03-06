@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 
 import WorkingBuild.global_cfg as cfg
 import WorkingBuild.gps_ops as gps
+import WorkingBuild.mock_sim_inputs as vec
 import WorkingBuild.stepped_turning as turning
-import WorkingBuild.vector_ops as vec
 
 BUFFERSIZE = 50
 

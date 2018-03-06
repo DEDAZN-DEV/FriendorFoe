@@ -3,8 +3,6 @@ import random
 
 import WorkingBuild.global_cfg as cfg
 
-CIRCLETGTANGLE = 0
-
 
 def gen_random_vector():
     """
@@ -89,37 +87,11 @@ def update_pos(vector, data):
     return newdata
 
 
-def new_pos(stage, cardata):
-    radius = 5
-
-    if stage == 1:
-        return [30, 20]
-    elif stage == 2:
-        return [40, 40]
-    elif stage == 3:
-        return [50, 65]
-    elif 3 < stage <= 25:
-        circleangle = math.fmod(cardata[3] + 1, 360)
-
-        x = 50 + radius * math.cos(math.radians(circleangle))
-        y = 65 + radius * math.sin(math.radians(circleangle))
-
-        return [x, y]
-        #    return [45, 90]
-        # elif stage == 5:
-        #    return [55, 110]
-    else:
-        return [75, 110]
-
-
 def calc_xy(vx, vy, curx, cury, heading):
     xdistance = (vx * cfg.UPDATE_INTERVAL) + (
             0.5 * math.cos(math.radians(heading)) * cfg.ACCELERATION * (cfg.UPDATE_INTERVAL ** 2.0))
     ydistance = (vy * cfg.UPDATE_INTERVAL) + (
             0.5 * math.sin(math.radians(heading)) * cfg.ACCELERATION * (cfg.UPDATE_INTERVAL ** 2.0))
-
-    # print('********************************************')
-    # print('Calculated XY Deltas: ', xdistance, ydistance)
 
     return [curx + xdistance, cury + ydistance]
 

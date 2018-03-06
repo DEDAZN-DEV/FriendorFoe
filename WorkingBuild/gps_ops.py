@@ -177,9 +177,8 @@ def gps_debug():
 
 
 def calc_originxy():
-
-    BASE_X = 0
-    BASE_Y = 0
+    global BASE_X
+    global BASE_Y
 
     temp = gps_to_xy(cfg.ORIGIN_LATITUDE, cfg.ORIGIN_LONGITUDE)
     BASE_X = temp[0]
@@ -190,9 +189,8 @@ def calc_originxy():
 
 
 def set_xy_ratio():
-
-    X_RATIO = 1
-    Y_RATIO = 1
+    global X_RATIO
+    global Y_RATIO
 
     temp = gps_to_xy(cfg.CORNER_LAT, cfg.CORNER_LONG)
     Y_RATIO = temp[1] / cfg.LENGTH_Y
