@@ -7,6 +7,7 @@ BASE_Y = 0
 X_RATIO = 1
 Y_RATIO = 1
 
+
 def parse_gps_msg(message):
     """
     Gets the current GPS coordinates from the RC car. Currently generates a random GPS coordinate +/- error factor
@@ -57,10 +58,11 @@ def parse_gps_msg(message):
     latitude = 48
     longitude = 123
 
-    #data = scale_xy(gps_to_xy(latitude, longitude))
+    # data = scale_xy(gps_to_xy(latitude, longitude))
     data = [latitude, longitude]
 
     return data
+
 
 #    # bytes 17 - 26
 #    print(message)
@@ -117,7 +119,7 @@ def gps_to_xy(lat, lon):
     @return:
     """
 
-    BASE_X, BASE_Y = calc_originxy()
+    calc_originxy()
 
     radlat = math.radians(lat)
     radlong = math.radians(lon)
@@ -129,13 +131,13 @@ def gps_to_xy(lat, lon):
     rot_y = y * math.cos(math.radians(cfg.ROTATION_ANGLE)) + x * math.sin(math.radians(cfg.ROTATION_ANGLE))
 
     xy = [rot_x - BASE_X, rot_y - BASE_Y]
-    # xy = [x - BASE_X, y - BASE_Y]
 
     return xy
 
 
 def scale_xy(xy):
-    X_RATIO, Y_RATIO = set_xy_ratio()
+    set_xy_ratio()
+
     xy[0] = xy[0] / X_RATIO
     xy[1] = xy[1] / Y_RATIO
 
@@ -185,7 +187,6 @@ def calc_originxy():
     BASE_Y = temp[1]
 
     return BASE_X, BASE_Y
-
 
 
 def set_xy_ratio():

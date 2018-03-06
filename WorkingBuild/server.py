@@ -190,7 +190,6 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
         }
         turn_data = turning.stepped_turning_algorithm(turn_data)
 
-
         # #######  GPS ##########
         # socket_tx('gps', cfg.CLIENT_IP_A, cfg.PORT, sock)
         # message = sock.recv(128)
