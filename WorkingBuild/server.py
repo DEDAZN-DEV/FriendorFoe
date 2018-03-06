@@ -8,9 +8,9 @@ from multiprocessing import Process, freeze_support
 
 import matplotlib.pyplot as plt
 
-import WorkingBuild.stepped_turning as turning
 import WorkingBuild.global_cfg as cfg
 import WorkingBuild.gps_ops as gps
+import WorkingBuild.stepped_turning as turning
 import WorkingBuild.vector_ops as vec
 
 BUFFERSIZE = 50
@@ -374,8 +374,7 @@ if __name__ == '__main__':
     freeze_support()
     if len(sys.argv) < 2:
         print("Missing argument...\nUsage: python server.py\
-               [stop, run, debug_circle [time in seconds], "
-              "debug_random, debug_gps]")
+               [run, debug_gps]")
         sys.exit()
     else:
         test_type = sys.argv[1]
