@@ -154,6 +154,7 @@ try:
 
         # Limit to 20 frames per second
         clock.tick(120)
+
 except KeyboardInterrupt:
     # Close the window and quit.
     # If you forget this line, the program will 'hang'
