@@ -60,7 +60,7 @@ class Drone:
         print('Drone ID: ' + str(self.name))
 
 
-def main(debug_mode, test_type, shared_gps_data, shared_velocity_vector):
+def main(debug_mode, test_arg, shared_gps_data, shared_velocity_vector):
     """
     Driver function for the entire program. Spawns sub-processes to control
     each drone and then terminates.
@@ -70,7 +70,7 @@ def main(debug_mode, test_type, shared_gps_data, shared_velocity_vector):
     proclst = []
 
     try:
-        if test_type == 'run':
+        if test_arg == 'run':
             a = Drone(run, cfg.CLIENT_IP_A,
                       cfg.PORT,
                       random.randint(0, 999),
