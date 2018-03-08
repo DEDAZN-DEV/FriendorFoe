@@ -288,6 +288,9 @@ def gen_turn_signal(angle):
     :return: 0 on successful completion
     """
 
+    if angle < -180 or angle > 180:
+        raise ValueError
+
     if angle < 0:
         turn_signal = int(round(cfg.CENTER + (abs(angle) * cfg.DEGPERPOINT)))
     else:

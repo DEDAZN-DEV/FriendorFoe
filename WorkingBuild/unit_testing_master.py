@@ -24,7 +24,14 @@ class TestServerFunctions(unittest.TestCase):
     def test_gen_turn_signal(self):
         self.assertEqual(server.gen_turn_signal(180), cfg.MAX_RIGHT)
         self.assertEqual(server.gen_turn_signal(0), cfg.CENTER)
+        self.assertEqual(server.gen_turn_signal(-180), cfg.MAX_LEFT)
 
+        self.assertRaises(ValueError, server.gen_turn_signal, -190)
+        self.assertRaises(ValueError, server.gen_turn_signal, 190)
+
+        for angle in range(-180, 180):
+            self.assertGreaterEqual(server.gen_turn_signal(angle), cfg.MAX_LEFT)
+            self.assertLessEqual(server.gen_turn_signal(angle), cfg.MAX_RIGHT)
 
 if __name__ == '__main__':
     unittest.main()
