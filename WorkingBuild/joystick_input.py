@@ -151,17 +151,21 @@ try:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
             velocity_vector[0] = -1
-        elif keys[pygame.K_RIGHT]:
+
+        if keys[pygame.K_RIGHT]:
             velocity_vector[0] = 1
-        else:
-            velocity_vector[0] = 0
 
         if keys[pygame.K_UP]:
             velocity_vector[1] = 1
-        elif keys[pygame.K_DOWN]:
+
+        if keys[pygame.K_DOWN]:
             velocity_vector[1] = -1
-        else:
+
+        if keys[pygame.K_UP] == False and keys[pygame.K_DOWN] == False:
             velocity_vector[1] = 0
+
+        if keys[pygame.K_LEFT] == False and keys[pygame.K_RIGHT] == False:
+            velocity_vector[0] = 0
 
         textPrint.print(screen, "Velocity vector: {:>6.3f} {:>6.3f}". \
                         format(velocity_vector[0], velocity_vector[1]))
