@@ -41,6 +41,11 @@ class TextPrint:
 
 
 def init_joystick():
+    """
+    Initialize joystick/keyboard for use and input
+
+    :return: <Exception> KeyboardInterrupt upon completion
+    """
     global velocity_vector
 
     speed_factor = 0.0
@@ -205,11 +210,23 @@ def init_joystick():
 
 
 def get_vector():
+    """
+    Gets the vector from keyboard/joystick
+
+    :return: <Vector> The generated vector created by input x,y
+    """
     print(velocity_vector)
     return velocity_vector
 
 
 def gen_velocity_vector(x_input, y_input):
+    """
+    Calculates the velocity vector based on angle
+
+    :param x_input: <Float> [-1,1] from the x-axis of the input device
+    :param y_input: <Float> [-1,1] from the y-axis of the input device
+    :return: <List> Angle and velocity vector (x,y)
+    """
     deg_angle = math.atan2(y_input, x_input) * 180 / math.pi
 
     if deg_angle < 0:

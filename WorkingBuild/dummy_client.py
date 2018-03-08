@@ -1,3 +1,7 @@
+"""
+Striped down version of client.py for testing purposes only.
+"""
+
 import os
 import socket
 import sys
@@ -33,7 +37,7 @@ def main():
                         print('[DEBUG] Recieved data from: ' +
                               conn.getpeername().__str__() +
                               '\t\t' + data.__str__())
-                        # result = test_run(data, conn)
+                        # result = execute_data(data, conn)
                         if data == "gps":
                             conn.sendall("<GPS Message>")
                         else:
@@ -140,7 +144,7 @@ def test_run(arg, conn):
                       + str(val))
                 servo_ctl(tgt, val)
 
-    print('[DEBUG] Exiting test_run function')
+    print('[DEBUG] Exiting execute_data function')
 
 
 def get_gps(conn):

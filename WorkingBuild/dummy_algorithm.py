@@ -1,6 +1,11 @@
-import WorkingBuild.car_controller as controller
-import time
+"""
+Stripped down version of server.py for testing purposes only
+"""
+
 import sys
+import time
+
+import WorkingBuild.car_controller as controller
 
 if __name__ == '__main__':
     controller.start_server([2, 2])

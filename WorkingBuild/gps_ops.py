@@ -10,8 +10,10 @@ Y_RATIO = 1
 
 def parse_gps_msg(message):
     """
-    Gets the current GPS coordinates from the RC car. Currently generates a random GPS coordinate +/- error factor
-    @return: Returns the lat and long.
+    Parses a GGA formatted string and returns the lat and long in degree-decimal format
+
+    :param message: <String> the GGA message that is to be parsed, a string
+    :return: <Array> a two element array that contains the lat and long
     """
 
     separator = []
@@ -67,10 +69,11 @@ def parse_gps_msg(message):
 
 def gps_to_xy(lat, lon):
     """
+    Converts the lat, long to a raw x,y value based on the reference points in the config file
 
-    @param lat:
-    @param lon:
-    @return:
+    :param lat: <Float> decimal latitude value
+    :param lon: <Float> decimal longitiude value
+    :return: <Array> two element array consisting of raw x,y values
     """
 
     calc_originxy()
@@ -91,9 +94,10 @@ def gps_to_xy(lat, lon):
 
 def scale_xy(xy):
     """
+    Scales xy values to proper size based on length and width of field
 
-    :param xy:
-    :return:
+    :param xy: <Array> vector to be scaled (x,y)
+    :return: <Array> two element array consisting of scaled x,y values
     """
     set_xy_ratio()
 
@@ -105,17 +109,19 @@ def scale_xy(xy):
 
 def deg_to_seconds(val):
     """
+    Converts degrees to seconds (1 degree = 60 minutes = 3600 seconds)
 
-    :param val:
-    :return:
+    :param val: <Float> value to be converted
+    :return: <Float> converted value
     """
     return val * 60 * 60
 
 
 def gps_debug():
     """
+    Debug function for GPS
 
-    :return:
+    :return: <Int> 0 on success
     """
     calc_originxy()
     set_xy_ratio()
@@ -145,11 +151,13 @@ def gps_debug():
     print(test)
     print(scale_xy(test))
 
+    return 0
 
 def calc_originxy():
     """
+    Calculates origin x,y based on latitude and longitude. Used to laterally shift the x,y to 0,0.
 
-    :return:
+    :return: <Array> Base X and Y values
     """
     global BASE_X
     global BASE_Y
@@ -163,8 +171,9 @@ def calc_originxy():
 
 def set_xy_ratio():
     """
+    Calculate the XY ratio based on the length and width versus the change in lat/long between origin and diagonal corner
 
-    :return:
+    :return: <Array> Calculated X and Y Ratio
     """
     global X_RATIO
     global Y_RATIO

@@ -16,8 +16,8 @@ def start_server(initial_velocity_vector):
     """
     Initilizes server with a given velocity vector
 
-    :param initial_velocity_vector:
-    :return: 0 on successful completion
+    :param <Array> initial_velocity_vector:
+    :return: <Int> 0 on success
     """
     server.main(True, "run", shared_gps_data, shared_velocity_vector)
     with shared_velocity_vector.get_lock():
@@ -31,7 +31,7 @@ def get_gps_data():
     """
     Get gps data from shared buffer for API
 
-    :return: An array with two elements consisting of x and y positions
+    :return: <Array> An array with two elements consisting of x and y positions
     """
     with shared_gps_data.get_lock():
         x_position = shared_gps_data[0]
@@ -44,8 +44,8 @@ def set_velocity_vectors(velocity_vector):
     """
     API function to change velocity vectors
 
-    :param velocity_vector: New vector [x,y] to be input to our software
-    :return: 0 on successful completion
+    :param velocity_vector: <Array> New vector [x,y] to be input to our software
+    :return: <Int> 0 on success
     """
     with shared_velocity_vector.get_lock():
         shared_velocity_vector[0] = velocity_vector[0]

@@ -1,3 +1,7 @@
+"""
+Global configuration values, all constants set before start
+"""
+
 # CAR VALUES #
 ACCELERATION = 15  # of car in m/s**2
 CENTER = 5800
