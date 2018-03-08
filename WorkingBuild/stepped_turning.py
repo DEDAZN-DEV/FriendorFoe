@@ -13,6 +13,7 @@ import sys
 
 debug = False
 
+
 def find_angular_difference(heading_1, heading_2):
     """
 
@@ -119,16 +120,8 @@ def find_advanced_position(car_data):
     :param car_data:
     :return:
     """
-    car_data["final_heading"] = car_data["current_heading"] + car_data["turning_angle"]
-    if car_data["final_heading"] < 0:
-        car_data["final_heading"] += 360
-
-    if debug:
-        print("\nSpeed: " + str(car_data["speed"]) + "\nFinal Heading: " + str(car_data["final_heading"]) + "\n" +
-              str(7.5 * math.sin(math.radians(10))))
-
-    car_data["x_speed_component"] = car_data["speed"] * math.sin(math.radians(car_data["final_heading"]))
-    car_data["y_speed_component"] = car_data["speed"] * math.cos(math.radians(car_data["final_heading"]))
+    car_data["final_heading"] = add_angles(car_data["current_heading"], car_data["turning_angle"])
+    find_speed_components(car_data)
 
     car_data["advanced_x_position"] = car_data["initial_x_position"] + \
         car_data["time_step"] * car_data["x_speed_component"]
@@ -141,6 +134,19 @@ def find_advanced_position(car_data):
         print("\n")
 
     return car_data
+
+
+def find_speed_components(car_data):
+    car_data["x_speed_component"] = car_data["speed"] * math.sin(math.radians(car_data["final_heading"]))
+    car_data["y_speed_component"] = car_data["speed"] * math.cos(math.radians(car_data["final_heading"]))
+
+
+def add_angles(angle_1, angle_2):
+    angle_sum = angle_1 + angle_2
+    if angle_sum < 0:
+        angle_sum += 360
+
+    return angle_sum
 
 
 # Direction must be a string with either 'x' or 'y'

@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 import WorkingBuild.global_cfg as cfg
 import WorkingBuild.gps_ops as gps
-import WorkingBuild.mock_sim_inputs as vec
+# import WorkingBuild.mock_sim_inputs as vec
 import WorkingBuild.stepped_turning as turning
 
 BUFFERSIZE = 50
@@ -42,6 +42,8 @@ class CarData:
         self.LONG = 0.0
         self.XPOS = 0.0
         self.YPOS = 0.0
+        self.TGTXPOS = 0.0
+        self.TGTYPOS = 0.0
         self.HEADING = 0.0
         self.TURNANGLE = 0.0
         self.SPEED = 0.0
@@ -127,84 +129,93 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
     sock = initialize_connection(ip, port)
 
     while True:
-        request_gps_fix(cardata, debug, shared_gps_data, sock)
-        desired_heading, tgtx, tgty, velocity_vector = get_new_heading(cardata, debug, shared_velocity_vector)
+        request_gps_fix(cardata, debug, sock)
+        update_shared_gps_data(shared_gps_data, cardata)
 
-        turn_data = {
-            "current_heading": cardata.HEADING,
-            "desired_heading": desired_heading,
-            "speed": cardata.SPEED,
-            "initial_x_position": cardata.XPOS,
-            "initial_y_position": cardata.YPOS,
-            "time_step": cfg.UPDATE_INTERVAL
-        }
+        velocity_vector = update_velocity_vector(shared_velocity_vector)
+        desired_heading = calculate_desired_heading(cardata, debug)
+        find_vehicle_speed(cardata, velocity_vector)
+        turn_data = initialize_turn_data(cardata, desired_heading)
         turn_data = turning.stepped_turning_algorithm(turn_data)
+        apply_turn_to_cardata(cardata, turn_data)
+        turn_signal, speed_signal = generate_servo_signals(cardata)
+        send_turn_to_car(sock, speed_signal, turn_signal)
 
-        request_gps_fix(cardata, debug, shared_gps_data, sock)
-
-        cardata.DIST_TRAVELED = turn_data["distance_travelled"]
-
-        cardata.TURNANGLE = turn_data["turning_angle"]
-
-        cardata.HEADING = turn_data["final_heading"]
-
-        if abs(cardata.TURNANGLE) < 1.0:
-            cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 +
-                                      velocity_vector[1] ** 2)
-        else:
-            cardata.SPEED = 5
-            # ^ Relate this to the angle in which its turning,
-            # higher angle == slower speed
-
-        gen_turn_signal(cardata.TURNANGLE, sock)
-
-        gen_spd_signal(cardata.SPEED, cardata.TURNANGLE, sock)
-
-        pause_interval = cardata.DIST_TRAVELED / cardata.SPEED
-        print("Pause Interval: " + str(pause_interval))
-
-        if pause_interval == 0:
-            pause_interval = 1e-6  # <-- This is a starter to the program
-
-        if len(xpos) > BUFFERSIZE:
-            xpos.pop(0)
-            ypos.pop(0)
-
-        xpos.append(cardata.XPOS)
-        ypos.append(cardata.YPOS)
-
-        plt.clf()
-        plt.title(dronename)
-
-        if not debug:
-            plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
-
-        plt.plot(xpos, ypos, 'k-')
-        plt.plot(tgtx, tgty, 'rx')
-        plt.grid(True)
-
-        if debug:
-            print('Recieved Vel Vector: ', velocity_vector)
-            print('Calculated Tgt Pos: ', tgtx, tgty)
-            print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
-            print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
-            # print('Interval Time: ', interval_time)
-            print('')
-
-        plt.pause(pause_interval)
+        plot_car_path(cardata, debug, dronename, velocity_vector, xpos, ypos)
 
 
-def get_new_heading(cardata, debug, shared_velocity_vector):
-    velocity_vector = update_velocity_vector(shared_velocity_vector)
-    [tgtx, tgty] = vec.calc_xy(velocity_vector[0], velocity_vector[1],
-                               cardata.XPOS, cardata.YPOS,
-                               cardata.HEADING)
-    desired_heading = calculate_desired_heading(cardata, debug, tgtx, tgty)
-    return desired_heading, tgtx, tgty, velocity_vector
+def plot_car_path(cardata, debug, dronename, velocity_vector, xpos, ypos):
+    pause_interval = cardata.DIST_TRAVELED / cardata.SPEED
+    print("Pause Interval: " + str(pause_interval))
+    if pause_interval == 0:
+        pause_interval = 1e-6  # <-- This is a starter to the program
+    if len(xpos) > BUFFERSIZE:
+        xpos.pop(0)
+        ypos.pop(0)
+    xpos.append(cardata.XPOS)
+    ypos.append(cardata.YPOS)
+    plt.clf()
+    plt.title(dronename)
+    if not debug:
+        plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
+    plt.plot(xpos, ypos, 'k-')
+    plt.plot(cardata.TGTXPOS, cardata.TGTYPOS, 'rx')
+    plt.grid(True)
+    if debug:
+        print('Recieved Vel Vector: ', velocity_vector)
+        print('Calculated Tgt Pos: ', cardata.TGTXPOS, cardata.TGTYPOS)
+        print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
+        print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
+        # print('Interval Time: ', interval_time)
+        print('')
+    plt.pause(pause_interval)
 
 
-def calculate_desired_heading(cardata, debug, tgtx, tgty):
-    desired_heading = math.atan2((tgty - cardata.YPOS), (tgtx - cardata.XPOS))
+def send_turn_to_car(sock, speed_signal, turn_signal):
+    socket_tx(str(cfg.STEERING) + str(turn_signal), sock)
+    socket_tx(str(cfg.ESC) + str(speed_signal), sock)
+
+
+def generate_servo_signals(cardata):
+    turn_signal = gen_turn_signal(cardata.TURNANGLE)
+    speed_signal = gen_spd_signal(cardata.SPEED, cardata.TURNANGLE)
+
+    return turn_signal, speed_signal
+
+
+def apply_turn_to_cardata(cardata, turn_data):
+    cardata.DIST_TRAVELED = turn_data["distance_travelled"]
+    cardata.TURNANGLE = turn_data["turning_angle"]
+    cardata.HEADING = turn_data["final_heading"]
+    cardata.SPEED = turn_data["speed"]
+    cardata.TGTXPOS = turn_data["advanced_x_position"]
+    cardata.TGTYPOS = turn_data["advanced_y_position"]
+
+
+def find_vehicle_speed(cardata, velocity_vector):
+    if abs(cardata.TURNANGLE) < 1.0:
+        cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 +
+                                  velocity_vector[1] ** 2)
+    else:
+        cardata.SPEED = 5
+        # ^ Relate this to the angle in which its turning,
+        # higher angle == slower speed
+
+
+def initialize_turn_data(cardata, desired_heading):
+    turn_data = {
+        "current_heading": cardata.HEADING,
+        "desired_heading": desired_heading,
+        "speed": cardata.SPEED,
+        "initial_x_position": cardata.XPOS,
+        "initial_y_position": cardata.YPOS,
+        "time_step": cfg.UPDATE_INTERVAL
+    }
+    return turn_data
+
+
+def calculate_desired_heading(cardata, debug):
+    desired_heading = math.atan2((cardata.TGTYPOS - cardata.YPOS), (cardata.TGTXPOS - cardata.XPOS))
     if debug:
         print('Last Angle Orientation: ', math.degrees(desired_heading))
     return desired_heading
@@ -229,13 +240,12 @@ def initialize_plot():
     return xpos, ypos
 
 
-def request_gps_fix(cardata, debug, shared_gps_data, sock):
+def request_gps_fix(cardata, debug, sock):
     socket_tx('gps', sock)
     message = socket_rx(sock)
     try:
         cardata.XPOS = gps.parse_gps_msg(str(message))[0]
         cardata.YPOS = gps.parse_gps_msg(str(message))[1]
-        update_shared_gps_data(shared_gps_data, cardata)
     except TypeError:
         if debug:
             print('Invalid GPS Message...Exiting')
@@ -255,48 +265,46 @@ def printf(layout, *args):
     sys.stdout.write(layout % args)
 
 
-def gen_turn_signal(angle, sock):
+def gen_turn_signal(angle):
     """
     Generates turn signal for MSC and transmits to drone
     :param angle: Float, angle of turn for drone
-    :param sock:
     :return: 0 on successful completion
     """
 
     if angle < 0:
-        ang = int(round(cfg.CENTER + (abs(angle) * cfg.DEGPERPOINT)))
+        turn_signal = int(round(cfg.CENTER + (abs(angle) * cfg.DEGPERPOINT)))
     else:
-        ang = int(round(cfg.CENTER - (angle * cfg.DEGPERPOINT)))
+        turn_signal = int(round(cfg.CENTER - (angle * cfg.DEGPERPOINT)))
 
-    if ang > 8000:
-        ang = cfg.MAX_LEFT
-    elif ang < 4000:
-        ang = cfg.MAX_RIGHT
+    if turn_signal > 8000:
+        turn_signal = cfg.MAX_LEFT
+    elif turn_signal < 4000:
+        turn_signal = cfg.MAX_RIGHT
 
-    socket_tx(str(cfg.STEERING) + str(ang), sock)
+    return turn_signal
 
 
-def gen_spd_signal(speed, angle, sock):
+def gen_spd_signal(speed, angle):
     """
     Generates speed signal for MSC and transmits to drone
     :param speed: Float, speed to be reached
     :param angle: Float, current angle of turn
-    :param sock:
     :return: 0 on successful completion
     """
 
     if abs(angle) > 1.0:
-        spd = int(round((cfg.TEST_SPEED + (speed * cfg.SPDSCALE)) /
-                        (abs(angle) * cfg.TURNFACTOR)))
+        speed_signal = int(round((cfg.TEST_SPEED + (speed * cfg.SPDSCALE)) /
+                           (abs(angle) * cfg.TURNFACTOR)))
     else:
-        spd = int(round(cfg.TEST_SPEED + (speed * cfg.SPDSCALE)))
+        speed_signal = int(round(cfg.TEST_SPEED + (speed * cfg.SPDSCALE)))
 
-    if spd > cfg.MAX_SPEED:
-        spd = cfg.MAX_SPEED - cfg.SPDLIMITER  # <- FOR TESTING PURPOSES
-    elif spd < cfg.TEST_SPEED:
-        spd = cfg.TEST_SPEED
+    if speed_signal > cfg.MAX_SPEED:
+        speed_signal = cfg.MAX_SPEED - cfg.SPDLIMITER  # <- FOR TESTING PURPOSES
+    elif speed_signal < cfg.TEST_SPEED:
+        speed_signal = cfg.TEST_SPEED
 
-    socket_tx(str(cfg.ESC) + str(spd), sock)
+    return speed_signal
 
 
 def socket_tx(data, sock):
