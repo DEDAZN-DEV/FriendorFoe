@@ -14,20 +14,24 @@ shared_velocity_vector = SharedArray(typecode_or_type=ctypes.c_double, size_or_i
 
 def start_server(initial_velocity_vector):
     """
+    Initilizes server with a given velocity vector
 
     :param initial_velocity_vector:
-    :return:
+    :return: 0 on successful completion
     """
     server.main(True, "run", shared_gps_data, shared_velocity_vector)
     with shared_velocity_vector.get_lock():
         shared_velocity_vector[0] = initial_velocity_vector[0]
         shared_velocity_vector[1] = initial_velocity_vector[1]
 
+    return 0
+
 
 def get_gps_data():
     """
+    Get gps data from shared buffer for API
 
-    :return:
+    :return: An array with two elements consisting of x and y positions
     """
     with shared_gps_data.get_lock():
         x_position = shared_gps_data[0]
@@ -38,10 +42,13 @@ def get_gps_data():
 
 def set_velocity_vectors(velocity_vector):
     """
+    API function to change velocity vectors
 
-    :param velocity_vector:
-    :return:
+    :param velocity_vector: New vector [x,y] to be input to our software
+    :return: 0 on successful completion
     """
     with shared_velocity_vector.get_lock():
         shared_velocity_vector[0] = velocity_vector[0]
         shared_velocity_vector[1] = velocity_vector[1]
+
+    return 0
