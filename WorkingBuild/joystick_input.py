@@ -4,6 +4,9 @@ import pygame
 
 import WorkingBuild.global_cfg as cfg
 
+# Globals
+velocity_vector = [0, 0]
+
 # Define some colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -160,3 +163,10 @@ except KeyboardInterrupt:
     # If you forget this line, the program will 'hang'
     # on exit if running from IDLE.
     pygame.quit()
+
+print(velocity_vector)
+
+
+def get_vector():
+    print(velocity_vector)
+    return velocity_vector
