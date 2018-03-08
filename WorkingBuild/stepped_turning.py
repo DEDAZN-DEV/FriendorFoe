@@ -22,7 +22,7 @@ def find_angular_difference(heading_1, heading_2):
     :return:
     """
     angular_difference = heading_2 - heading_1
-    print("Wide Angular Difference: " + str(angular_difference))
+    # print("Wide Angular Difference: " + str(angular_difference))
     if angular_difference >= 180:
         angular_difference -= 360
     elif angular_difference <= -180:
@@ -42,10 +42,10 @@ def check_if_within_heading(current_heading, desired_heading, tolerance):
     angular_difference = find_angular_difference(current_heading, desired_heading)
     within_tolerance = abs(angular_difference) <= tolerance
 
-    if debug:
-        print("Angular Difference: " + str(angular_difference))
-        print("Tolerance: " + str(tolerance))
-        print("Within tolerance: " + str(within_tolerance) + "\n")
+    # if debug:
+    #     print("Angular Difference: " + str(angular_difference))
+    #     print("Tolerance: " + str(tolerance))
+    #     print("Within tolerance: " + str(within_tolerance) + "\n")
     return within_tolerance
 
 
@@ -58,12 +58,12 @@ def check_right_turn(current_heading, desired_heading):
     """
     angular_difference = find_angular_difference(current_heading, desired_heading)
     if angular_difference >= 0:
-        if debug:
-            print("Right Turn")
+        # if debug:
+        #     print("Right Turn")
         return True
     else:
-        if debug:
-            print("Left Turn")
+        # if debug:
+        #     print("Left Turn")
         return False
 
 
@@ -80,15 +80,15 @@ def choose_wheel_turn_angle(current_heading, desired_heading, turn_angles, speed
     tolerance_for_large_turn = 45
 
     if check_if_within_heading(current_heading, desired_heading, tolerance=tolerance_for_small_turn):
-        print("\nWithin 5 degrees")
+        # print("\nWithin 5 degrees")
         return turn_angles[0], speed_coefficients[0]
 
     elif check_if_within_heading(current_heading, desired_heading, tolerance=tolerance_for_large_turn):
-        print("\nWithin 45 degrees")
+        # print("\nWithin 45 degrees")
         return turn_angles[1], speed_coefficients[1]
 
     else:
-        print("\nMore than 45 degrees")
+        # print("\nMore than 45 degrees")
         return turn_angles[2], speed_coefficients[2]
 
 

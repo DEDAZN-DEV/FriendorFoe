@@ -10,7 +10,7 @@ def gen_random_vector():
     @return: Returns a two element vector consisting of the x and y component of a velocity.
     """
 
-    newvector = [random.uniform(-cfg.MAXVELOCITY, cfg.UPDATE_INTERVAL, cfg.MAXVELOCITY),
+    newvector = [random.uniform(-cfg.MAXVELOCITY, cfg.MAXVELOCITY),
                  random.uniform(-cfg.MAXVELOCITY, cfg.MAXVELOCITY)]
     return newvector
 
