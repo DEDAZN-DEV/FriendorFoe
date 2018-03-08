@@ -94,9 +94,3 @@ def calc_xy(vx, vy, curx, cury, heading):
             0.5 * math.sin(math.radians(heading)) * cfg.ACCELERATION * (cfg.UPDATE_INTERVAL ** 2.0))
 
     return [curx + xdistance, cury + ydistance]
-
-
-def call_sim():
-    # TODO: Create method call for ATE-3 Simulation
-    return (random.uniform(-math.sqrt(cfg.MAXVELOCITY), math.sqrt(cfg.MAXVELOCITY)),
-            random.uniform(-math.sqrt(cfg.MAXVELOCITY), math.sqrt(cfg.MAXVELOCITY)))

@@ -219,3 +219,6 @@ def gen_velocity_vector(x_input, y_input):
         vector = [0, 0]
 
     return deg_angle, vector
+
+
+init_joystick()
