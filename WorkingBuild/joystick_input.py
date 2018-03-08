@@ -43,6 +43,8 @@ class TextPrint:
 def init_joystick():
     global velocity_vector
 
+    speed_factor = 0.0
+
     pygame.init()
 
     # Set the width and height of the screen [width,height]
@@ -142,7 +144,7 @@ def init_joystick():
 
                 textPrint.unindent()
             if joystick_count == 0:
-                # WASD Input
+                # Arrow Key Input
                 x_axis = 0
                 y_axis = 0
 
@@ -172,19 +174,20 @@ def init_joystick():
                     # velocity_vector[0] = 0
                     x_axis = 0
 
-                keyboard_angle = math.atan2(y_axis, x_axis) * 180 / math.pi
+                if keys[pygame.K_w] and speed_factor < 1.0:
+                    speed_factor = speed_factor + 0.005
+                elif keys[pygame.K_s] and speed_factor > 0.0:
+                    speed_factor = speed_factor - 0.005
 
-                if keyboard_angle < 0:
-                    keyboard_angle = keyboard_angle + 360
-
-                if x_axis != 0 or y_axis != 0:
-                    velocity_vector = [math.cos(keyboard_angle * math.pi / 180) * cfg.MAXVELOCITY,
-                                       math.sin(keyboard_angle * math.pi / 180) * cfg.MAXVELOCITY]
-                else:
-                    velocity_vector = [0, 0]
+                angle, velocity_vector = gen_velocity_vector(x_axis, y_axis)
+                velocity_vector = [speed_factor * x for x in velocity_vector]
 
                 textPrint.print(screen, "Velocity vector: {:>6.3f} {:>6.3f}". \
                                 format(velocity_vector[0], velocity_vector[1]))
+
+                textPrint.indent()
+                textPrint.print(screen, "Speed factor: {:>6.3f}".format(speed_factor))
+                textPrint.unindent()
 
             # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
 
@@ -220,5 +223,4 @@ def gen_velocity_vector(x_input, y_input):
 
     return deg_angle, vector
 
-
-init_joystick()
+# init_joystick()
