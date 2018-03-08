@@ -40,151 +40,182 @@ class TextPrint:
         self.x -= 10
 
 
-pygame.init()
+def init_joystick():
+    global velocity_vector
 
-# Set the width and height of the screen [width,height]
-size = [500, 700]
-screen = pygame.display.set_mode(size)
+    pygame.init()
 
-pygame.display.set_caption("Joystick Input")
+    # Set the width and height of the screen [width,height]
+    size = [500, 700]
+    screen = pygame.display.set_mode(size)
 
-# Loop until the user clicks the close button.
-done = False
+    pygame.display.set_caption("Joystick Input")
 
-# Used to manage how fast the screen updates
-clock = pygame.time.Clock()
+    # Loop until the user clicks the close button.
+    done = False
 
-# Initialize the joysticks
-pygame.joystick.init()
+    # Used to manage how fast the screen updates
+    clock = pygame.time.Clock()
 
-# Get ready to print
-textPrint = TextPrint()
+    # Initialize the joysticks
+    pygame.joystick.init()
 
-try:
-    # -------- Main Program Loop -----------
-    while ~done:
-        # EVENT PROCESSING STEP
-        for event in pygame.event.get():  # User did something
-            if event.type == pygame.QUIT:  # If user clicked close
-                done = True  # Flag that we are done so we exit this loop
+    # Get ready to print
+    textPrint = TextPrint()
 
-            # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
-            if event.type == pygame.JOYBUTTONDOWN:
-                print("Joystick button pressed.")
-            if event.type == pygame.JOYBUTTONUP:
-                print("Joystick button released.")
+    try:
+        # -------- Main Program Loop -----------
+        while ~done:
+            # EVENT PROCESSING STEP
+            for event in pygame.event.get():  # User did something
+                if event.type == pygame.QUIT:  # If user clicked close
+                    done = True  # Flag that we are done so we exit this loop
 
-        # DRAWING STEP
-        # First, clear the screen to white. Don't put other drawing commands
-        # above this, or they will be erased with this command.
-        screen.fill(WHITE)
-        textPrint.reset()
+                # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
+                if event.type == pygame.JOYBUTTONDOWN:
+                    print("Joystick button pressed.")
+                if event.type == pygame.JOYBUTTONUP:
+                    print("Joystick button released.")
 
-        # Get count of joysticks
-        joystick_count = pygame.joystick.get_count()
+            # DRAWING STEP
+            # First, clear the screen to white. Don't put other drawing commands
+            # above this, or they will be erased with this command.
+            screen.fill(WHITE)
+            textPrint.reset()
 
-        textPrint.print(screen, "Number of joysticks: {}".format(joystick_count))
-        textPrint.indent()
+            # Get count of joysticks
+            joystick_count = pygame.joystick.get_count()
 
-        # For each joystick:
-        for i in range(joystick_count):
-            joystick = pygame.joystick.Joystick(i)
-            joystick.init()
-
-            textPrint.print(screen, "Joystick {}".format(i))
+            textPrint.print(screen, "Number of joysticks: {}".format(joystick_count))
             textPrint.indent()
 
-            # Get the name from the OS for the controller/joystick
-            name = joystick.get_name()
-            textPrint.print(screen, "Joystick name: {}".format(name))
+            # For each joystick:
+            for i in range(joystick_count):
+                joystick = pygame.joystick.Joystick(i)
+                joystick.init()
 
-            # Usually axis run in pairs, up/down for one, and left/right for
-            # the other.
-            axes = joystick.get_numaxes()
-            textPrint.print(screen, "Number of axes: {}".format(axes))
-            textPrint.indent()
+                textPrint.print(screen, "Joystick {}".format(i))
+                textPrint.indent()
 
-            for j in range(axes):
-                axis = joystick.get_axis(j)
-                textPrint.print(screen, "Axis {} value: {:>6.3f}".format(j, axis))
-            textPrint.unindent()
+                # Get the name from the OS for the controller/joystick
+                name = joystick.get_name()
+                textPrint.print(screen, "Joystick name: {}".format(name))
 
-            # Print the outputted velocity vector
-            y_axis = -joystick.get_axis(1)
-            x_axis = joystick.get_axis(0)
+                # Usually axis run in pairs, up/down for one, and left/right for
+                # the other.
+                axes = joystick.get_numaxes()
+                textPrint.print(screen, "Number of axes: {}".format(axes))
+                textPrint.indent()
 
-            deg_angle = math.atan2(y_axis, x_axis) * 180 / math.pi
+                for j in range(axes):
+                    axis = joystick.get_axis(j)
+                    textPrint.print(screen, "Axis {} value: {:>6.3f}".format(j, axis))
+                textPrint.unindent()
 
-            if deg_angle < 0:
-                deg_angle = deg_angle + 360
+                # Print the outputted velocity vector
+                y_axis = -joystick.get_axis(1)
+                x_axis = joystick.get_axis(0)
 
-            textPrint.print(screen, "Joystick angle: {:>6.3f}".format(deg_angle))
-            if y_axis != 0 and y_axis != 0:
-                velocity_vector = [math.cos(deg_angle * math.pi / 180) * cfg.MAXVELOCITY,
-                                   math.sin(deg_angle * math.pi / 180) * cfg.MAXVELOCITY]
-            else:
-                velocity_vector = [0, 0]
+                deg_angle, velocity_vector = gen_velocity_vector(x_axis, y_axis)
 
-            buttons = joystick.get_numbuttons()
-            textPrint.print(screen, "Number of buttons: {}".format(buttons))
-            textPrint.indent()
+                textPrint.print(screen, "Joystick angle: {:>6.3f}".format(deg_angle))
 
-            for k in range(buttons):
-                button = joystick.get_button(k)
-                textPrint.print(screen, "Button {:>2} value: {}".format(k, button))
-            textPrint.unindent()
+                buttons = joystick.get_numbuttons()
+                textPrint.print(screen, "Number of buttons: {}".format(buttons))
+                textPrint.indent()
 
-            # Hat switch. All or nothing for direction, not like joysticks.
-            # Value comes back in an array.
-            hats = joystick.get_numhats()
-            textPrint.print(screen, "Number of hats: {}".format(hats))
-            textPrint.indent()
+                for k in range(buttons):
+                    button = joystick.get_button(k)
+                    textPrint.print(screen, "Button {:>2} value: {}".format(k, button))
+                textPrint.unindent()
 
-            for n in range(hats):
-                hat = joystick.get_hat(n)
-                textPrint.print(screen, "Hat {} value: {}".format(n, str(hat)))
-            textPrint.unindent()
+                # Hat switch. All or nothing for direction, not like joysticks.
+                # Value comes back in an array.
+                hats = joystick.get_numhats()
+                textPrint.print(screen, "Number of hats: {}".format(hats))
+                textPrint.indent()
 
-            textPrint.unindent()
+                for n in range(hats):
+                    hat = joystick.get_hat(n)
+                    textPrint.print(screen, "Hat {} value: {}".format(n, str(hat)))
+                textPrint.unindent()
 
-        # WASD Input
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            velocity_vector[0] = -1
+                textPrint.unindent()
+            if joystick_count == 0:
+                # WASD Input
+                x_axis = 0
+                y_axis = 0
 
-        if keys[pygame.K_RIGHT]:
-            velocity_vector[0] = 1
+                keys = pygame.key.get_pressed()
 
-        if keys[pygame.K_UP]:
-            velocity_vector[1] = 1
+                if keys[pygame.K_LEFT]:
+                    # velocity_vector[0] = -cfg.MAXVELOCITY
+                    x_axis = -1
 
-        if keys[pygame.K_DOWN]:
-            velocity_vector[1] = -1
+                if keys[pygame.K_RIGHT]:
+                    # velocity_vector[0] = cfg.MAXVELOCITY
+                    x_axis = 1
 
-        if keys[pygame.K_UP] == False and keys[pygame.K_DOWN] == False:
-            velocity_vector[1] = 0
+                if keys[pygame.K_UP]:
+                    # velocity_vector[1] = cfg.MAXVELOCITY
+                    y_axis = 1
 
-        if keys[pygame.K_LEFT] == False and keys[pygame.K_RIGHT] == False:
-            velocity_vector[0] = 0
+                if keys[pygame.K_DOWN]:
+                    # velocity_vector[1] = -cfg.MAXVELOCITY
+                    y_axis = -1
 
-        textPrint.print(screen, "Velocity vector: {:>6.3f} {:>6.3f}". \
-                        format(velocity_vector[0], velocity_vector[1]))
+                if keys[pygame.K_UP] == False and keys[pygame.K_DOWN] == False:
+                    # velocity_vector[1] = 0
+                    y_axis = 0
 
-        # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
+                if keys[pygame.K_LEFT] == False and keys[pygame.K_RIGHT] == False:
+                    # velocity_vector[0] = 0
+                    x_axis = 0
 
-        # Go ahead and update the screen with what we've drawn.
-        pygame.display.flip()
+                keyboard_angle = math.atan2(y_axis, x_axis) * 180 / math.pi
 
-        # Limit to 20 frames per second
-        clock.tick(120)
+                if keyboard_angle < 0:
+                    keyboard_angle = keyboard_angle + 360
 
-except KeyboardInterrupt:
-    # Close the window and quit.
-    # If you forget this line, the program will 'hang'
-    # on exit if running from IDLE.
-    pygame.quit()
+                if x_axis != 0 or y_axis != 0:
+                    velocity_vector = [math.cos(keyboard_angle * math.pi / 180) * cfg.MAXVELOCITY,
+                                       math.sin(keyboard_angle * math.pi / 180) * cfg.MAXVELOCITY]
+                else:
+                    velocity_vector = [0, 0]
+
+                textPrint.print(screen, "Velocity vector: {:>6.3f} {:>6.3f}". \
+                                format(velocity_vector[0], velocity_vector[1]))
+
+            # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
+
+            # Go ahead and update the screen with what we've drawn.
+            pygame.display.flip()
+
+            # Limit to 20 frames per second
+            clock.tick(120)
+
+    except KeyboardInterrupt:
+        # Close the window and quit.
+        # If you forget this line, the program will 'hang'
+        # on exit if running from IDLE.
+        pygame.quit()
 
 
 def get_vector():
     print(velocity_vector)
     return velocity_vector
+
+
+def gen_velocity_vector(x_input, y_input):
+    deg_angle = math.atan2(y_input, x_input) * 180 / math.pi
+
+    if deg_angle < 0:
+        deg_angle = deg_angle + 360
+
+    if x_input != 0 or y_input != 0:
+        vector = [math.cos(deg_angle * math.pi / 180) * cfg.MAXVELOCITY,
+                  math.sin(deg_angle * math.pi / 180) * cfg.MAXVELOCITY]
+    else:
+        vector = [0, 0]
+
+    return deg_angle, vector

@@ -96,12 +96,23 @@ def main(debug_mode, test_arg, shared_gps_data, shared_velocity_vector):
 
 
 def update_shared_gps_data(shared_gps_data, cardata):
+    """
+
+    :param shared_gps_data:
+    :param cardata:
+    :return:
+    """
     with shared_gps_data.get_lock():
         shared_gps_data[0] = cardata.XPOS
         shared_gps_data[1] = cardata.YPOS
 
 
 def update_velocity_vector(shared_velocity_vector):
+    """
+
+    :param shared_velocity_vector:
+    :return:
+    """
     velocity_vector = [0, 0]
     with shared_velocity_vector.get_lock():
         velocity_vector[0] = shared_velocity_vector[0]
@@ -177,6 +188,11 @@ def send_turn_to_car(sock, speed_signal, turn_signal):
 
 
 def generate_servo_signals(cardata):
+    """
+
+    :param cardata:
+    :return:
+    """
     turn_signal = gen_turn_signal(cardata.TURNANGLE)
     speed_signal = gen_spd_signal(cardata.SPEED, cardata.TURNANGLE)
 
