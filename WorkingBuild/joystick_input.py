@@ -125,9 +125,6 @@ try:
             else:
                 velocity_vector = [0, 0]
 
-            textPrint.print(screen, "Velocity vector: {:>6.3f} {:>6.3f}". \
-                            format(velocity_vector[0], velocity_vector[1]))
-
             buttons = joystick.get_numbuttons()
             textPrint.print(screen, "Number of buttons: {}".format(buttons))
             textPrint.indent()
@@ -150,6 +147,25 @@ try:
 
             textPrint.unindent()
 
+        # WASD Input
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            velocity_vector[0] = -1
+        elif keys[pygame.K_RIGHT]:
+            velocity_vector[0] = 1
+        else:
+            velocity_vector[0] = 0
+
+        if keys[pygame.K_UP]:
+            velocity_vector[1] = 1
+        elif keys[pygame.K_DOWN]:
+            velocity_vector[1] = -1
+        else:
+            velocity_vector[1] = 0
+
+        textPrint.print(screen, "Velocity vector: {:>6.3f} {:>6.3f}". \
+                        format(velocity_vector[0], velocity_vector[1]))
+
         # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
 
         # Go ahead and update the screen with what we've drawn.
@@ -163,8 +179,6 @@ except KeyboardInterrupt:
     # If you forget this line, the program will 'hang'
     # on exit if running from IDLE.
     pygame.quit()
-
-print(velocity_vector)
 
 
 def get_vector():
