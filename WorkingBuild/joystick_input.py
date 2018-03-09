@@ -125,8 +125,6 @@ def init_joystick():
                 deg_angle, velocity_vector = gen_velocity_vector(x_axis, y_axis)
 
                 textPrint.print(screen, "Joystick angle: {:>6.3f}".format(deg_angle))
-                textPrint.print(screen, "Velocity vector: {:>6.3f} {:>6.3f}". \
-                                format(velocity_vector[0], velocity_vector[1]))
 
                 buttons = joystick.get_numbuttons()
                 textPrint.print(screen, "Number of buttons: {}".format(buttons))
@@ -199,18 +197,26 @@ def init_joystick():
                 velocity_vector = [speed_factor * x for x in velocity_vector]
 
                 textPrint.indent()
-                textPrint.print(screen, "Velocity vector: {:>6.3f} {:>6.3f}". \
-                                format(velocity_vector[0], velocity_vector[1]))
-
-                textPrint.print(screen, "Speed factor: {:>6.3f}".format(speed_factor))
+                textPrint.print(screen, "X-Axis: {:>d}".format(x_axis))
+                textPrint.print(screen, "Y-Axis: {:>d}".format(y_axis))
+                textPrint.print(screen, "Speed factor: {:>6.3f}x".format(speed_factor))
 
             # Velocity vector input to simulation
             controller.set_velocity_vectors(velocity_vector)
 
             # Display coordinates on screen
-            [lat, long] = controller.get_gps_data()
-            textPrint.unindent()
-            textPrint.print(screen, "Lat: {:>6.10f} Long: {:>6.10f}".format(lat, long))
+            [x, y] = controller.get_gps_data()
+            if joystick_count == 0:
+                textPrint.unindent()
+            else:
+                textPrint.indent()
+
+            textPrint.print(screen, "")
+            textPrint.print(screen, "*** OUTPUT ***")
+            textPrint.print(screen, "Velocity vector: {:>6.3f} {:>6.3f}".
+                            format(velocity_vector[0], velocity_vector[1]))
+
+            textPrint.print(screen, "X: {:>6.3f} Y: {:>6.3f}".format(x, y))
 
             # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
 

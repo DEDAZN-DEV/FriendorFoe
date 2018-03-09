@@ -78,5 +78,6 @@ class TestMockSimInputs(unittest.TestCase):
         self.assertLessEqual(mock.gen_random_vector(), [cfg.MAXVELOCITY, cfg.MAXVELOCITY])
         self.assertGreaterEqual(mock.gen_random_vector(), [-cfg.MAXVELOCITY, -cfg.MAXVELOCITY])
 
+
 if __name__ == '__main__':
     unittest.main()
