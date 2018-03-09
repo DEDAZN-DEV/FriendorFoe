@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 
 import WorkingBuild.global_cfg as cfg
 import WorkingBuild.gps_ops as gps
-# import WorkingBuild.mock_sim_inputs as vec
 import WorkingBuild.stepped_turning as turning
 
 BUFFERSIZE = 50
@@ -247,7 +246,7 @@ def initialize_connection(ip, port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((ip, port))
         return sock
-    except KeyboardInterrupt as intrpt:
+    except KeyboardInterrupt:
         sys.exit()
 
 
