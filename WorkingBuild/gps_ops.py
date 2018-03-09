@@ -76,8 +76,6 @@ def gps_to_xy(lat, lon):
     :return: <Array> two element array consisting of raw x,y values
     """
 
-    calc_originxy()
-
     radlat = math.radians(lat)
     radlong = math.radians(lon)
 

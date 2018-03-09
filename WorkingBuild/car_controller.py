@@ -12,14 +12,16 @@ shared_gps_data = SharedArray(typecode_or_type=ctypes.c_double, size_or_initiali
 shared_velocity_vector = SharedArray(typecode_or_type=ctypes.c_double, size_or_initializer=2)
 
 
-def start_server(initial_velocity_vector):
+def start_server(initial_velocity_vector, dbg_mode):
     """
     Initilizes server with a given velocity vector
 
-    :param <Array> initial_velocity_vector:
+    :param initial_velocity_vector: <Array>
+    :param dbg_mode: <Boolean> Debug mode (T/F)
     :return: <Int> 0 on success
     """
-    server.main(True, "run", shared_gps_data, shared_velocity_vector)
+
+    server.main(dbg_mode, 'run', shared_gps_data, shared_velocity_vector)
     with shared_velocity_vector.get_lock():
         shared_velocity_vector[0] = initial_velocity_vector[0]
         shared_velocity_vector[1] = initial_velocity_vector[1]

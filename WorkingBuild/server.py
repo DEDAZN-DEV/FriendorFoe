@@ -243,9 +243,12 @@ def initialize_gps():
 
 
 def initialize_connection(ip, port):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((ip, port))
-    return sock
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((ip, port))
+        return sock
+    except KeyboardInterrupt as intrpt:
+        sys.exit()
 
 
 def initialize_plot():
@@ -378,5 +381,3 @@ if __name__ == '__main__':
         sys.exit()
     else:
         test_type = sys.argv[1]
-
-    # main(True, test_type)

@@ -2,6 +2,7 @@ import math
 
 import pygame
 
+import WorkingBuild.car_controller as controller
 import WorkingBuild.global_cfg as cfg
 
 # Globals
@@ -94,15 +95,13 @@ def init_joystick():
             joystick_count = pygame.joystick.get_count()
 
             textPrint.print(screen, "Number of joysticks: {}".format(joystick_count))
-            textPrint.indent()
 
             # For each joystick:
             for i in range(joystick_count):
                 joystick = pygame.joystick.Joystick(i)
                 joystick.init()
-
-                textPrint.print(screen, "Joystick {}".format(i))
                 textPrint.indent()
+                textPrint.print(screen, "Joystick {}".format(i))
 
                 # Get the name from the OS for the controller/joystick
                 name = joystick.get_name()
@@ -112,8 +111,8 @@ def init_joystick():
                 # the other.
                 axes = joystick.get_numaxes()
                 textPrint.print(screen, "Number of axes: {}".format(axes))
-                textPrint.indent()
 
+                textPrint.indent()
                 for j in range(axes):
                     axis = joystick.get_axis(j)
                     textPrint.print(screen, "Axis {} value: {:>6.3f}".format(j, axis))
@@ -126,11 +125,13 @@ def init_joystick():
                 deg_angle, velocity_vector = gen_velocity_vector(x_axis, y_axis)
 
                 textPrint.print(screen, "Joystick angle: {:>6.3f}".format(deg_angle))
+                textPrint.print(screen, "Velocity vector: {:>6.3f} {:>6.3f}". \
+                                format(velocity_vector[0], velocity_vector[1]))
 
                 buttons = joystick.get_numbuttons()
                 textPrint.print(screen, "Number of buttons: {}".format(buttons))
-                textPrint.indent()
 
+                textPrint.indent()
                 for k in range(buttons):
                     button = joystick.get_button(k)
                     textPrint.print(screen, "Button {:>2} value: {}".format(k, button))
@@ -140,15 +141,17 @@ def init_joystick():
                 # Value comes back in an array.
                 hats = joystick.get_numhats()
                 textPrint.print(screen, "Number of hats: {}".format(hats))
-                textPrint.indent()
 
+                textPrint.indent()
                 for n in range(hats):
                     hat = joystick.get_hat(n)
                     textPrint.print(screen, "Hat {} value: {}".format(n, str(hat)))
                 textPrint.unindent()
 
-                textPrint.unindent()
             if joystick_count == 0:
+                textPrint.indent()
+                textPrint.print(screen, "Arrow Key Input")
+
                 # Arrow Key Input
                 x_axis = 0
                 y_axis = 0
@@ -183,16 +186,31 @@ def init_joystick():
                     speed_factor = speed_factor + 0.005
                 elif keys[pygame.K_s] and speed_factor > 0.0:
                     speed_factor = speed_factor - 0.005
+                elif keys[pygame.K_1]:
+                    speed_factor = 0.25
+                elif keys[pygame.K_2]:
+                    speed_factor = 0.5
+                elif keys[pygame.K_3]:
+                    speed_factor = 0.75
+                elif keys[pygame.K_4]:
+                    speed_factor = 1
 
                 angle, velocity_vector = gen_velocity_vector(x_axis, y_axis)
                 velocity_vector = [speed_factor * x for x in velocity_vector]
 
+                textPrint.indent()
                 textPrint.print(screen, "Velocity vector: {:>6.3f} {:>6.3f}". \
                                 format(velocity_vector[0], velocity_vector[1]))
 
-                textPrint.indent()
                 textPrint.print(screen, "Speed factor: {:>6.3f}".format(speed_factor))
-                textPrint.unindent()
+
+            # Velocity vector input to simulation
+            controller.set_velocity_vectors(velocity_vector)
+
+            # Display coordinates on screen
+            [lat, long] = controller.get_gps_data()
+            textPrint.unindent()
+            textPrint.print(screen, "Lat: {:>6.10f} Long: {:>6.10f}".format(lat, long))
 
             # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
 
@@ -240,4 +258,10 @@ def gen_velocity_vector(x_input, y_input):
 
     return deg_angle, vector
 
-# init_joystick()
+
+def start():
+    controller.start_server(velocity_vector, True)
+    init_joystick()
+
+
+start()
