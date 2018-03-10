@@ -256,7 +256,11 @@ def gen_velocity_vector(x_input, y_input):
     if deg_angle < 0:
         deg_angle = deg_angle + 360
 
-    if x_input != 0 or y_input != 0:
+    if x_input == 0:
+        vector = [0, y_input * cfg.MAXVELOCITY]
+    elif y_input == 0:
+        vector = [x_input * cfg.MAXVELOCITY, 0]
+    elif x_input != 0 or y_input != 0:
         vector = [math.cos(deg_angle * math.pi / 180) * cfg.MAXVELOCITY,
                   math.sin(deg_angle * math.pi / 180) * cfg.MAXVELOCITY]
     else:
