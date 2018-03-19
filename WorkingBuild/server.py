@@ -316,7 +316,7 @@ def gen_spd_signal(speed, angle):
 
     if abs(angle) > 1.0:
         speed_signal = int(round((cfg.TEST_SPEED + (speed * cfg.SPDSCALE)) /
-                           (abs(angle) * cfg.TURNFACTOR)))
+                                 (abs(angle) * cfg.TURNFACTOR)))
     else:
         speed_signal = int(round(cfg.TEST_SPEED + (speed * cfg.SPDSCALE)))
 
