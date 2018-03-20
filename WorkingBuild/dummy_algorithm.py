@@ -8,7 +8,7 @@ import time
 import WorkingBuild.car_controller as controller
 
 if __name__ == '__main__':
-    controller.start_server([2, 2])
+    controller.start_server([2, 2], True)
 
     while True:
         try:
