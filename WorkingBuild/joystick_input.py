@@ -193,8 +193,11 @@ def init_joystick():
                 elif keys[pygame.K_4]:
                     speed_factor = 1
 
+                if speed_factor < 0.0:
+                    speed_factor = 0.0
+
                 angle, velocity_vector = gen_velocity_vector(x_axis, y_axis)
-                velocity_vector = [speed_factor * x for x in velocity_vector]
+                velocity_vector = [speed_factor * n for n in velocity_vector]
 
                 textPrint.indent()
                 textPrint.print(screen, "X-Axis: {:>d}".format(x_axis))
