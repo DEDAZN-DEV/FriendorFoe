@@ -55,7 +55,7 @@ class Controller:
         if PY2:
             self.usb.write(cmdStr)
         else:
-            self.usb.write(bytes(cmdStr, 'utf8'))
+            self.usb.write(bytes(str.encode(cmdStr)))
 
     # Set channels min and max value range.  Use this as a safety to protect
     # from accidentally moving outside known safe parameters. A setting of 0
