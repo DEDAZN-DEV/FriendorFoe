@@ -24,7 +24,7 @@ def main():
 
     print('[NETWORK] SERVER ESTABLISHED....')
 
-    test_controller('/dev/ttyACM0')
+    test_device('/dev/ttyACM0')
 
     print('[SERVO] TESTING COMPLETE....')
 
@@ -52,64 +52,63 @@ def main():
             execute_data('stop', conn)
 
 
-def test_controller(port):
+def test_device(port):
     """
-    Initial arming and testing of Maestro servo controller.
+    Initial arming and testing of Maestro servo Device.
 
-    :param port: <String> Consists of the RPi3 port that the servo controller is connected to
+    :param port: <String> Consists of the RPi3 port that the servo Device is connected to
     :return: <Int> 0 on success
     """
-    servo = maestro.Controller(port)
+    servo = maestro.Device(port)
     print('[SERVO] SERVO CONNECTION ESTABLISHED....')
 
     # 3 ESC, 5 STEERING
 
-    servo.setAccel(cfg.STEERING, 50)
-    servo.setAccel(cfg.ESC, 100)
-    print(servo.getMin(cfg.STEERING), servo.getMax(cfg.STEERING))
+    servo.set_acceleration(cfg.STEERING, 50)
+    servo.set_acceleration(cfg.ESC, 100)
 
     print('[SERVO] SENT SIGNAL....')
 
-    servo.setTarget(cfg.STEERING, cfg.MAX_RIGHT)
-    print(servo.getPosition(cfg.STEERING))
+    servo.set_target(cfg.STEERING, cfg.MAX_RIGHT)
+    print(servo.get_position(cfg.STEERING))
     time.sleep(1)
-    servo.setTarget(cfg.STEERING, cfg.MAX_LEFT)
-    print(servo.getPosition(cfg.STEERING))
+    servo.set_target(cfg.STEERING, cfg.MAX_LEFT)
+    print(servo.get_position(cfg.STEERING))
     time.sleep(1)
-    servo.setTarget(cfg.STEERING, cfg.MAX_RIGHT)
-    print(servo.getPosition(cfg.STEERING))
+    servo.set_target(cfg.STEERING, cfg.MAX_RIGHT)
+    print(servo.get_position(cfg.STEERING))
     time.sleep(1)
-    servo.setTarget(cfg.STEERING, cfg.CENTER)
+    servo.set_target(cfg.STEERING, cfg.CENTER)
     print('[SERVO] STEERING ARMED....')
     time.sleep(1)
 
-    print(servo.getPosition(cfg.ESC))
-    servo.setTarget(cfg.ESC, 8000)
-    servo.setTarget(cfg.ESC, cfg.NEUTRAL)
-    print(servo.getPosition(cfg.ESC))
+    print(servo.get_position(cfg.ESC))
+    servo.set_target(cfg.ESC, 8000)
+    servo.set_target(cfg.ESC, cfg.NEUTRAL)
+    print(servo.get_position(cfg.ESC))
     print('[SERVO] MOTOR ARMED....')
     time.sleep(1)
 
-    print('[DEBUG] Exiting test_controller function')
+    print('[DEBUG] Exiting test_Device function')
 
     return 0
 
 
 def servo_ctl(servo_num, val):
     """
-    Function to send signal to Maestro servo controller for execution
+    Function to send signal to Maestro servo Device for execution
 
     :param servo_num: <Int> 3 for speed, 5 for steering
     :param val: <Int> qms pulse value for the servo to execute
     :return: <Int> 0 on success
     """
-    servo = maestro.Controller('/dev/ttyACM0')
+    servo = maestro.Device('/dev/ttyACM0')
 
     # TODO: Modify this to accommodate for speed
-    servo.setAccel(cfg.STEERING, 50)
-    servo.setAccel(cfg.ESC, 100)
+    servo.set_acceleration(cfg.STEERING, 50)
+    servo.set_acceleration(cfg.ESC, 100)
 
-    servo.setTarget(servo_num, val)
+    servo.set_target(servo_num, val)
     print('[DEBUG] Exiting servo_ctl function')
 
     return 0
