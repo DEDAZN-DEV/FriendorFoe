@@ -3,8 +3,8 @@ import socket
 import sys
 import time
 
-import WorkingBuild.maestro as maestro
-from WorkingBuild import global_cfg as cfg
+import global_cfg as cfg
+import maestro
 
 
 def main():
