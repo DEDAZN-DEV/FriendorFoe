@@ -1,6 +1,6 @@
 from sys import version_info
 
-import serial
+import serial as pyserial
 
 PY2 = version_info[0] == 2  # Running Python 2.x?
 
@@ -33,7 +33,7 @@ class Controller:
     # noinspection PyPep8Naming
     def __init__(self, ttyStr='/dev/ttyACM0', device=0x0c):
         # Open the command port
-        self.usb = serial.Serial(ttyStr)
+        self.usb = pyserial.Serial(ttyStr)
         # Command lead-in and device number are sent for each Pololu serial command.
         self.PololuCmd = chr(0xaa) + chr(device)
         # Track target position for each servo. The function isMoving() will
@@ -55,7 +55,7 @@ class Controller:
         if PY2:
             self.usb.write(cmdStr)
         else:
-            self.usb.write(bytes(cmdStr))
+            self.usb.write(bytes(cmdStr, 'utf8'))
 
     # Set channels min and max value range.  Use this as a safety to protect
     # from accidentally moving outside known safe parameters. A setting of 0
