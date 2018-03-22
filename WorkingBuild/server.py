@@ -337,7 +337,7 @@ def socket_tx(data, sock):
     """
 
     try:
-        sock.sendall(data.encode())
+        sock.sendall(data.encode('utf8'))
         print('SERVER SENT: ' + data)
         print(BColors.OKGREEN + "Data Sent Successfully..." + BColors.ENDC)
     except socket.herror:

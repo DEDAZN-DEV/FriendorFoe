@@ -3,7 +3,7 @@ import socket
 import sys
 import time
 
-# This is intentionally wrong.
+# This is intentionally wrong, do not change or everything will burn!
 import global_cfg as cfg
 import maestro
 
@@ -34,7 +34,7 @@ def main():
         try:
             while True:
                 try:
-                    data = conn.recv(64)
+                    data = conn.recv(64).decode('utf8')
                     if data:
                         print('[DEBUG] Recieved data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
                         result = execute_data(data, conn)
