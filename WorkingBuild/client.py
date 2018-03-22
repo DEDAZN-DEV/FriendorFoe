@@ -79,6 +79,7 @@ def test_device():
     time.sleep(1)
     servo.set_target(cfg.STEERING, cfg.CENTER)
     print('[SERVO] STEERING ARMED....')
+    servo.go_home()
     time.sleep(1)
 
     print(servo.get_position(cfg.ESC))
@@ -86,6 +87,7 @@ def test_device():
     servo.set_target(cfg.ESC, cfg.NEUTRAL)
     print(servo.get_position(cfg.ESC))
     print('[SERVO] MOTOR ARMED....')
+    servo.go_home()
     time.sleep(1)
 
     print('[DEBUG] Exiting test_Device function')
