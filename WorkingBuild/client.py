@@ -3,6 +3,9 @@ import socket
 import sys
 import time
 
+file_dir = os.path.dirname(__file__)
+sys.path.append(file_dir)
+
 import WorkingBuild.global_cfg as cfg
 import WorkingBuild.maestro as maestro
 
