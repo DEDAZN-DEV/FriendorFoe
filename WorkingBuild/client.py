@@ -4,7 +4,7 @@ import sys
 import time
 
 from WorkingBuild import global_cfg as cfg
-from WorkingBuild.maestro import Device
+from WorkingBuild import maestro
 
 
 def main():
@@ -58,7 +58,7 @@ def test_device():
 
     :return: <Int> 0 on success
     """
-    servo = Device()
+    servo = maestro.Device()
     print('[SERVO] SERVO CONNECTION ESTABLISHED....')
 
     # 3 ESC, 5 STEERING
@@ -101,7 +101,7 @@ def servo_ctl(servo_num, val):
     :param val: <Int> qms pulse value for the servo to execute
     :return: <Int> 0 on success
     """
-    servo = Device()
+    servo = maestro.Device()
 
     # TODO: Modify this to accommodate for speed
     servo.set_acceleration(cfg.STEERING, 50)
