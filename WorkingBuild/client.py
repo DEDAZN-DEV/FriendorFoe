@@ -24,7 +24,7 @@ def main():
 
     print('[NETWORK] SERVER ESTABLISHED....')
 
-    test_device('/dev/ttyACM0')
+    test_device()
 
     print('[SERVO] TESTING COMPLETE....')
 
@@ -52,14 +52,14 @@ def main():
             execute_data('stop', conn)
 
 
-def test_device(port):
+def test_device():
     """
     Initial arming and testing of Maestro servo Device.
 
     :param port: <String> Consists of the RPi3 port that the servo Device is connected to
     :return: <Int> 0 on success
     """
-    servo = maestro.Device(port)
+    servo = maestro.Device()
     print('[SERVO] SERVO CONNECTION ESTABLISHED....')
 
     # 3 ESC, 5 STEERING
@@ -102,7 +102,7 @@ def servo_ctl(servo_num, val):
     :param val: <Int> qms pulse value for the servo to execute
     :return: <Int> 0 on success
     """
-    servo = maestro.Device('/dev/ttyACM0')
+    servo = maestro.Device()
 
     # TODO: Modify this to accommodate for speed
     servo.set_acceleration(cfg.STEERING, 50)
