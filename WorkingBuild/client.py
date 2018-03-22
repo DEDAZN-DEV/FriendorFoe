@@ -1,10 +1,9 @@
 import os
 import socket
 import sys
-import time
 
 from WorkingBuild import global_cfg as cfg
-from WorkingBuild import maestro
+from WorkingBuild.maestro import *
 
 
 def main():
@@ -56,10 +55,9 @@ def test_device():
     """
     Initial arming and testing of Maestro servo Device.
 
-    :param port: <String> Consists of the RPi3 port that the servo Device is connected to
     :return: <Int> 0 on success
     """
-    servo = maestro.Device()
+    servo = Device()
     print('[SERVO] SERVO CONNECTION ESTABLISHED....')
 
     # 3 ESC, 5 STEERING
@@ -102,7 +100,7 @@ def servo_ctl(servo_num, val):
     :param val: <Int> qms pulse value for the servo to execute
     :return: <Int> 0 on success
     """
-    servo = maestro.Device()
+    servo = Device()
 
     # TODO: Modify this to accommodate for speed
     servo.set_acceleration(cfg.STEERING, 50)
