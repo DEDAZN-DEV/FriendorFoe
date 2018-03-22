@@ -6,10 +6,10 @@ Global configuration values, all constants set before start
 ACCELERATION = 15  # of car in m/s**2
 CENTER = 5800
 ESC = 3
-MAX_RIGHT = 8000
-NEUTRAL = 6000
-MAX_LEFT = 4000
-MAX_SPEED = 9000
+MAX_RIGHT = 1136
+NEUTRAL = 1500
+MAX_LEFT = 1808
+MAX_SPEED = 1808
 MAX_TURN_RADIUS = 30  # degrees
 MAXVELOCITY = 13.4  # m/s
 STEERING = 5
