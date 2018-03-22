@@ -3,6 +3,7 @@ import socket
 import sys
 import time
 
+# This is intentionally wrong.
 import global_cfg as cfg
 import maestro
 
