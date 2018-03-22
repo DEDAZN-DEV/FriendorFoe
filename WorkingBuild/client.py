@@ -1,9 +1,10 @@
 import os
 import socket
 import sys
+import time
 
 from WorkingBuild import global_cfg as cfg
-from WorkingBuild.maestro import *
+from WorkingBuild.maestro import Device
 
 
 def main():
