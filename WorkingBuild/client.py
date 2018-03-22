@@ -79,7 +79,7 @@ def test_device():
     print('[SERVO] STEERING ARMED....')
     time.sleep(1)
 
-    servo.set_target(cfg.ESC, 8000)
+    servo.set_target(cfg.ESC, cfg.MAX_SPEED)
     servo.set_target(cfg.ESC, cfg.NEUTRAL)
     print('[SERVO] MOTOR ARMED....')
     time.sleep(1)
