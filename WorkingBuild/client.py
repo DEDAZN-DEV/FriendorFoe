@@ -68,7 +68,6 @@ def test_device():
     servo.set_acceleration(cfg.ESC, 100)
 
     print('[SERVO] SENT SIGNAL....')
-
     servo.set_target(cfg.STEERING, cfg.MAX_RIGHT)
     time.sleep(1)
     servo.set_target(cfg.STEERING, cfg.MAX_LEFT)
