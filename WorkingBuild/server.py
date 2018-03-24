@@ -137,28 +137,32 @@ def run(dronename, ip, port, debug, shared_gps_data, shared_velocity_vector):
     xpos, ypos = initialize_plot()
     initialize_gps()
     sock = initialize_connection(ip, port)
+    try:
+        while True:
+            request_gps_fix(cardata, debug, sock)
+            update_shared_gps_data(shared_gps_data, cardata)
 
-    while True:
-        request_gps_fix(cardata, debug, sock)
-        update_shared_gps_data(shared_gps_data, cardata)
+            velocity_vector = update_velocity_vector(shared_velocity_vector)
+            desired_heading = calculate_desired_heading(cardata, debug)
+            find_vehicle_speed(cardata, velocity_vector)
+            turn_data = initialize_turn_data(cardata, desired_heading)
+            turn_data = turning.stepped_turning_algorithm(turn_data)
+            apply_turn_to_cardata(cardata, turn_data)
+            turn_signal, speed_signal = generate_servo_signals(cardata)
+            send_turn_to_car(sock, speed_signal, turn_signal)
 
-        velocity_vector = update_velocity_vector(shared_velocity_vector)
-        desired_heading = calculate_desired_heading(cardata, debug)
-        find_vehicle_speed(cardata, velocity_vector)
-        turn_data = initialize_turn_data(cardata, desired_heading)
-        turn_data = turning.stepped_turning_algorithm(turn_data)
-        apply_turn_to_cardata(cardata, turn_data)
-        turn_signal, speed_signal = generate_servo_signals(cardata)
-        send_turn_to_car(sock, speed_signal, turn_signal)
-
-        plot_car_path(cardata, debug, dronename, velocity_vector, xpos, ypos)
-
+            plot_car_path(cardata, debug, dronename, velocity_vector, xpos, ypos)
+    except KeyboardInterrupt:
+        socket_tx('disconnect', sock)
+        sock.close()
+        sys.exit()
 
 def plot_car_path(cardata, debug, dronename, velocity_vector, xpos, ypos):
-    pause_interval = cardata.DIST_TRAVELED / cardata.SPEED
-    print("Pause Interval: " + str(pause_interval))
-    if pause_interval == 0:
+    if math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2) != 0:
+        pause_interval = cardata.DIST_TRAVELED / cardata.SPEED
+    else:
         pause_interval = 1e-6  # <-- This is a starter to the program
+    print("Pause Interval: " + str(pause_interval))
     if len(xpos) > BUFFERSIZE:
         xpos.pop(0)
         ypos.pop(0)
@@ -264,12 +268,15 @@ def request_gps_fix(cardata, debug, sock):
     try:
         cardata.XPOS = gps.parse_gps_msg(str(message))[0]
         cardata.YPOS = gps.parse_gps_msg(str(message))[1]
-    except TypeError:
-        if debug:
-            print('Invalid GPS Message...Exiting')
-        socket_tx('disconnect', sock)
-        sock.close()
-        sys.exit()
+    except ValueError:
+        # if debug:
+        #     print('Invalid GPS Message...Exiting')
+        # socket_tx('disconnect', sock)
+        # sock.close()
+        # sys.exit()
+
+        cardata.XPOS = 222
+        cardata.YPOS = 222
 
 
 def printf(layout, *args):
@@ -348,7 +355,7 @@ def socket_tx(data, sock):
 
 def socket_rx(sock):
     try:
-        message = sock.recv(128)
+        message = sock.recv(128).decode('utf8')
         print(BColors.OKGREEN + "Data Received Successfully..." + BColors.ENDC)
         return message
     except socket.herror:

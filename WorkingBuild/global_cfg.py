@@ -4,7 +4,7 @@ Global configuration values, all constants set before start
 
 # CAR VALUES #
 ACCELERATION = 15  # of car in m/s**2
-CENTER = 5800
+CENTER = 1500
 ESC = 3
 MAX_RIGHT = 1000
 NEUTRAL = 1500

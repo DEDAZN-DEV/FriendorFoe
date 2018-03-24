@@ -15,7 +15,6 @@ def parse_gps_msg(message):
     :param message: <String> the GGA message that is to be parsed, a string
     :return: <Array> a two element array that contains the lat and long
     """
-
     separator = []
 
     for char in range(0, len(message)):
@@ -150,6 +149,7 @@ def gps_debug():
     print(scale_xy(test))
 
     return 0
+
 
 def calc_originxy():
     """
