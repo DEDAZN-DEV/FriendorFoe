@@ -305,9 +305,9 @@ def gen_turn_signal(angle):
     else:
         turn_signal = int(round(cfg.CENTER - (angle * cfg.DEGPERPOINT)))
 
-    if turn_signal > 8000:
+    if turn_signal > cfg.MAX_LEFT:
         turn_signal = cfg.MAX_LEFT
-    elif turn_signal < 4000:
+    elif turn_signal < cfg.MAX_RIGHT:
         turn_signal = cfg.MAX_RIGHT
 
     return turn_signal
@@ -321,16 +321,21 @@ def gen_spd_signal(speed, angle):
     :return: 0 on successful completion
     """
 
-    if abs(angle) > 1.0:
-        speed_signal = int(round((cfg.TEST_SPEED + (speed * cfg.SPDSCALE)) /
-                                 (abs(angle) * cfg.TURNFACTOR)))
-    else:
-        speed_signal = int(round(cfg.TEST_SPEED + (speed * cfg.SPDSCALE)))
+    # if abs(angle) > 1.0:
+    #     speed_signal = int(round((cfg.TEST_SPEED + (speed * cfg.SPDSCALE)) /
+    #                              (abs(angle) * cfg.TURNFACTOR)))
+    # else:
+    #     speed_signal = int(round(cfg.TEST_SPEED + (speed * cfg.SPDSCALE)))
+    #
+    # if speed_signal > cfg.MAX_SPEED:
+    #     speed_signal = cfg.MAX_SPEED - cfg.SPDLIMITER  # <- FOR TESTING PURPOSES
+    # elif speed_signal < cfg.TEST_SPEED:
+    #     speed_signal = cfg.TEST_SPEED
+    #
+    # print(str(speed_signal) + '************')
 
-    if speed_signal > cfg.MAX_SPEED:
-        speed_signal = cfg.MAX_SPEED - cfg.SPDLIMITER  # <- FOR TESTING PURPOSES
-    elif speed_signal < cfg.TEST_SPEED:
-        speed_signal = cfg.TEST_SPEED
+    # TODO: FIX THIS
+    speed_signal = cfg.TEST_SPEED
 
     return speed_signal
 

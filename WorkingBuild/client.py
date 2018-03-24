@@ -151,7 +151,7 @@ def execute_data(data, conn):
         if tgt == cfg.ESC and val > cfg.MAX_TEST_SPEED:
             print('[WARN] Speed would exceed testing limits!')
         else:
-            if 4000 <= val <= 8000:
+            if cfg.MAX_RIGHT <= val <= cfg.MAX_LEFT:
                 print('[SERVO] Entering servo_ctl function with value of: ' + str(val))
                 servo_ctl(tgt, val)
 
