@@ -7,8 +7,8 @@ import socket
 import sys
 import time
 
-import WorkingBuild.global_cfg as cfg
-import WorkingBuild.maestro as maestro
+import global_cfg as cfg
+import maestro as maestro
 
 
 def main():
