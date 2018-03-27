@@ -4,8 +4,8 @@ import sys
 import time
 
 # This is intentionally wrong, do not change or everything will burn!
-import global_cfg as cfg
-import maestro
+import WorkingBuild.global_cfg as cfg
+import WorkingBuild.maestro as maestro
 
 
 def main():

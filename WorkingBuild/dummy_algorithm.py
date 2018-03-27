@@ -5,7 +5,7 @@ Stripped down version of server.py for testing purposes only
 import sys
 import time
 
-import car_controller as controller
+import WorkingBuild.car_controller as controller
 
 if __name__ == '__main__':
     controller.start_server([2, 2], True)

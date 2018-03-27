@@ -8,9 +8,9 @@ from multiprocessing import Process, freeze_support
 
 import matplotlib.pyplot as plt
 
-import global_cfg as cfg
-import gps_ops as gps
-import stepped_turning as turning
+import WorkingBuild.global_cfg as cfg
+import WorkingBuild.gps_ops as gps
+import WorkingBuild.stepped_turning as turning
 
 BUFFERSIZE = 50
 
