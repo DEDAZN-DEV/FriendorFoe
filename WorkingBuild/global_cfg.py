@@ -4,16 +4,16 @@ Global configuration values, all constants set before start
 
 # CAR VALUES #
 ACCELERATION = 15  # of car in m/s**2
-CENTER = 5800
+CENTER = 1500
 ESC = 3
-MAX_RIGHT = 8000
-NEUTRAL = 6000
-MAX_LEFT = 4000
-MAX_SPEED = 9000
+MAX_RIGHT = 1000
+NEUTRAL = 1500
+MAX_LEFT = 2000
+MAX_SPEED = 2000
 MAX_TURN_RADIUS = 30  # degrees
 MAXVELOCITY = 13.4  # m/s
 STEERING = 5
-TEST_SPEED = 6320
+TEST_SPEED = 3000
 TURNDELAY = 30
 TURNDIAMETER = 1.5
 TURNFACTOR = 0.001
@@ -25,7 +25,7 @@ MAX_TEST_SPEED = 6500
 SPDLIMITER = MAX_SPEED - MAX_TEST_SPEED
 
 # NETWORK VALUES #
-CLIENT_IP_A = "10.33.30.125"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
+CLIENT_IP_A = "192.168.1.10"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
 COM_PORT = ''
 HOST = ''
 PORT = 7878

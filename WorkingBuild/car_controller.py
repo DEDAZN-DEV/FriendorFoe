@@ -20,7 +20,7 @@ def start_server(initial_velocity_vector, dbg_mode):
     :param dbg_mode: <Boolean> Debug mode (T/F)
     :return: <Int> 0 on success
     """
-
+    print('***')
     server.main(dbg_mode, 'run', shared_gps_data, shared_velocity_vector)
     with shared_velocity_vector.get_lock():
         shared_velocity_vector[0] = initial_velocity_vector[0]

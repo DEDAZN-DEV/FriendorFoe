@@ -1,183 +1,404 @@
-from sys import version_info
+#!/usr/bin/python3
+###########################################################################################
+# Filename:
+#      Device5.py
+###########################################################################################
+# Project Authors: 
+#     Juhapekka Piiroinen
+#     Brian Wu
+# https://raw.githubusercontent.com/AustralianSynchrotron/Australian-Synchrotron-Surveyor-Tunnel-Exploration-And-Fault-Detection-Robot/master/dev/Device.py
+# 
+# Changes:
+#     February 8, 2015 by Dipto Pratyaksa
+#           - Port code from Python2 to Python3
+#           - added set_angle function to enable servo positioning between 0 and 180 degrees
+#     September 24, 2012 by Cameron Rodda
+#           - added minimaestro 12+ multiple servo writes, .set_targets function
+#     June 14, 2010 by Juhapekka Piiroinen - changes committed to svn
+#           - added comments for the device commands according to the manual from Pololu
+#           - added latest draft code for rotating base servo (Parallax Continuous Rotating Servo)
+#           - note! you should be able to clear error flags with .get_errors function according to the manual
+#           - renamed CameraDriver to LegacyCameraDriver as Brian Wu has done better one
+#           - integrated batch of changes provided by Brian Wu
+#
+#     June 11, 2010 by Brian Wu - Changes committed thru email
+#           - Decoupling the implementation from the program
+#
+#     April 19, 2010 by Juhapekka Piiroinen
+#           - Initial Release
+# 
+# Email:
+#     juhapekka.piiroinen@gmail.com
+#
+# License: 
+#     GNU/GPLv3
+#
+# Description:
+#     A python-wrapper for Pololu Micro Maestro 6-Channel USB Servo Controller
+#
+############################################################################################
+# /!\ Notes /!\
+# You will have to enable _USB Dual Port_ mode from the _Pololu Maestro Control Center_.
+#
+############################################################################################
+# Device Documentation is available @ http://www.pololu.com/docs/pdf/0J40/maestro.pdf
+############################################################################################
+# (C) 2010 Juhapekka Piiroinen
+#          Brian Wu
+############################################################################################
+import time
 
 import serial
 
-PY2 = version_info[0] == 2  # Running Python 2.x?
+
+def log(*msgline):
+    for msg in msgline:
+        print(msg)
 
 
-#
-# ---------------------------
-# Maestro Servo Controller
-# ---------------------------
-#
-# Support for the Pololu Maestro line of servo controllers
-#
-# Steven Jacobs -- Aug 2013
-# https://github.com/FRC4564/Maestro/
-#
-# These functions provide access to many of the Maestro's capabilities using the
-# Pololu serial protocol
+class Device(object):
+    def __init__(self, con_port="/dev/ttyACM1", ser_port="/dev/ttyACM0",
+                 timeout=1):  # /dev/ttyACM0  and   /dev/ttyACM1  for Linux
+        ############################
+        # lets introduce and init the main variables
+        self.con = None
+        self.ser = None
+        self.isInitialized = False
 
-class Controller:
-    # When connected via USB, the Maestro creates two virtual serial ports
-    # /dev/ttyACM0 for commands and /dev/ttyACM1 for communications.
-    # Be sure the Maestro is configured for "USB Dual Port" serial mode.
-    # "USB Chained Mode" may work as well, but hasn't been tested.
-    #
-    # Pololu protocol allows for multiple Maestros to be connected to a single
-    # serial port. Each connected device is then indexed by number.
-    # This device number defaults to 0x0C (or 12 in decimal), which this module
-    # assumes.  If two or more controllers are connected to different serial
-    # ports, or you are using a Windows OS, you can provide the tty port.  For
-    # example, '/dev/ttyACM2' or for Windows, something like 'COM3'.
-    # noinspection PyPep8Naming
-    def __init__(self, ttyStr='/dev/ttyACM0', device=0x0c):
-        # Open the command port
-        self.usb = serial.Serial(ttyStr)
-        # Command lead-in and device number are sent for each Pololu serial command.
-        self.PololuCmd = chr(0xaa) + chr(device)
-        # Track target position for each servo. The function isMoving() will
-        # use the Target vs Current servo position to determine if movement is
-        # occuring.  Upto 24 servos on a Maestro, (0-23). Targets start at 0.
-        self.Targets = [0] * 24
-        # Servo minimum and maximum targets can be restricted to protect components.
-        self.Mins = [0] * 24
-        self.Maxs = [0] * 24
+        ############################
+        # lets connect the TTL Port
+        try:
+            self.con = serial.Serial(con_port, timeout=timeout)
+            self.con.baudrate = 9600
+            self.con.close()
+            self.con.open()
+            log("Link to Command Port -", con_port, "- successful")
 
-    # Cleanup by closing USB serial port
-    def close(self):
-        self.usb.close()
+        except serial.serialutil.SerialException as e:
+            print(e)
+            log("Link to Command Port -", con_port, "- failed")
 
-    # Send a Pololu command out the serial port
-    # noinspection PyPep8Naming,PyPep8Naming
-    def sendCmd(self, cmd):
-        cmdStr = self.PololuCmd + cmd
-        if PY2:
-            self.usb.write(cmdStr)
+        if self.con:
+            #####################
+            # If your Maestro's serial mode is "UART, detect baud rate", you must first send it the baud rate indication byte 0xAA on
+            # the RX line before sending any commands. The 0xAA baud rate indication byte can be the first byte of a Pololu protocol
+            # command.
+            # http://www.pololu.com/docs/pdf/0J40/maestro.pdf - page 35
+            # self.con.write(bytes(chr(0xAA),'utf-8'))
+            # self.con.flush()
+            # log("Baud rate indication byte 0xAA sent!")
+            pass
+        ###################################
+        # lets connect the TTL Port
+        try:
+            self.ser = serial.Serial(ser_port, timeout=timeout)
+            # self.ser.baudrate = 9600
+            self.ser.close()
+            self.ser.open()
+            log("Link to TTL Port -", ser_port, "- successful")
+        except serial.serialutil.SerialException as e:
+            print(e)
+            log("Link to TTL Port -", ser_port, "- failed!")
+
+        self.isInitialized = (self.con != None and self.ser != None)
+        if (self.isInitialized):
+            err_flags = self.get_errors()
+            log("Device error flags read (", err_flags, ") and cleared")
+        log("Device initialized:", self.isInitialized)
+
+    ###########################################################################################################################
+    ## common write function for handling all write related tasks
+    def write(self, *data):
+        if not self.isInitialized: log("Not initialized"); return
+        if not self.ser.writable():
+            log("Device not writable")
+            return
+        for d in data:
+            if type(d) is list:
+                # Handling for writing to multiple servos at same time
+                for li in d:
+                    self.ser.write(bytes([li]))
+            else:
+                self.ser.write(bytes([d]))
+
+        self.ser.flush()
+
+    ###########################################################################################################################
+    ## Go Home
+    # Compact protocol: 0xA2
+    # --
+    # This command sends all servos and outputs to their home positions, just as if an error had occurred. For servos and
+    # outputs set to "Ignore", the position will be unchanged.
+    # --
+    # Source: http://www.pololu.com/docs/pdf/0J40/maestro.pdf
+    def go_home(self):
+        if not self.isInitialized: log("Not initialized"); return
+        self.write(0xA2)
+
+    ###########################################################################################################################
+    ## Set Target
+    # Compact protocol: 0x84, channel number, target low bits, target high bits
+    # --
+    # The lower 7 bits of the third data byte represent bits 0-6 of the target (the lower 7 bits), while the lower 7 bits of the
+    # fourth data byte represent bits 7-13 of the target. The target is a non-negative integer.
+    # --
+    # Source: http://www.pololu.com/docs/pdf/0J40/maestro.pdf
+    def set_target(self, servo, value):
+        if not self.isInitialized: log("Not initialized"); return
+        if not self.ser.writable():
+            log("Device not writable")
+            return
+        # time.sleep(0.0001)
+        value = int(value) * 4
+        log("servo: {} value: {}".format(servo, value))
+        commandByte = 0x84
+        commandByte2 = 0xaa + 0x0c + 0x04
+        channelByte = servo
+        lowTargetByte = value & 0x7F
+        highTargetByte = (value >> 7) & 0x7F
+        self.write(commandByte, channelByte, lowTargetByte, highTargetByte)
+
+    def setAngle(self, servo, angle):
+        if angle > 180 or angle < 0:
+            angle = 90
+        byteone = int(254 * angle / 180)
+        self.write(0xFF, servo, byteone)
+
+    def setRotation(self, servo, angle):
+        if angle > 254 or angle < 0:
+            angle = 127
+        self.write(0xFF, servo, angle)
+
+    ##########################################################################################################################
+    ## Set Targets
+    # Compact protocol: 0x9F, number of targets, first channel number, first target low bits, first target high bits, second
+    # target low bits, second target high bits, ...
+    # --
+    # This command simultaneously sets the targets for a contiguous block of channels. The first byte specifies how many
+    # channels are in the contiguous block; this is the number of target values you will need to send. The second byte specifies
+    # the lowest channel number in the block. The subsequent bytes contain the target values for each of the channels, in order
+    # by channel number, in the same format as the Set Target command above.
+    # --
+    # Source: http://www.pololu.com/docs/pdf/0J40/maestro.pdf
+    def set_targets(self, num_targets, start_channel, values):
+        if not self.isInitialized: log("Not initialized"); return
+        result = []
+        for k in range(num_targets):
+            print("K=", values[k])
+            highbits, lowbits = divmod(values[k], 32)
+            # lowbits = values[k] & 0x7F
+            # highbits = (values[k] >> 7) & 0x7F
+
+            result.append(lowbits)
+            result.append(highbits)
+
+        if type(start_channel) is list:
+            start_channel = min(start_channel)
+
+        self.write(0x9F, num_targets, start_channel, lowbits, highbits, lowbits, highbits)
+
+    ###########################################################################################################################
+    ## Set Speed
+    # Compact protocol: 0x87, channel number, speed low bits, speed high bits
+    # --
+    # This command limits the speed at which a servo channel's output value changes. The speed limit is given in units of (0.25 us)/(10 ms)
+    # --
+    # For example, the command 0x87, 0x05, 0x0C, 0x01 sets
+    # the speed of servo channel 5 to a value of 140, which corresponds to a speed of 3.5 us/ms. What this means is that if
+    # you send a Set Target command to adjust the target from, say, 1000 us to 1350 us, it will take 100 ms to make that
+    # adjustment. A speed of 0 makes the speed unlimited, so that setting the target will immediately affect the position. Note
+    # that the actual speed at which your servo moves is also limited by the design of the servo itself, the supply voltage, and
+    # mechanical loads; this parameter will not help your servo go faster than what it is physically capable of.
+    # --
+    # At the minimum speed setting of 1, the servo output takes 40 seconds to move from 1 to 2 ms.
+    # The speed setting has no effect on channels configured as inputs or digital outputs.
+    # --
+    # Source: http://www.pololu.com/docs/pdf/0J40/maestro.pdf
+    def set_speed(self, servo, speed):
+        if not self.isInitialized: log("Not initialized"); return
+        highbits, lowbits = divmod(speed, 32)
+        self.write(0x87, servo, lowbits << 2, highbits)
+        time.sleep(0.1)
+
+    def set_speeds(self, servos, speeds):
+        if not self.isInitialized: log("Not initialized"); return
+        index = 0
+        for s in servos:
+            if type(speeds) is list:
+                highbits, lowbits = divmod(speeds[index], 32)
+                self.write(0x87, s, lowbits << 2, highbits)
+                # log("MULTI: channel %s; speed %s"%(s,speeds[index]))
+                index += 1
+            elif type(speeds) is int:
+                highbits, lowbits = divmod(speeds, 32)
+                self.write(0x87, s, lowbits << 2, highbits)
+                # log("SINGLE: channel %s; speed %s"%(s,speeds))
+            else:
+                log("Set Speed: <Type> Error");
+                return
+
+    ###########################################################################################################################
+    ## Set Acceleration
+    # Compact protocol: 0x89, channel number, acceleration low bits, acceleration high bits
+    # --
+    # This command limits the acceleration of a servo channel's output. The acceleration limit is a value from 0 to 255 in units of (0.25 us)/(10 ms)/(80 ms),
+    # --
+    # A value of 0 corresponds to no acceleration limit. An acceleration limit causes the speed of a servo to slowly ramp up until it reaches the maximum speed, then
+    # to ramp down again as position approaches target, resulting in a relatively smooth motion from one point to another.
+    # With acceleration and speed limits, only a few target settings are required to make natural-looking motions that would
+    # otherwise be quite complicated to produce.
+    # --
+    # At the minimum acceleration setting of 1, the servo output takes about 3 seconds to move smoothly from a target of 1 ms to a target of 2 ms.
+    # The acceleration setting has no effect on channels configured as inputs or digital outputs.
+    # --
+    # Source: http://www.pololu.com/docs/pdf/0J40/maestro.pdf
+    def set_acceleration(self, servo, acceleration):
+        if not self.isInitialized: log("Not initialized"); return
+        highbits, lowbits = divmod(acceleration, 32)
+        self.write(0x89, servo, lowbits << 2, highbits)
+
+    ###########################################################################################################################
+    ## Set PWM (Mini Maestro 12, 18, and 24 only)
+    # Compact protocol: 0x8A, on time low bits, on time high bits, period low bits, period high bits
+    # --
+    # This command sets the PWM output to the specified on time and period, in units of 1/48 us. The on time and period
+    # are both encoded with 7 bits per byte in the same way as the target in command 0x84, above.
+    # --
+    # Source: http://www.pololu.com/docs/pdf/0J40/maestro.pdf
+    def set_pwm(self):
+        pass
+
+    ###########################################################################################################################
+    ## Get Position
+    # Compact protocol: 0x90, channel number
+    # Pololu protocol: 0xAA, device number, 0x10, channel number
+    # Response: position low 8 bits, position high 8 bits
+    # --
+    # This command allows the device communicating with the Maestro to get the position value of a channel. The position
+    # is sent as a two-byte response immediately after the command is received.
+    # --
+    # If the specified channel is configured as a servo, this position value represents the current pulse width that the Maestro
+    # is transmitting on the channel, reflecting the effects of any previous commands, speed and acceleration limits, or scripts
+    # running on the Maestro.
+    # --
+    # If the channel is configured as a digital output, a position value less than 6000 means the Maestro is driving the line low,
+    # while a position value of 6000 or greater means the Maestro is driving the line high.
+    # --
+    # If the channel is configured as an input, the position represents the voltage measured on the channel. The inputs on
+    # channels 0-11 are analog: their values range from 0 to 1023, representing voltages from 0 to 5 V. The inputs on channels
+    # 12-23 are digital: their values are either exactly 0 or exactly 1023.
+    # --
+    # Note that the formatting of the position in this command differs from the target/speed/acceleration formatting in the
+    # other commands. Since there is no restriction on the high bit, the position is formatted as a standard little-endian two-
+    # byte unsigned integer. For example, a position of 2567 corresponds to a response 0x07, 0x0A.
+    # --
+    # Note that the position value returned by this command is equal to four times the number displayed in the Position box
+    # in the Status tab of the Maestro Control Center.
+    # --
+    # Source: http://www.pololu.com/docs/pdf/0J40/maestro.pdf
+    def get_position(self, servo):
+        if not self.isInitialized: log("Not initialized"); return None
+        command = chr(0x90) + chr(servo)
+        # command = chr(0xaa) + chr(0x0c)+chr(0x10)+chr(servo)
+        self.write(0x90, servo)
+        # self.write(0xAA, 0x0C, 0x10, servo)
+
+        data = self.ser.read(2)
+        if data:
+            return (int(data[0]) + int(data[1] << 8)) / 4
         else:
-            self.usb.write(bytes(cmdStr))
+            return None
 
-    # Set channels min and max value range.  Use this as a safety to protect
-    # from accidentally moving outside known safe parameters. A setting of 0
-    # allows unrestricted movement.
-    #
-    # ***Note that the Maestro itself is configured to limit the range of servo travel
-    # which has precedence over these values.  Use the Maestro Control Center to configure
-    # ranges that are saved to the controller.  Use setRange for software controllable ranges.
-    # noinspection PyPep8Naming
-    def setRange(self, chan, min, max):
-        self.Mins[chan] = min
-        self.Maxs[chan] = max
+    def get_positions(self, servos):
+        if not self.isInitialized: log("Not initialized"); return None
+        result = []
+        for s in servos:
+            self.write(0x90, servos)
+            data = self.ser.read(2)
+            if data:
+                result.append((int(data[0]) + (int(data[1]) << 8)) / 4)
+            else:
+                result.append(None)
 
-    # Return Minimum channel range value
-    # noinspection PyPep8Naming
-    def getMin(self, chan):
-        return self.Mins[chan]
+        return result
 
-    # Return Maximum channel range value
-    # noinspection PyPep8Naming
-    def getMax(self, chan):
-        return self.Maxs[chan]
-
-    # Set channel to a specified target value.  Servo will begin moving based
-    # on Speed and Acceleration parameters previously set.
-    # Target values will be constrained within Min and Max range, if set.
-    # For servos, target represents the pulse width in of quarter-microseconds
-    # Servo center is at 1500 microseconds, or 6000 quarter-microseconds
-    # Typcially valid servo range is 3000 to 9000 quarter-microseconds
-    # If channel is configured for digital output, values < 6000 = Low ouput
-    # noinspection PyPep8Naming
-    def setTarget(self, chan, target):
-        # if Min is defined and Target is below, force to Min
-        if self.Mins[chan] > 0 and target < self.Mins[chan]:
-            target = self.Mins[chan]
-        # if Max is defined and Target is above, force to Max
-        if 0 < self.Maxs[chan] < target:
-            target = self.Maxs[chan]
-        #
-        lsb = target & 0x7f  # 7 bits for least significant byte
-        msb = (target >> 7) & 0x7f  # shift 7 and take next 7 bits for msb
-        cmd = chr(0x04) + chr(chan) + chr(lsb) + chr(msb)
-        self.sendCmd(cmd)
-        # Record Target value
-        self.Targets[chan] = target
-
-    # Set speed of channel
-    # Speed is measured as 0.25microseconds/10milliseconds
-    # For the standard 1ms pulse width change to move a servo between extremes, a speed
-    # of 1 will take 1 minute, and a speed of 60 would take 1 second.
-    # Speed of 0 is unrestricted.
-    # noinspection PyPep8Naming
-    def setSpeed(self, chan, speed):
-        lsb = speed & 0x7f  # 7 bits for least significant byte
-        msb = (speed >> 7) & 0x7f  # shift 7 and take next 7 bits for msb
-        cmd = chr(0x07) + chr(chan) + chr(lsb) + chr(msb)
-        self.sendCmd(cmd)
-
-    # Set acceleration of channel
-    # This provide soft starts and finishes when servo moves to target position.
-    # Valid values are from 0 to 255. 0=unrestricted, 1 is slowest start.
-    # A value of 1 will take the servo about 3s to move between 1ms to 2ms range.
-    # noinspection PyPep8Naming
-    def setAccel(self, chan, accel):
-        lsb = accel & 0x7f  # 7 bits for least significant byte
-        msb = (accel >> 7) & 0x7f  # shift 7 and take next 7 bits for msb
-        cmd = chr(0x09) + chr(chan) + chr(lsb) + chr(msb)
-        self.sendCmd(cmd)
-
-    # Get the current position of the device on the specified channel
-    # The result is returned in a measure of quarter-microseconds, which mirrors
-    # the Target parameter of setTarget.
-    # This is not reading the true servo position, but the last target position sent
-    # to the servo. If the Speed is set to below the top speed of the servo, then
-    # the position result will align well with the acutal servo position, assuming
-    # it is not stalled or slowed.
-    # noinspection PyPep8Naming
-    def getPosition(self, chan):
-        cmd = chr(0x10) + chr(chan)
-        self.sendCmd(cmd)
-        lsb = ord(self.usb.read())
-        msb = ord(self.usb.read())
-        return (msb << 8) + lsb
-
-    # Test to see if a servo has reached the set target position.  This only provides
-    # useful results if the Speed parameter is set slower than the maximum speed of
-    # the servo.  Servo range must be defined first using setRange. See setRange comment.
-    #
-    # ***Note if target position goes outside of Maestro's allowable range for the
-    # channel, then the target can never be reached, so it will appear to always be
-    # moving to the target.  
-    # noinspection PyPep8Naming
-    def isMoving(self, chan):
-        if self.Targets[chan] > 0:
-            if self.getPosition(chan) != self.Targets[chan]:
-                return True
-        return False
-
-    # Have all servo outputs reached their targets? This is useful only if Speed and/or
-    # Acceleration have been set on one or more of the channels. Returns True or False.
-    # Not available with Micro Maestro.
-    # noinspection PyPep8Naming
-    def getMovingState(self):
-        cmd = chr(0x13)
-        self.sendCmd(cmd)
-        if self.usb.read() == chr(0):
-            return False
+    ###########################################################################################################################    
+    ## Get Moving State
+    # Compact protocol: 0x93
+    # Response: 0x00 if no servos are moving, 0x01 if servos are moving
+    # --
+    # This command is used to determine whether the servo outputs have reached their targets or are still changing, limited
+    # by speed or acceleration settings. Using this command together with the Set Target command, you can initiate several
+    # servo movements and wait for all the movements to finish before moving on to the next step of your program.
+    # --
+    # Source: http://www.pololu.com/docs/pdf/0J40/maestro.pdf
+    # WARNING: BUGGY! 0x01 always returned althoug it has stopped
+    def get_moving_state(self):
+        if not self.isInitialized: log("Not initialized"); return None
+        self.write(0x93)
+        data = self.ser.read(1)
+        if data:
+            return data[0]
         else:
-            return True
+            return None
 
-    # Run a Maestro Script subroutine in the currently active script. Scripts can
-    # have multiple subroutines, which get numbered sequentially from 0 on up. Code your
-    # Maestro subroutine to either infinitely loop, or just end (return is not valid).
-    # noinspection PyPep8Naming,PyPep8Naming
-    def runScriptSub(self, subNumber):
-        cmd = chr(0x27) + chr(subNumber)
-        # can pass a param with command 0x28
-        # cmd = chr(0x28) + chr(subNumber) + chr(lsb) + chr(msb)
-        self.sendCmd(cmd)
+    ###########################################################################################################################    
+    ## Get Errors
+    # Compact protocol: 0xA1
+    # --
+    # Response: error bits 0-7, error bits 8-15
+    # --
+    # Use this command to examine the errors that the Maestro has detected.
+    # --
+    # The error register is sent as a two-byte response immediately after the command is received,
+    # then all the error bits are cleared. For most applications using serial control, it is a good idea to check errors continuously
+    # and take appropriate action if errors occur.
+    # --
+    # Source: http://www.pololu.com/docs/pdf/0J40/maestro.pdf
+    def get_errors(self):
+        if not self.isInitialized: log("Not initialized"); return None
+        self.write(0xA1)
+        # self.ser.write(bytes(chr(0xA1),'UTF-8'))
+        data = self.ser.read(2)
+        if data:
+            return int(data[0]) + int(data[1]) << 8
+        else:
+            return None
 
-    # Stop the current Maestro Script
-    # noinspection PyPep8Naming
-    def stopScript(self):
-        cmd = chr(0x24)
-        self.sendCmd(cmd)
+    ###########################################################################################################################
+    ## a helper function for Set Target
+    def wait_until_at_target(self):
+        while (self.get_moving_state()):
+            time.sleep(0.01)
+
+    ###########################################################################################################################
+    ## Lets close and clean when we are done
+    def __del__(self):
+        try:
+            if (self.ser):
+                self.ser.close()
+                del (self.ser)
+        except Exception as e:
+            print(e)
+        try:
+            if (self.con):
+                self.con.close()
+                del (self.conf)
+        except Exception as e:
+            print(e)
+
+    # convert angle 0-180 degrees to servo pos
+    # =(degree*(max-min)/180)+min
+    def set_angle(self, servo, min, max, degree):
+        val = (float(degree) * (max - min) / 180) + min
+        self.set_target(servo, val)
+        print("Degree = ", degree)
+
+    def up(self, servo, min, max):
+        self.set_angle(servo, min, max, 180)
+
+    def mid(self, servo, min, max):
+        self.set_angle(servo, min, max, 90)
+
+    def down(self, servo, min, max):
+        self.set_angle(servo, min, max, 0)

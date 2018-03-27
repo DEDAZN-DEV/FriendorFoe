@@ -3,8 +3,9 @@ import socket
 import sys
 import time
 
-import WorkingBuild.global_cfg as cfg
-import WorkingBuild.maestro as maestro
+# This is intentionally wrong, do not change or everything will burn!
+import global_cfg as cfg
+import maestro
 
 
 def main():
@@ -24,7 +25,7 @@ def main():
 
     print('[NETWORK] SERVER ESTABLISHED....')
 
-    test_controller('/dev/ttyACM0')
+    test_device()
 
     print('[SERVO] TESTING COMPLETE....')
 
@@ -33,7 +34,7 @@ def main():
         try:
             while True:
                 try:
-                    data = conn.recv(64)
+                    data = conn.recv(64).decode('utf8')
                     if data:
                         print('[DEBUG] Recieved data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
                         result = execute_data(data, conn)
@@ -52,64 +53,56 @@ def main():
             execute_data('stop', conn)
 
 
-def test_controller(port):
+def test_device():
     """
-    Initial arming and testing of Maestro servo controller.
+    Initial arming and testing of Maestro servo Device.
 
-    :param port: <String> Consists of the RPi3 port that the servo controller is connected to
     :return: <Int> 0 on success
     """
-    servo = maestro.Controller(port)
+    servo = maestro.Device()
     print('[SERVO] SERVO CONNECTION ESTABLISHED....')
 
     # 3 ESC, 5 STEERING
 
-    servo.setAccel(cfg.STEERING, 50)
-    servo.setAccel(cfg.ESC, 100)
-    print(servo.getMin(cfg.STEERING), servo.getMax(cfg.STEERING))
+    servo.set_acceleration(cfg.STEERING, 50)
+    servo.set_acceleration(cfg.ESC, 100)
 
     print('[SERVO] SENT SIGNAL....')
-
-    servo.setTarget(cfg.STEERING, cfg.MAX_RIGHT)
-    print(servo.getPosition(cfg.STEERING))
+    servo.set_target(cfg.STEERING, cfg.MAX_RIGHT)
     time.sleep(1)
-    servo.setTarget(cfg.STEERING, cfg.MAX_LEFT)
-    print(servo.getPosition(cfg.STEERING))
+    servo.set_target(cfg.STEERING, cfg.MAX_LEFT)
     time.sleep(1)
-    servo.setTarget(cfg.STEERING, cfg.MAX_RIGHT)
-    print(servo.getPosition(cfg.STEERING))
+    servo.set_target(cfg.STEERING, cfg.MAX_RIGHT)
     time.sleep(1)
-    servo.setTarget(cfg.STEERING, cfg.CENTER)
+    servo.set_target(cfg.STEERING, cfg.CENTER)
     print('[SERVO] STEERING ARMED....')
     time.sleep(1)
 
-    print(servo.getPosition(cfg.ESC))
-    servo.setTarget(cfg.ESC, 8000)
-    servo.setTarget(cfg.ESC, cfg.NEUTRAL)
-    print(servo.getPosition(cfg.ESC))
+    servo.set_target(cfg.ESC, cfg.MAX_SPEED)
+    servo.set_target(cfg.ESC, cfg.NEUTRAL)
     print('[SERVO] MOTOR ARMED....')
     time.sleep(1)
 
-    print('[DEBUG] Exiting test_controller function')
+    print('[DEBUG] Exiting test_Device function')
 
     return 0
 
 
 def servo_ctl(servo_num, val):
     """
-    Function to send signal to Maestro servo controller for execution
+    Function to send signal to Maestro servo Device for execution
 
     :param servo_num: <Int> 3 for speed, 5 for steering
     :param val: <Int> qms pulse value for the servo to execute
     :return: <Int> 0 on success
     """
-    servo = maestro.Controller('/dev/ttyACM0')
+    servo = maestro.Device()
 
     # TODO: Modify this to accommodate for speed
-    servo.setAccel(cfg.STEERING, 50)
-    servo.setAccel(cfg.ESC, 100)
+    servo.set_acceleration(cfg.STEERING, 50)
+    servo.set_acceleration(cfg.ESC, 100)
 
-    servo.setTarget(servo_num, val)
+    servo.set_target(servo_num, val)
     print('[DEBUG] Exiting servo_ctl function')
 
     return 0
@@ -158,7 +151,7 @@ def execute_data(data, conn):
         if tgt == cfg.ESC and val > cfg.MAX_TEST_SPEED:
             print('[WARN] Speed would exceed testing limits!')
         else:
-            if 4000 <= val <= 8000:
+            if cfg.MAX_RIGHT <= val <= cfg.MAX_LEFT:
                 print('[SERVO] Entering servo_ctl function with value of: ' + str(val))
                 servo_ctl(tgt, val)
 
@@ -179,7 +172,7 @@ def get_gps(conn):
     message = myfile.read()
     myfile.close()
     print('[GPS] ' + message)
-    conn.sendall(message.encode())
+    conn.sendall(message.encode('utf8'))
     print('[GPS] GPS SENT')
     print('[DEBUG] Exiting get_gps function')
 
