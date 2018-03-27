@@ -32,6 +32,7 @@ def main():
     while True:
         (conn, address) = sock.accept()
         try:
+            servo_obj = maestro.Device()
             while True:
                 servo_obj = maestro.Device()
                 try:
@@ -51,7 +52,11 @@ def main():
                     print('[WARN][NETWORK] Socket error')
                     break
         except KeyboardInterrupt:
+<<<<<<< HEAD
             execute_data('stop', conn, servo_obj)
+=======
+            execute_data('stop', conn)
+>>>>>>> 80e13e1eb6fedcfa2cca4d3c7458abc0ba5094dd
             conn.close()
             sys.exit()
 
@@ -155,7 +160,7 @@ def execute_data(data, conn, servo_obj):
         else:
             if cfg.MAX_RIGHT <= val <= cfg.MAX_LEFT:
                 print('[SERVO] Entering servo_ctl function with value of: ' + str(val))
-                servo_ctl(tgt, val)
+                servo_ctl(tgt, val, servo_obj)
 
     print('[DEBUG] Exiting execute_data function')
 
@@ -172,6 +177,7 @@ def get_gps(conn):
     os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
     myfile = open('gps.txt', 'r')
     message = myfile.read()
+
     myfile.close()
     print('[GPS] ' + message)
     conn.sendall(message.encode('utf8'))
