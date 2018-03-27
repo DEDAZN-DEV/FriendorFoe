@@ -32,12 +32,13 @@ def main():
     while True:
         (conn, address) = sock.accept()
         try:
+            servo_obj = maestro.Device()
             while True:
                 try:
                     data = conn.recv(64).decode('utf8')
                     if data:
                         print('[DEBUG] Recieved data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
-                        result = execute_data(data, conn)
+                        result = execute_data(data, conn, servo_obj)
 
                         if result == 404:
                             break
@@ -51,6 +52,8 @@ def main():
                     break
         except KeyboardInterrupt:
             execute_data('stop', conn)
+            conn.close()
+            sys.exit()
 
 
 def test_device():
@@ -88,7 +91,7 @@ def test_device():
     return 0
 
 
-def servo_ctl(servo_num, val):
+def servo_ctl(servo_num, val, servo_obj):
     """
     Function to send signal to Maestro servo Device for execution
 
@@ -96,19 +99,18 @@ def servo_ctl(servo_num, val):
     :param val: <Int> qms pulse value for the servo to execute
     :return: <Int> 0 on success
     """
-    servo = maestro.Device()
 
     # TODO: Modify this to accommodate for speed
-    servo.set_acceleration(cfg.STEERING, 50)
-    servo.set_acceleration(cfg.ESC, 100)
+    servo_obj.set_acceleration(cfg.STEERING, 50)
+    servo_obj.set_acceleration(cfg.ESC, 100)
 
-    servo.set_target(servo_num, val)
+    servo_obj.set_target(servo_num, val)
     print('[DEBUG] Exiting servo_ctl function')
 
     return 0
 
 
-def execute_data(data, conn):
+def execute_data(data, conn, servo_obj):
     """
     Function to handle data processing and socket network disconnect
 
@@ -121,23 +123,23 @@ def execute_data(data, conn):
     print(data)
 
     if data == 'kill':
-        servo_ctl(cfg.ESC, cfg.NEUTRAL)
-        servo_ctl(cfg.STEERING, cfg.CENTER)
+        servo_ctl(cfg.ESC, cfg.NEUTRAL, servo_obj)
+        servo_ctl(cfg.STEERING, cfg.CENTER, servo_obj)
         conn.close()
         print('[DEBUG] Terminating Client')
         sys.exit()
     elif data == 'start':
-        servo_ctl(cfg.STEERING, cfg.MAX_RIGHT)
-        servo_ctl(cfg.ESC, cfg.TEST_SPEED)
+        servo_ctl(cfg.STEERING, cfg.MAX_RIGHT, servo_obj)
+        servo_ctl(cfg.ESC, cfg.TEST_SPEED, servo_obj)
     elif data == 'stop':
         print('[DEBUG] ***** Stopping')
-        servo_ctl(cfg.ESC, cfg.NEUTRAL)
-        servo_ctl(cfg.STEERING, cfg.CENTER)
+        servo_ctl(cfg.ESC, cfg.NEUTRAL, servo_obj)
+        servo_ctl(cfg.STEERING, cfg.CENTER, servo_obj)
     elif data == 'gps':
         get_gps(conn)
     elif data == 'disconnect':
-        servo_ctl(cfg.ESC, cfg.NEUTRAL)
-        servo_ctl(cfg.STEERING, cfg.CENTER)
+        servo_ctl(cfg.ESC, cfg.NEUTRAL, servo_obj)
+        servo_ctl(cfg.STEERING, cfg.CENTER, servo_obj)
         print('[NETWORK] Disconnect')
         time.sleep(10)
         conn.close()
@@ -153,7 +155,7 @@ def execute_data(data, conn):
         else:
             if cfg.MAX_RIGHT <= val <= cfg.MAX_LEFT:
                 print('[SERVO] Entering servo_ctl function with value of: ' + str(val))
-                servo_ctl(tgt, val)
+                servo_ctl(tgt, val, servo_obj)
 
     print('[DEBUG] Exiting execute_data function')
 
@@ -170,6 +172,7 @@ def get_gps(conn):
     os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
     myfile = open('gps.txt', 'r')
     message = myfile.read()
+
     myfile.close()
     print('[GPS] ' + message)
     conn.sendall(message.encode('utf8'))
