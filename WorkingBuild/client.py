@@ -52,11 +52,7 @@ def main():
                     print('[WARN][NETWORK] Socket error')
                     break
         except KeyboardInterrupt:
-<<<<<<< HEAD
             execute_data('stop', conn, servo_obj)
-=======
-            execute_data('stop', conn)
->>>>>>> 80e13e1eb6fedcfa2cca4d3c7458abc0ba5094dd
             conn.close()
             sys.exit()
 
