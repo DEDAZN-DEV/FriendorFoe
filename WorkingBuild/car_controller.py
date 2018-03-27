@@ -6,7 +6,7 @@ Purpose: To provide functions with which to control server.py
 import ctypes
 from multiprocessing import Array as SharedArray
 
-import WorkingBuild.server as server
+import server as server
 
 shared_gps_data = SharedArray(typecode_or_type=ctypes.c_double, size_or_initializer=2)
 shared_velocity_vector = SharedArray(typecode_or_type=ctypes.c_double, size_or_initializer=2)
