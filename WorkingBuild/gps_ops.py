@@ -1,6 +1,6 @@
 import math
 
-import WorkingBuild.global_cfg as cfg
+import global_cfg as cfg
 
 BASE_X = 0
 BASE_Y = 0
