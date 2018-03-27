@@ -34,7 +34,6 @@ def main():
         try:
             servo_obj = maestro.Device()
             while True:
-                servo_obj = maestro.Device()
                 try:
                     data = conn.recv(64).decode('utf8')
                     if data:
@@ -63,7 +62,7 @@ def test_device():
 
     :return: <Int> 0 on success
     """
-    servo = maestro.Device(object)
+    servo = maestro.Device()
     print('[SERVO] SERVO CONNECTION ESTABLISHED....')
 
     # 3 ESC, 5 STEERING
