@@ -4,8 +4,8 @@ import sys
 import time
 
 # This is intentionally wrong, do not change or everything will burn!
-import WorkingBuild.global_cfg as cfg
-import WorkingBuild.maestro as maestro
+import global_cfg as cfg
+import maestro as maestro
 
 
 def main():
@@ -62,7 +62,7 @@ def test_device():
 
     :return: <Int> 0 on success
     """
-    servo = maestro.Device()
+    servo = maestro.Device(object)
     print('[SERVO] SERVO CONNECTION ESTABLISHED....')
 
     # 3 ESC, 5 STEERING
