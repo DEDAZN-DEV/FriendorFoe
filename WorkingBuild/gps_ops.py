@@ -188,8 +188,7 @@ class GPSCalculations:
         return X_RATIO, Y_RATIO
 
     def request_gps_fix(self, connection, cardata, debug):
-        connection.socket_tx('gps')
-        message = connection.socket_rx()
+        message = connection.socket_tx('gps')
         try:
             cardata.XPOS = self.parse_gps_msg(str(message))[0]
             cardata.YPOS = self.parse_gps_msg(str(message))[1]

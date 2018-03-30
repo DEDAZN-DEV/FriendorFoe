@@ -125,13 +125,17 @@ def execute_data(data, conn):
         print('[DEBUG] Terminating Client')
         sys.exit()
     elif data == 'start':
+        conn.sendall(b'started')
         pass
     elif data == 'stop':
         print('[DEBUG] ***** Stopping')
+        conn.sendall(b'stopped')
     elif data == 'gps':
+        # conn.sendall(b'getting gps fix')
         get_gps(conn)
     elif data == 'disconnect':
         print('[NETWORK] Disconnect')
+        conn.sendall(b'disconnecting')
         time.sleep(10)
         conn.close()
         return 404
@@ -149,6 +153,8 @@ def execute_data(data, conn):
             if cfg.MAX_RIGHT <= val <= cfg.MAX_LEFT:
                 print('[SERVO] Entering servo_ctl function with value of: ' +
                       str(val))
+
+        conn.sendall(b'turn received')
 
     print('[DEBUG] Exiting execute_data function')
 

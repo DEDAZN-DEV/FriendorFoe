@@ -107,6 +107,7 @@ class Drones:
 
         try:
             while True:
+                print("\n")
                 time.sleep(0.01)
                 gps_calculations.request_gps_fix(connection, cardata, debug)
                 message_passing.update_shared_gps_data(car_controller, cardata)
@@ -267,11 +268,18 @@ class CarConnection:
         except socket.timeout:
             print(output.FAIL + "Connection timed out...." + output.ENDC)
 
+        response = self.socket_rx()
+        while not response:
+            print(response)
+            pass
+        print('Client Response: ' + response)
+        return response
+
     def socket_rx(self):
         output = DebugOutput()
         try:
             message = self.sock.recv(128).decode('utf8')
-            print(output.OKGREEN + "Data Received Successfully..." + output.ENDC)
+            # print(output.OKGREEN + "Data Received Successfully..." + output.ENDC)
             return message
         except socket.herror:
             print(output.FAIL + "Connection refused...." + output.ENDC)
