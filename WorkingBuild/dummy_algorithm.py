@@ -5,10 +5,11 @@ Stripped down version of server.py for testing purposes only
 import sys
 import time
 
-import WorkingBuild.car_controller as controller
+from WorkingBuild.car_controller import CarController as Controller
 
 if __name__ == '__main__':
-    controller.start_server([2, 2], True)
+    controller = Controller()
+    controller.start_car([2, 2], True)
 
     while True:
         try:

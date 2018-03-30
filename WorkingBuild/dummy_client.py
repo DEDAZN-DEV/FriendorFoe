@@ -1,18 +1,18 @@
-import os
 import socket
 import sys
 import time
 
 # This is intentionally wrong, do not change or everything will burn!
-import WorkingBuild.global_cfg as cfg
-import WorkingBuild.maestro as maestro
+import global_cfg as cfg
+import maestro as maestro
 
 
 def main():
     """
     Main executing function for client
 
-    :return: <Exception> Will raise exception upon crash or disconnect: socket.error, TypeError, KeyboardInterrupt
+    :return: <Exception> Will raise exception upon crash or disconnect:
+        socket.error, TypeError, KeyboardInterrupt
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -22,21 +22,21 @@ def main():
         sys.exit()
 
     sock.listen(5)
-
-    print('[NETWORK] SERVER ESTABLISHED....')
-
-    test_device()
-
-    print('[SERVO] TESTING COMPLETE....')
+    print('[NETWORK] SERVER ESTABLISHED, IP: ' + cfg.CLIENT_IP_A + ', PORT: ' + str(cfg.PORT) + '....')
 
     while True:
+        print('*** GOT HERE ***')
         (conn, address) = sock.accept()
+        print('*** AND HERE ***')
         try:
             while True:
                 try:
                     data = conn.recv(64).decode('utf8')
                     if data:
-                        print('[DEBUG] Recieved data from: ' + conn.getpeername().__str__() + '\t\t' + data.__str__())
+                        print('[DEBUG] Recieved data from: ' +
+                              conn.getpeername().__str__() +
+                              '\t\t' +
+                              data.__str__())
                         result = execute_data(data, conn)
 
                         if result == 404:
@@ -118,7 +118,7 @@ def execute_data(data, conn):
                 <Int> 0 on success
     """
     # data = data[2:len(data)-1]
-    print(data)
+    print("__" + data + "__")
 
     if data == 'kill':
         conn.close()
@@ -140,13 +140,15 @@ def execute_data(data, conn):
         tgt = int(data[0])
         val = int(data[1:len(data)])
 
+        print("target: " + str(tgt) + "\nvalue: " + str(val))
+
         # Guard statement to protect servossy
         if tgt == cfg.ESC and val > cfg.MAX_TEST_SPEED:
             print('[WARN] Speed would exceed testing limits!')
         else:
             if cfg.MAX_RIGHT <= val <= cfg.MAX_LEFT:
-                print('[SERVO] Entering servo_ctl function with value of: ' + str(val))
-                servo_ctl(tgt, val)
+                print('[SERVO] Entering servo_ctl function with value of: ' +
+                      str(val))
 
     print('[DEBUG] Exiting execute_data function')
 
@@ -160,7 +162,8 @@ def get_gps(conn):
     :param conn: <Connection object> Created by successful socket connection
     :return: <Int> 0 on success
     """
-    message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"
+    message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893, \
+              M,-25.669,M,2.0,0031*4F"
     print('[GPS] ' + message)
     conn.sendall(message.encode('utf8'))
     print('[GPS] GPS SENT')
