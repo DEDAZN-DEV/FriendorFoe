@@ -25,9 +25,7 @@ def main():
     print('[NETWORK] SERVER ESTABLISHED, IP: ' + cfg.CLIENT_IP_A + ', PORT: ' + str(cfg.PORT) + '....')
 
     while True:
-        print('*** GOT HERE ***')
         (conn, address) = sock.accept()
-        print('*** AND HERE ***')
         try:
             while True:
                 try:

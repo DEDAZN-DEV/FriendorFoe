@@ -1,14 +1,9 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
+import asyncio
 import math
-import random
 import socket
 import sys
-import time
-#import asyncio as asyncio
-from multiprocessing import Process, freeze_support
-from concurrent.futures import FIRST_COMPLETED
-
 import matplotlib.pyplot as plt
 
 import WorkingBuild.global_cfg as cfg
@@ -38,49 +33,9 @@ class CarData:
             print("******INITIALIZED CARDATA*******")
 
 
-class Drone:
-    """
-    """
-
-    def __init__(self, func, ip, port, droneid, debug, shared_gps_data, shared_velocity_vector):
-        self.name = droneid
-        self.process = Process(target=func,
-                               args=('Drone ' + str(droneid),
-                                     ip,
-                                     port,
-                                     debug,
-                                     shared_gps_data,
-                                     shared_velocity_vector))
-
-        print('Drone ID: ' + str(self.name))
-
-
 class Drones:
-    async def run_drones(self, ip, port, debug, car_controller, plot_points):
-        droneids = []
-        for drone_num in range(1, cfg.NUM_DRONES + 1):
-            droneids.append(random.randint(0, 999))
-
-        futures = [self.drone(droneid,
-                              ip,
-                              port,
-                              debug,
-                              car_controller,
-                              plot_points
-                              )
-                   for droneid in droneids
-                   ]
-        #done, pending = await asyncio.wait(futures, return_when=FIRST_COMPLETED)
-
-        print("Drones: " + str(droneids))
-
-        #print(done.pop().result())
-
-        #for future in pending:
-        #    future.cancel()
-
     @staticmethod
-    def drone(dronename, ip, port, debug, car_controller, plot_points):
+    async def drone(dronename, ip, port, debug, car_controller, plot_points):
         """
         Default drone control algorithm. Uses input from ATE-3 Sim to control
         drones.
@@ -93,9 +48,6 @@ class Drones:
         :param plot_points: whether or not to open the plot
         :return: Nothing
         """
-
-        print("******INITIALIZATION*****")
-
         turning = Turning(debug)
         message_passing = ServerMessagePassing(debug)
         connection = CarConnection(ip, port, debug)
@@ -103,25 +55,20 @@ class Drones:
         gps_calculations = gps.GPSCalculations(debug)
         cardata = CarData(debug)
 
-        print("*****INITIALIZATION COMPLETE*****")
-
         try:
             while True:
                 print("\n")
-                time.sleep(0.01)
                 gps_calculations.request_gps_fix(connection, cardata, debug)
                 message_passing.update_shared_gps_data(car_controller, cardata)
 
-                # await asyncio.sleep(0)
+                await asyncio.sleep(0)
 
-                velocity_vector = message_passing.update_velocity_vector(car_controller)
-                desired_heading = turning.calculate_desired_heading(cardata, debug)
-                turning.find_vehicle_speed(cardata, velocity_vector)
-                turn_data = turning.initialize_turn_data(cardata, desired_heading)
-                turn_data = turning.stepped_turning_algorithm(turn_data)
-                turning.apply_turn_to_cardata(cardata, turn_data)
-                turn_signal, speed_signal = turning.generate_servo_signals(cardata)
-                connection.send_turn_to_car(speed_signal, turn_signal)
+                velocity_vector = await Drones.execute_turn(car_controller,
+                                                            cardata,
+                                                            connection,
+                                                            debug,
+                                                            message_passing,
+                                                            turning)
 
                 # await asyncio.sleep(0)
 
@@ -132,43 +79,17 @@ class Drones:
             connection.sock.close()
             sys.exit()
 
-
-class Main:
     @staticmethod
-    def main(debug_mode, test_arg, car_controller, plot_points):
-        """
-        Driver function for the entire program. Spawns sub-processes to control
-        each drone and then terminates.
-        :return: 0 on successful completion
-        """
-
-        proclst = []
-
-        try:
-            if test_arg == 'run':
-                drones = Drones()
-#                ioloop = asyncio.get_event_loop()
-#                ioloop.run_until_complete(drones.run_drones(cfg.CLIENT_IP_A,
-#                                                            cfg.PORT,
-#                                                            debug_mode,
-#                                                            car_controller,
-#                                                            plot_points
-#                                                            )
-#                                          )
-#                drones.run_drones(cfg.CLIENT_IP_A, cfg.PORT, debug_mode, car_controller, plot_points)
-                drones.drone(1, cfg.CLIENT_IP_A, cfg.PORT, debug_mode, car_controller, plot_points)
-
-            elif test_type == 'debug_gps':
-                gps_calculations = gps.GPSCalculations(debug_mode)
-                gps_calculations.gps_debug()
-
-        except KeyboardInterrupt:
-            print('Keyboard Interrupt....Killing live processes')
-            for i in range(0, len(proclst)):
-                if proclst[i].process.is_alive():
-                    print('Killing Drone ID: ' + str(proclst[i].name))
-                    proclst[i].process.terminate()
-            print('....Done\n')
+    async def execute_turn(car_controller, cardata, connection, debug, message_passing, turning):
+        velocity_vector = message_passing.update_velocity_vector(car_controller)
+        desired_heading = turning.calculate_desired_heading(cardata, debug)
+        turning.find_vehicle_speed(cardata, velocity_vector)
+        turn_data = turning.initialize_turn_data(cardata, desired_heading)
+        turn_data = turning.stepped_turning_algorithm(turn_data)
+        turning.apply_turn_to_cardata(cardata, turn_data)
+        turn_signal, speed_signal = turning.generate_servo_signals(cardata)
+        connection.send_turn_to_car(speed_signal, turn_signal)
+        return velocity_vector
 
 
 class ServerMessagePassing:
@@ -188,7 +109,10 @@ class ServerMessagePassing:
         with car_controller.shared_gps_data.get_lock():
             car_controller.shared_gps_data[0] = cardata.XPOS
             car_controller.shared_gps_data[1] = cardata.YPOS
-            print('Received Lat, Long: ', cardata.LAT, cardata.LONG)
+            print('Updated Car GPS Position: ',
+                  car_controller.shared_gps_data[0],
+                  car_controller.shared_gps_data[0]
+                  )
 
     @staticmethod
     def update_velocity_vector(car_controller):
@@ -201,6 +125,8 @@ class ServerMessagePassing:
         with car_controller.shared_velocity_vector.get_lock():
             velocity_vector[0] = car_controller.shared_velocity_vector[0]
             velocity_vector[1] = car_controller.shared_velocity_vector[1]
+            print('Shared Vel Vector: ', car_controller.shared_velocity_vector[0],
+                  ', ', car_controller.shared_velocity_vector[1])
             print('Received Vel Vector: ', velocity_vector)
         return velocity_vector
 
@@ -244,7 +170,6 @@ class CarConnection:
     def __init__(self, ip, port, debug):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            print("**GOT HERE**" + cfg.CLIENT_IP_A + ' ' + str(cfg.PORT))
             self.sock.connect((ip, port))
             if debug:
                 print('******INITIALIZED CONNECTION*******')
@@ -326,13 +251,3 @@ class DebugOutput:
         self.WARNING = ''
         self.FAIL = ''
         self.ENDC = ''
-
-
-if __name__ == '__main__':
-    freeze_support()
-    if len(sys.argv) < 2:
-        print("Missing argument...\nUsage: python server.py\
-               [run, debug_gps]")
-        sys.exit()
-    else:
-        test_type = sys.argv[1]

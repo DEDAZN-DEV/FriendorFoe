@@ -3,33 +3,71 @@ Author: Julian Pryde
 Purpose: To provide functions with which to control server.py
 """
 
+import asyncio
 import ctypes
+import random
+from concurrent.futures import FIRST_COMPLETED
 from multiprocessing import Array as SharedArray
-from WorkingBuild.server import Main as ServerMain
+from multiprocessing import Process
+
+import WorkingBuild.global_cfg as cfg
+from WorkingBuild.server import Drones
 
 
 class CarController:
     def __init__(self):
         self.shared_gps_data = SharedArray(typecode_or_type=ctypes.c_double, size_or_initializer=2)
         self.shared_velocity_vector = SharedArray(typecode_or_type=ctypes.c_double, size_or_initializer=2)
-        self.server = None
 
-    def start_car(self, initial_velocity_vector, dbg_mode):
+    def start_server(self, initial_velocity_vector, debug, num_cars):
+        car_server = Process(target=self.start_cars, args=(initial_velocity_vector, debug, num_cars))
+        car_server.start()
+
+    def start_cars(self, initial_velocity_vector, debug, num_drones):
         """
         Initializes server with a given velocity vector
 
         :param initial_velocity_vector: <Array>
-        :param dbg_mode: <Boolean> Debug mode (T/F)
+        :param debug: <Boolean> Debug mode (T/F)
+        :param num_drones: number of cars being run
         :return: <Int> 0 on success
         """
-        print('***')
-        self.server = ServerMain()
-        self.server.main(dbg_mode, 'run', self, False)
         with self.shared_velocity_vector.get_lock():
             self.shared_velocity_vector[0] = initial_velocity_vector[0]
             self.shared_velocity_vector[1] = initial_velocity_vector[1]
 
-        return 0
+        # self.server = ServerMain()
+        event_loop = asyncio.get_event_loop()
+        asyncio.ensure_future(self.run_drones(debug, False, num_drones))
+        event_loop.run_forever()
+
+    async def run_drones(self, debug, plot_points, num_drones):
+        try:
+            droneids = []
+            for drone_num in range(1, num_drones + 1):
+                droneids.append(random.randint(0, 999))
+
+            futures = [Drones().drone(droneid,
+                                      cfg.CLIENT_IP_A,
+                                      cfg.PORT,
+                                      debug,
+                                      self,
+                                      plot_points
+                                      )
+                       for droneid in droneids
+                       ]
+
+            done, pending = await asyncio.wait(futures, return_when=FIRST_COMPLETED)
+            print("Drones: " + str(droneids))
+            print(done.pop().result())
+
+            for future in pending:
+                future.cancel()
+
+        except KeyboardInterrupt:
+            print('Keyboard Interrupt...ending scheduled tasks')
+
+            print('....Done\n')
 
     def get_gps_data(self):
         """

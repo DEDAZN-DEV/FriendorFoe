@@ -25,7 +25,7 @@ MAX_TEST_SPEED = 6500
 SPDLIMITER = MAX_SPEED - MAX_TEST_SPEED
 
 # NETWORK VALUES #
-CLIENT_IP_A = "192.168.0.12"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
+CLIENT_IP_A = "10.33.30.245"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
 COM_PORT = ''
 HOST = ''
 PORT = 7878
@@ -46,4 +46,3 @@ TEST_ITERATIONS = 25
 LENGTH_X = 90
 LENGTH_Y = 120
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
-NUM_DRONES = 1
