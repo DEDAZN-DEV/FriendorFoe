@@ -10,6 +10,7 @@ Usage: turn_signals <current heading> <desired heading> <speed in mph> <current 
 import math
 import pprint
 import sys
+
 import WorkingBuild.global_cfg as cfg
 
 debug = False
@@ -127,9 +128,9 @@ class Turning:
         self.find_speed_components(car_data)
 
         car_data["advanced_x_position"] = car_data["initial_x_position"] + \
-            car_data["time_step"] * car_data["x_speed_component"]
+                                          car_data["time_step"] * car_data["x_speed_component"]
         car_data["advanced_y_position"] = car_data["initial_y_position"] + \
-            car_data["time_step"] * car_data["y_speed_component"]
+                                          car_data["time_step"] * car_data["y_speed_component"]
 
         if debug:
             printer = pprint.PrettyPrinter(indent=4)
@@ -174,7 +175,7 @@ class Turning:
         x_distance_travelled = self.find_distance_component(car_data, 'x')
         y_distance_travelled = self.find_distance_component(car_data, 'y')
         car_data["distance_travelled"] = \
-            math.sqrt(x_distance_travelled**2 + y_distance_travelled**2)  # Pythagorean Theorem
+            math.sqrt(x_distance_travelled ** 2 + y_distance_travelled ** 2)  # Pythagorean Theorem
 
     def stepped_turning_algorithm(self, car_data):
         """
@@ -218,13 +219,8 @@ class Turning:
 
     @staticmethod
     def find_vehicle_speed(cardata, velocity_vector):
-        if abs(cardata.TURNANGLE) < 1.0:
-            cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 +
-                                      velocity_vector[1] ** 2)
-        else:
-            cardata.SPEED = 5
-            # ^ Relate this to the angle in which its turning,
-            # higher angle == slower speed
+        cardata.SPEED = math.sqrt(velocity_vector[0] ** 2 +
+                                  velocity_vector[1] ** 2)
 
     @staticmethod
     def initialize_turn_data(cardata, desired_heading):
@@ -270,29 +266,20 @@ class Turning:
         return turn_signal
 
     @staticmethod
-    def gen_spd_signal(speed, angle):
+    def gen_spd_signal(speed):
         """
         Generates speed signal for MSC and transmits to drone
         :param speed: Float, speed to be reached
-        :param angle: Float, current angle of turn
         :return: 0 on successful completion
         """
 
-        # if abs(angle) > 1.0:
-        #     speed_signal = int(round((cfg.TEST_SPEED + (speed * cfg.SPDSCALE)) /
-        #                              (abs(angle) * cfg.TURNFACTOR)))
-        # else:
-        #     speed_signal = int(round(cfg.TEST_SPEED + (speed * cfg.SPDSCALE)))
-        #
-        # if speed_signal > cfg.MAX_SPEED:
-        #     speed_signal = cfg.MAX_SPEED - cfg.SPDLIMITER  # <- FOR TESTING PURPOSES
-        # elif speed_signal < cfg.TEST_SPEED:
-        #     speed_signal = cfg.TEST_SPEED
-        #
-        # print(str(speed_signal) + '************')
+        if speed == 0:
+            speed_signal = cfg.NEUTRAL
+        else:
+            speed_signal = round(cfg.MIN_MOVE_SPEED + ((cfg.MAX_SPEED - cfg.MIN_MOVE_SPEED) / cfg.MAXVELOCITY))
 
-        # TODO: FIX THIS
-        speed_signal = cfg.TEST_SPEED
+            if speed_signal > cfg.MAX_SPEED:
+                speed_signal = cfg.MAX_SPEED
 
         print("Turn Signal: " + str(speed_signal))
         return speed_signal
@@ -303,13 +290,13 @@ class Turning:
                   "\nCurrent Position: (" + sys.argv[4] + ", " + sys.argv[5] + ")\nTime step: " + sys.argv[6])
 
         car = {
-                "current_heading": float(sys.argv[1]),
-                "desired_heading": float(sys.argv[2]),
-                "speed": float(sys.argv[3]),
-                "initial_x_position": float(sys.argv[4]),
-                "initial_y_position": float(sys.argv[5]),
-                "time_step": float(sys.argv[6])
-                }
+            "current_heading": float(sys.argv[1]),
+            "desired_heading": float(sys.argv[2]),
+            "speed": float(sys.argv[3]),
+            "initial_x_position": float(sys.argv[4]),
+            "initial_y_position": float(sys.argv[5]),
+            "time_step": float(sys.argv[6])
+        }
 
         car = stepped_turning_algorithm(car)
 

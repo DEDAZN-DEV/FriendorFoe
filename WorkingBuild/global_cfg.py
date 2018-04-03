@@ -13,7 +13,7 @@ MAX_SPEED = 2000
 MAX_TURN_RADIUS = 30  # degrees
 MAXVELOCITY = 13.4  # m/s
 STEERING = 5
-TEST_SPEED = 3000
+MIN_MOVE_SPEED = 1567
 TURNDELAY = 30
 TURNDIAMETER = 1.5
 TURNFACTOR = 0.001
@@ -25,7 +25,7 @@ MAX_TEST_SPEED = 6500
 SPDLIMITER = MAX_SPEED - MAX_TEST_SPEED
 
 # NETWORK VALUES #
-CLIENT_IP_A = "10.33.30.245"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
+CLIENT_IP_A = "10.33.100.132"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
 COM_PORT = ''
 HOST = ''
 PORT = 7878
@@ -46,3 +46,9 @@ TEST_ITERATIONS = 25
 LENGTH_X = 90
 LENGTH_Y = 120
 UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
+
+# TODO Change this on getting server information from customer
+# SIMULATION SERVER
+SERVER_BASE_ADDRESS = 'http://pages.erau.edu/~prydej/friendorfoe'
+SERVER_POST_ADDRESS = '/post_gps_data.py'
+SERVER_GET_ADDRESS = '/get_velocity_vector.py'

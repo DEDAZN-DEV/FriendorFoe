@@ -1,10 +1,12 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
 import asyncio
+import aiohttp
 import math
 import socket
 import sys
 import matplotlib.pyplot as plt
+import json
 
 import WorkingBuild.global_cfg as cfg
 import WorkingBuild.gps_ops as gps
@@ -29,13 +31,14 @@ class CarData:
         self.TURNANGLE = 0.0
         self.SPEED = 0.0
         self.DIST_TRAVELED = 0.0
+        self.ID = 0
         if debug:
             print("******INITIALIZED CARDATA*******")
 
 
 class Drones:
     @staticmethod
-    async def drone(dronename, ip, port, debug, car_controller, plot_points):
+    async def drone(dronename, ip, port, debug, plot_points):
         """
         Default drone control algorithm. Uses input from ATE-3 Sim to control
         drones.
@@ -44,7 +47,6 @@ class Drones:
         :param ip: String, LAN IP address of drone
         :param port: LAN Port of drone to be controlled, not necessary but can be
         changed.
-        :param car_controller: Class containing shared memory for passing info between the cars and the user
         :param plot_points: whether or not to open the plot
         :return: Nothing
         """
@@ -54,23 +56,24 @@ class Drones:
         plotting = Plotting(debug)
         gps_calculations = gps.GPSCalculations(debug)
         cardata = CarData(debug)
+        cardata.ID = dronename
 
         try:
             while True:
                 print("\n")
                 gps_calculations.request_gps_fix(connection, cardata, debug)
-                message_passing.update_shared_gps_data(car_controller, cardata)
+                message_passing.post_gps_data(cardata)
 
-                await asyncio.sleep(0)
+                # await asyncio.sleep(0)
 
-                velocity_vector = await Drones.execute_turn(car_controller,
-                                                            cardata,
+                velocity_vector = await Drones.execute_turn(cardata,
                                                             connection,
                                                             debug,
                                                             message_passing,
-                                                            turning)
+                                                            turning
+                                                            )
 
-                # await asyncio.sleep(0)
+                await asyncio.sleep(0)
 
                 if plot_points:
                     plotting.plot_car_path(cardata, debug, dronename, velocity_vector)
@@ -80,8 +83,8 @@ class Drones:
             sys.exit()
 
     @staticmethod
-    async def execute_turn(car_controller, cardata, connection, debug, message_passing, turning):
-        velocity_vector = message_passing.update_velocity_vector(car_controller)
+    async def execute_turn(cardata, connection, debug, message_passing, turning):
+        velocity_vector = await message_passing.get_velocity_data()
         desired_heading = turning.calculate_desired_heading(cardata, debug)
         turning.find_vehicle_speed(cardata, velocity_vector)
         turn_data = turning.initialize_turn_data(cardata, desired_heading)
@@ -96,7 +99,45 @@ class ServerMessagePassing:
 
     def __init__(self, debug):
         if debug:
-            print('******INITIALIZED SHARED MEMORY*******')
+            print('******INITIALIZED API SERVER CONNECTION******')
+
+    @staticmethod
+    async def post_gps_data(cardata):
+        """
+        Uses aiohttp to post gps data from a webserver
+        :param cardata:
+        :return: true if successful
+        """
+        gps_data_dict = {"ypos": cardata.YPOS, "xpos": cardata.XPOS, "id": cardata.ID}
+        gps_data_string = json.dumps(gps_data_dict)
+        gps_data_bytes = bytearray(gps_data_string, 'utf-8')
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                    cfg.SERVER_BASE_ADDRESS + cfg.SERVER_POST_ADDRESS,
+                    data=gps_data_bytes) \
+                    as response:
+                print(response.status)
+                print(await response.text())
+
+        pass
+
+    @staticmethod
+    async def get_velocity_data():
+        """
+        Uses aiohttp to get velocity data for the car from a webserver
+        :return:
+        """
+        async with aiohttp.ClientSession() as session:
+            async with session.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS) as response:
+                print(response.status)
+                velocity_info = await response.text()
+
+        print("New Velocity Info: " + velocity_info)
+        velocity_info = json.loads(velocity_info)
+        print("Decoded Velocity Info: " + str(velocity_info))
+
+        velocity_vector = [velocity_info["xvel"], velocity_info["yvel"]]
+        return velocity_vector
 
     @staticmethod
     def update_shared_gps_data(car_controller, cardata):
