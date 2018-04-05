@@ -204,7 +204,7 @@ class Turning:
         :return:
         """
         turn_signal = self.gen_turn_signal(cardata.TURNANGLE)
-        speed_signal = self.gen_spd_signal(cardata.SPEED, cardata.TURNANGLE)
+        speed_signal = self.gen_spd_signal(cardata.SPEED)
 
         return turn_signal, speed_signal
 
@@ -241,7 +241,8 @@ class Turning:
             print('Last Angle Orientation: ', math.degrees(desired_heading))
         return desired_heading
 
-    def gen_turn_signal(self, angle):
+    @staticmethod
+    def gen_turn_signal(angle):
         """
         Generates turn signal for MSC and transmits to drone
         :param angle: Float, angle of turn for drone

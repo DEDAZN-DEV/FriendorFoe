@@ -128,7 +128,7 @@ def execute_data(data, conn):
         sys.exit()
     elif data == 'start':
         servo_ctl(cfg.STEERING, cfg.MAX_RIGHT)
-        servo_ctl(cfg.ESC, cfg.TEST_SPEED)
+        servo_ctl(cfg.ESC, cfg.MIN_MOVE_SPEED)
     elif data == 'stop':
         print('[DEBUG] ***** Stopping')
         servo_ctl(cfg.ESC, cfg.NEUTRAL)
