@@ -1,12 +1,13 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
 import asyncio
-import aiohttp
+import json
 import math
 import socket
 import sys
+
+import aiohttp
 import matplotlib.pyplot as plt
-import json
 
 import WorkingBuild.global_cfg as cfg
 import WorkingBuild.gps_ops as gps

@@ -334,7 +334,9 @@ class Device(object):
     # Source: http://www.pololu.com/docs/pdf/0J40/maestro.pdf
     # WARNING: BUGGY! 0x01 always returned althoug it has stopped
     def get_moving_state(self):
-        if not self.isInitialized: log("Not initialized"); return None
+        if not self.isInitialized:
+            log("Not initialized")
+            return None
         self.write(0x93)
         data = self.ser.read(1)
         if data:
