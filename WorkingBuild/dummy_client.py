@@ -7,7 +7,7 @@ import global_cfg as cfg
 import maestro as maestro
 
 
-def main():
+def main(port):
     """
     Main executing function for client
 
@@ -20,9 +20,6 @@ def main():
     except socket.error as emsg1:
         print(emsg1)
         sys.exit()
-
-    sock.listen(5)
-    print('[NETWORK] SERVER ESTABLISHED, IP: ' + cfg.CLIENT_IP_A + ', PORT: ' + str(cfg.PORT) + '....')
 
     while True:
         (conn, address) = sock.accept()
@@ -177,4 +174,4 @@ def get_gps(conn):
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1])

@@ -25,10 +25,11 @@ MAX_TEST_SPEED = 6500
 SPDLIMITER = MAX_SPEED - MAX_TEST_SPEED
 
 # NETWORK VALUES #
-CLIENT_IP_A = "10.33.100.132"  # <-- This is the internal IP on the machine running client.py (ipconfig/ifconfig)
+HOST_IP = "10.33.31.175"  # <-- This is the internal IP on the machine running car_controller.py (ipconfig/ifconfig)
 COM_PORT = ''
 HOST = ''
-PORT = 7878
+CLIENT_PORTS = [7878, 7879]
+
 
 # GPS VALUES #
 ORIGIN = [0, 0]
@@ -49,6 +50,7 @@ UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
 
 # TODO Change this on getting server information from customer
 # SIMULATION SERVER
-SERVER_BASE_ADDRESS = 'http://pages.erau.edu/~prydej/friendorfoe'
-SERVER_POST_ADDRESS = '/post_gps_data.py'
-SERVER_GET_ADDRESS = '/get_velocity_vector.py'
+SERVER_BASE_ADDRESS = 'http://localhost/cgi-bin'
+SERVER_POST_ADDRESS = '/post_gps_data.cgi'
+SERVER_GET_ADDRESS = '/get_velocity_vector.cgi'
+SERVER_HELLO_ADDRESS = '/hello.cgi'

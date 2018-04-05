@@ -20,7 +20,7 @@ class CarData:
     Data structure for drone metrics
     """
 
-    def __init__(self, debug):
+    def __init__(self, debug, drone_id):
         self.LAT = 0.0
         self.LONG = 0.0
         self.XPOS = 0.0
@@ -31,52 +31,53 @@ class CarData:
         self.TURNANGLE = 0.0
         self.SPEED = 0.0
         self.DIST_TRAVELED = 0.0
-        self.ID = 0
+        self.ID = drone_id
         if debug:
             print("******INITIALIZED CARDATA*******")
 
 
-class Drones:
-    @staticmethod
-    async def drone(dronename, ip, port, debug, plot_points):
+class Drone:
+
+    def __init__(self):
+        self.client_socket_id = None
+        self.client_socket = None
+
+    async def drone(self, drone_id, debug, plot_points):
         """
         Default drone control algorithm. Uses input from ATE-3 Sim to control
         drones.
         :param debug:
-        :param dronename: String, name of drone
-        :param ip: String, LAN IP address of drone
-        :param port: LAN Port of drone to be controlled, not necessary but can be
-        changed.
+        :param drone_id: String, name of drone
         :param plot_points: whether or not to open the plot
         :return: Nothing
         """
         turning = Turning(debug)
         message_passing = ServerMessagePassing(debug)
-        connection = CarConnection(ip, port, debug)
+        connection = CarConnection(self, debug)
         plotting = Plotting(debug)
         gps_calculations = gps.GPSCalculations(debug)
-        cardata = CarData(debug)
-        cardata.ID = dronename
+        cardata = CarData(debug, drone_id)
+        print("******FINISHED INITIALIZATION******")
 
         try:
             while True:
-                print("\n")
+                print("\nDrone: " + drone_id)
                 gps_calculations.request_gps_fix(connection, cardata, debug)
-                message_passing.post_gps_data(cardata)
+                await message_passing.post_gps_data(cardata)
 
-                # await asyncio.sleep(0)
-
-                velocity_vector = await Drones.execute_turn(cardata,
-                                                            connection,
-                                                            debug,
-                                                            message_passing,
-                                                            turning
-                                                            )
+                print("Got Here")
+                velocity_vector = await Drone.execute_turn(cardata,
+                                                           connection,
+                                                           debug,
+                                                           message_passing,
+                                                           turning
+                                                           )
 
                 await asyncio.sleep(0)
+                print("And Here")
 
                 if plot_points:
-                    plotting.plot_car_path(cardata, debug, dronename, velocity_vector)
+                    plotting.plot_car_path(cardata, debug, drone_id, velocity_vector)
         except KeyboardInterrupt:
             connection.socket_tx('disconnect')
             connection.sock.close()
@@ -109,12 +110,10 @@ class ServerMessagePassing:
         :return: true if successful
         """
         gps_data_dict = {"ypos": cardata.YPOS, "xpos": cardata.XPOS, "id": cardata.ID}
-        gps_data_string = json.dumps(gps_data_dict)
-        gps_data_bytes = bytearray(gps_data_string, 'utf-8')
         async with aiohttp.ClientSession() as session:
             async with session.post(
                     cfg.SERVER_BASE_ADDRESS + cfg.SERVER_POST_ADDRESS,
-                    data=gps_data_bytes) \
+                    json=gps_data_dict) \
                     as response:
                 print(response.status)
                 print(await response.text())
@@ -137,38 +136,6 @@ class ServerMessagePassing:
         print("Decoded Velocity Info: " + str(velocity_info))
 
         velocity_vector = [velocity_info["xvel"], velocity_info["yvel"]]
-        return velocity_vector
-
-    @staticmethod
-    def update_shared_gps_data(car_controller, cardata):
-        """
-        Updates the shared memory with GPS data from the car
-        :param car_controller:
-        :param cardata:
-        :return:
-        """
-        with car_controller.shared_gps_data.get_lock():
-            car_controller.shared_gps_data[0] = cardata.XPOS
-            car_controller.shared_gps_data[1] = cardata.YPOS
-            print('Updated Car GPS Position: ',
-                  car_controller.shared_gps_data[0],
-                  car_controller.shared_gps_data[0]
-                  )
-
-    @staticmethod
-    def update_velocity_vector(car_controller):
-        """
-        Updates the velocity vector that the server uses with new info from the user
-        :param car_controller:
-        :return:
-        """
-        velocity_vector = [0, 0]
-        with car_controller.shared_velocity_vector.get_lock():
-            velocity_vector[0] = car_controller.shared_velocity_vector[0]
-            velocity_vector[1] = car_controller.shared_velocity_vector[1]
-            print('Shared Vel Vector: ', car_controller.shared_velocity_vector[0],
-                  ', ', car_controller.shared_velocity_vector[1])
-            print('Received Vel Vector: ', velocity_vector)
         return velocity_vector
 
 
@@ -208,10 +175,10 @@ class Plotting:
 
 
 class CarConnection:
-    def __init__(self, ip, port, debug):
+    def __init__(self, drone, debug):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.connect((ip, port))
+            self.sock.connect((drone.client_socket.IP, drone.client_socket.IPPORT))
             if debug:
                 print('******INITIALIZED CONNECTION*******')
         except KeyboardInterrupt:

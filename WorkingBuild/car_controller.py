@@ -4,54 +4,51 @@ Purpose: To provide functions with which to control server.py
 """
 
 import asyncio
-import random
+import socket
+import sys
 from concurrent.futures import FIRST_COMPLETED
 
 import WorkingBuild.global_cfg as cfg
-from WorkingBuild.server import Drones
+from WorkingBuild.server import Drone
 
 
 class CarController:
-    # def __init__(self):
-        # pass
-        # self.shared_gps_data = SharedArray(typecode_or_type=ctypes.c_double, size_or_initializer=2)
-        # self.shared_velocity_vector = SharedArray(typecode_or_type=ctypes.c_double, size_or_initializer=2)
-
-    def start_cars(self, debug, num_drones):
+    def start_cars(self, debug, num_drones, plot_points):
         """
         Initializes server with a given velocity vector
 
         :param debug: <Boolean> Debug mode (T/F)
         :param num_drones: number of cars being run
+        :param plot_points: whether or not to plot the points
         :return: <Int> 0 on success
         """
-#       with self.shared_velocity_vector.get_lock():
-#           self.shared_velocity_vector[0] = initial_velocity_vector[0]
-#           self.shared_velocity_vector[1] = initial_velocity_vector[1]
+        drones = self.instantiate_drones(num_drones)
+        self.listen_for_drones(drones)
 
-        # self.server = ServerMain()
         event_loop = asyncio.get_event_loop()
-        asyncio.ensure_future(self.run_drones(debug, False, num_drones))
+        asyncio.ensure_future(self.run_drones(debug, plot_points, drones))
         event_loop.run_forever()
 
     @staticmethod
-    async def run_drones(debug, plot_points, num_drones):
+    def instantiate_drones(num_drones):
+        drones = list()
+        for drone_num in range(1, num_drones + 1):
+            drones.append(Drone())
+
+        return drones
+
+    @staticmethod
+    async def run_drones(debug, plot_points, drones):
         try:
-            droneids = []
-            for drone_num in range(1, num_drones + 1):
-                droneids.append(random.randint(0, 999))
 
-            futures = [Drones().drone(droneid,
-                                      cfg.CLIENT_IP_A,
-                                      cfg.PORT,
-                                      debug,
-                                      plot_points
-                                      )
-                       for droneid in droneids
-                       ]
+            drone_counter = 0
+            futures = list()
+            for drone in drones:
+                drone.drone(drone_counter, debug, plot_points)
+                futures.append(drone)
+                drone_counter += 1
 
-            done, pending = await asyncio.wait(futures, return_when=FIRST_COMPLETED)
-            print("Drones: " + str(droneids))
+            done, pending = await asyncio.wait(futures)
             print(done.pop().result())
 
             for future in pending:
@@ -59,35 +56,58 @@ class CarController:
 
         except KeyboardInterrupt:
             print('Keyboard Interrupt...ending scheduled tasks')
-
             print('....Done\n')
 
-#   def get_gps_data(self):
-#       """
-#       Get gps data from shared buffer for API
+    @staticmethod
+    def listen_for_drones(drones):
+        for drone in drones:
+            drone.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            drone.socket_id = drone
 
-#       :return: <Array> An array with two elements consisting of x and y positions
-#       """
-#       with self.shared_gps_data.get_lock():
-#           x_position = self.shared_gps_data[0]
-#           y_position = self.shared_gps_data[1]
+        counter = 0
+        for drone in drones:
+            try:
+                drone.client_socket.bind(('', cfg.CLIENT_PORTS[counter]))
+                counter += 1
+            except socket.error as emsg1:
+                print(emsg1)
+                sys.exit()
 
-#       return [x_position, y_position]
+            drone.client_socket.listen()
+            print("Connected. IP: " + drone.client_socket.IP + ", PORT: " + drone.client_socket.IPPORT)
 
-#   def set_velocity_vectors(self, velocity_vector):
-#       """
-#       API function to change velocity vectors
 
-#       :param velocity_vector: <Array> New vector [x,y] to be input to our software
-#       :return: <Int> 0 on success
-#       """
-#       with self.shared_velocity_vector.get_lock():
-#           self.shared_velocity_vector[0] = velocity_vector[0]
-#           self.shared_velocity_vector[1] = velocity_vector[1]
+#   def connect_to_client(self, socket):
+#       while True:
+#           (conn, address) = socket.accept()
+#           try:
+#               while True:
+#                   try:
+#                       data = conn.recv(64).decode('utf8')
+#                       if data:
+#                           print('[DEBUG] Recieved data from: ' +
+#                                 conn.getpeername().__str__() +
+#                                 '\t\t' +
+#                                 data.__str__())
+#                           result = execute_data(data, conn)
 
-#       return 0
+#                           if result == 404:
+#                               break
 
+#                   except TypeError as emsg2:
+#                       print('[WARN] ' + str(emsg2))
+#                       conn.close()
+#                       sys.exit()
+#                   except socket.error:
+#                       print('[WARN][NETWORK] Socket error')
+#                       break
+#           except KeyboardInterrupt:
+#               execute_data('stop', conn)
 
 if __name__ == "__main__":
     car_controller = CarController()
-    car_controller.start_cars(True, 1)
+    car_controller.start_cars(
+        debug=True,
+        num_drones=2,
+        plot_points=True
+    )
