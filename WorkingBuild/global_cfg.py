@@ -19,13 +19,14 @@ TURNDIAMETER = 1.5
 TURNFACTOR = 0.001
 DEGPERPOINT = 2000 / TURNDIAMETER
 SPDSCALE = 2000 / MAXVELOCITY
+NUM_DRONES = 2
 
 # TEST VALUES #
 MAX_TEST_SPEED = 6500
 SPDLIMITER = MAX_SPEED - MAX_TEST_SPEED
 
 # NETWORK VALUES #
-HOST_IP = "10.33.31.175"  # <-- This is the internal IP on the machine running car_controller.py (ipconfig/ifconfig)
+HOST_IP = "192.168.0.12"  # <-- This is the internal IP on the machine running car_controller.py (ipconfig/ifconfig)
 COM_PORT = ''
 HOST = ''
 CLIENT_PORTS = [7878, 7879]

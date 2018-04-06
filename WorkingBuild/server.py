@@ -37,37 +37,34 @@ class CarData:
 
 
 class Drone:
+    def __init__(self, debug, drone_number):
+        self.drone_id = drone_number
+        self.connection = CarConnection(debug)
 
-    def __init__(self):
-        self.client_socket_id = None
-        self.client_socket = None
-
-    async def drone(self, drone_id, debug, plot_points):
+    async def drone(self, debug, plot_points):
         """
         Default drone control algorithm. Uses input from ATE-3 Sim to control
         drones.
         :param debug:
-        :param drone_id: String, name of drone
         :param plot_points: whether or not to open the plot
         :return: Nothing
         """
         turning = Turning(debug)
         message_passing = ServerMessagePassing(debug)
-        connection = CarConnection(self, debug)
         plotting = Plotting(debug)
         gps_calculations = gps.GPSCalculations(debug)
-        cardata = CarData(debug, drone_id)
+        cardata = CarData(debug, self.drone_id)
         print("******FINISHED INITIALIZATION******")
 
         try:
             while True:
-                print("\nDrone: " + drone_id)
-                gps_calculations.request_gps_fix(connection, cardata, debug)
+                print("\nDrone: ", self.drone_id)
+                gps_calculations.request_gps_fix(self.connection, cardata, debug)
                 await message_passing.post_gps_data(cardata)
 
                 print("Got Here")
                 velocity_vector = await Drone.execute_turn(cardata,
-                                                           connection,
+                                                           self.connection,
                                                            debug,
                                                            message_passing,
                                                            turning
@@ -77,10 +74,10 @@ class Drone:
                 print("And Here")
 
                 if plot_points:
-                    plotting.plot_car_path(cardata, debug, drone_id, velocity_vector)
+                    plotting.plot_car_path(cardata, debug, self.drone_id, velocity_vector)
         except KeyboardInterrupt:
-            connection.socket_tx('disconnect')
-            connection.sock.close()
+            self.connection.socket_tx('disconnect')
+            self.connection.client_socket.close()
             sys.exit()
 
     @staticmethod
@@ -175,14 +172,10 @@ class Plotting:
 
 
 class CarConnection:
-    def __init__(self, drone, debug):
-        try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.connect((drone.client_socket.IP, drone.client_socket.IPPORT))
-            if debug:
-                print('******INITIALIZED CONNECTION*******')
-        except KeyboardInterrupt:
-            sys.exit()
+    def __init__(self, debug):
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if debug:
+            print('******INITIALIZED CONNECTION*******')
 
     def socket_tx(self, data):
         """
@@ -193,7 +186,7 @@ class CarConnection:
         output = DebugOutput()
         try:
             print('SENDING: ' + data)
-            self.sock.sendall(data.encode('utf8'))
+            self.client_socket.sendall(data.encode('utf8'))
             print('SERVER SENT: ' + data)
             print(output.OKGREEN + "Data Sent Successfully..." + output.ENDC)
         except socket.herror:
@@ -211,7 +204,7 @@ class CarConnection:
     def socket_rx(self):
         output = DebugOutput()
         try:
-            message = self.sock.recv(128).decode('utf8')
+            message = self.client_socket.recv(128).decode('utf8')
             # print(output.OKGREEN + "Data Received Successfully..." + output.ENDC)
             return message
         except socket.herror:
@@ -224,6 +217,25 @@ class CarConnection:
         print("AND: " + str(cfg.ESC) + str(speed_signal))
         self.socket_tx(str(cfg.STEERING) + str(turn_signal))
         self.socket_tx(str(cfg.ESC) + str(speed_signal))
+
+    def listen_for_client_connections(self, drone_number, debug):
+        if debug:
+            print("Connecting to ", drone_number)
+        try:
+            self.client_socket.bind(('', cfg.CLIENT_PORTS[drone_number]))
+            self.client_socket.listen()
+            print("Listening on port: ", cfg.CLIENT_PORTS[drone_number])
+        except socket.error as emsg1:
+            print("Error Message: ", emsg1)
+
+        connected = False
+        while not connected:
+            connection, address = self.client_socket.accept()
+            print("About to connect on port: ", address[1])
+            print("Drone Number: ", cfg.CLIENT_PORTS[drone_number])
+            if connection:
+                connected = True
+                print("Connected. IP: ", address[0], ", PORT: ", address[1])
 
 
 class DebugOutput:

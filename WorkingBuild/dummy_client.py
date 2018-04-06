@@ -16,36 +16,36 @@ def main(port):
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.bind(('', cfg.PORT))
-    except socket.error as emsg1:
-        print(emsg1)
-        sys.exit()
+        sock.connect((cfg.HOST_IP, port))
+    except socket.error:
+        print(socket.error)
+        sys.exit(1)
+
+    print("Connected on port ", port, ". Ready to receive data.")
 
     while True:
-        (conn, address) = sock.accept()
         try:
-            while True:
-                try:
-                    data = conn.recv(64).decode('utf8')
-                    if data:
-                        print('[DEBUG] Recieved data from: ' +
-                              conn.getpeername().__str__() +
-                              '\t\t' +
-                              data.__str__())
-                        result = execute_data(data, conn)
+            sock.sendall(b"keepalive")
+            data = sock.recv(64).decode('utf8')
+            if data:
+                print('[DEBUG] Recieved data from: ' +
+                      sock.getpeername().__str__() +
+                      '\t\t' +
+                      data.__str__())
+                result = execute_data(data, sock)
 
-                        if result == 404:
-                            break
-
-                except TypeError as emsg2:
-                    print('[WARN] ' + str(emsg2))
-                    conn.close()
-                    sys.exit()
-                except socket.error:
-                    print('[WARN][NETWORK] Socket error')
+                if result == 404:
                     break
+
+        except TypeError as emsg2:
+            print('[WARN] ' + str(emsg2))
+            sock.close()
+            sys.exit()
+        except socket.error as error_message:
+            print('[NETWORK] Socket Error: ', error_message.args)
+            break
         except KeyboardInterrupt:
-            execute_data('stop', conn)
+            execute_data('stop', sock)
 
 
 def test_device():
@@ -174,4 +174,4 @@ def get_gps(conn):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(port=int(sys.argv[1]))
