@@ -11,8 +11,6 @@ Y_RATIO = 1
 class GPSCalculations:
 
     def __init__(self, debug):
-        self.calc_originxy()
-        self.set_xy_ratio()
         if debug:
             print('******INITIALIZED DEBUG******')
 
@@ -138,7 +136,10 @@ class GPSCalculations:
         print(self.scale_xy(corner))
 
         print("\n*** Center ***")
-        center = self.gps_to_xy((cfg.ORIGIN_LATITUDE + cfg.CORNER_LAT) / 2, (cfg.ORIGIN_LONGITUDE + cfg.CORNER_LONG) / 2)
+        center = self.gps_to_xy(
+            (cfg.ORIGIN_LATITUDE + cfg.CORNER_LAT) / 2,
+            (cfg.ORIGIN_LONGITUDE + cfg.CORNER_LONG) / 2
+        )
         print(center)
         print(self.scale_xy(center))
 
@@ -187,8 +188,8 @@ class GPSCalculations:
 
         return X_RATIO, Y_RATIO
 
-    def request_gps_fix(self, connection, cardata, debug):
-        message = connection.socket_tx('gps')
+    def request_gps_fix(self, connection, cardata):
+        message = connection.client_tx('gps')
         try:
             cardata.XPOS = self.parse_gps_msg(str(message))[0]
             cardata.YPOS = self.parse_gps_msg(str(message))[1]

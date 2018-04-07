@@ -29,7 +29,7 @@ SPDLIMITER = MAX_SPEED - MAX_TEST_SPEED
 HOST_IP = "192.168.0.12"  # <-- This is the internal IP on the machine running car_controller.py (ipconfig/ifconfig)
 COM_PORT = ''
 HOST = ''
-CLIENT_PORTS = [7878, 7879]
+HOST_PORT = 7878
 
 
 # GPS VALUES #
