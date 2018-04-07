@@ -31,7 +31,7 @@ class CarController:
     def run_server(event_loop, debug, plot_points):
         server_coroutine = event_loop.create_server(
             lambda: ServerClientProtocol(debug, plot_points),
-            'localhost',
+            '',
             7878
         )
         server = event_loop.run_until_complete(server_coroutine)
@@ -58,7 +58,8 @@ class ServerClientProtocol(asyncio.Protocol):
         print('Connection from: ', peername)
         self.transport = transport
 
-    async def data_received(self, data):
+    def data_received(self, data):
+        data = str(data)
         data_array = data.split(':')
 
         if data_array[0] == 'status':
@@ -73,7 +74,7 @@ class ServerClientProtocol(asyncio.Protocol):
             self.id = int(data_array[1])
             if self.drone_instance is None:
                 self.drone_instance = Drone(self.debug, self.id, transport=self.transport)
-                await self.drone_instance.drone(self.debug, self.plot_points)
+                self.drone_instance.drone(self.debug, self.plot_points)
             else:
                 self.drone_instance.drone_id = self.id
 

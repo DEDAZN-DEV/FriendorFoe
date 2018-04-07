@@ -12,7 +12,7 @@ class GPSCalculations:
 
     def __init__(self, debug):
         if debug:
-            print('******INITIALIZED DEBUG******')
+            print('******INITIALIZED GPS******')
 
     def parse_gps_msg(self, message):
         """
