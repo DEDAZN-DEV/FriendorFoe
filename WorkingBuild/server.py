@@ -7,7 +7,6 @@ import math
 import sys
 import matplotlib.pyplot as plt
 import json
-import time
 
 import WorkingBuild.global_cfg as cfg
 import WorkingBuild.gps_ops as gps
@@ -191,8 +190,8 @@ class CarConnection:
 
     def client_tx(self, data):
         print("About to send: ", data)
-        self.transport.write(bytearray(data, 'utf-8'))
-        time.sleep(1)
+        self.transport.write(bytearray(data + "\\", 'utf-8'))
+        # time.sleep(1)
 
 #   def socket_rx(self):
 #       output = DebugOutput()

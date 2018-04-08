@@ -24,25 +24,25 @@ def main():
         sys.exit(1)
 
     print("Connected on port ", cfg.HOST_PORT, ". Ready to receive data.")
-    drone_id = random.randint(0, 999)
-    server_tx(sock, 'id:' + str(drone_id))
-    print("ID Sent:", drone_id)
 
     while True:
-        time.sleep(0.25)
         try:
             print("Sending: request:velocity")
             server_tx(sock, 'request:velocity')
             data = sock.recv(64).decode('utf8')
             if data:
-                print('[DEBUG] Recieved data from: ' +
-                      sock.getpeername().__str__() +
-                      '\t\t' +
-                      data.__str__())
-                result = execute_data(data, sock)
+                data = data[0: -1]
+                data_array = data.split("\\")
+                print("Message Received: ", data_array)
+                for message in data_array:
+                    print('[DEBUG] Recieved data from: ' +
+                          sock.getpeername().__str__() +
+                          '\t\t' +
+                          message.__str__())
+                    result = execute_data(message, sock)
 
-                if result == 404:
-                    break
+                    if result == 404:
+                        break
 
         except TypeError:
             print(traceback.print_exc())

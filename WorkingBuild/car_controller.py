@@ -5,9 +5,6 @@ Purpose: To provide functions with which to control server.py
 
 import asyncio
 from WorkingBuild.gps_ops import GPSCalculations as GPS
-# from concurrent.futures import FIRST_COMPLETED
-
-# import WorkingBuild.global_cfg as cfg
 from WorkingBuild.server import Drone
 
 
@@ -57,7 +54,9 @@ class ServerClientProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
         print('Connection from: ', peername)
+        self.id = peername[1]  # port
         self.transport = transport
+        self.drone_instance = Drone(self.debug, self.id, self.transport)
 
     def data_received(self, data):
         data = str(data)
@@ -88,18 +87,11 @@ class ServerClientProtocol(asyncio.Protocol):
                     self.drone_instance.cardata.XPOS = 222
                     self.drone_instance.cardata.YPOS = 222
 
-            elif message[0] == 'id':
-                print("Received id: ", message[1])
-                self.id = int(message[1])
-                if self.drone_instance is None:
-                    self.drone_instance = Drone(self.debug, self.id, self.transport)
-                else:
-                    self.drone_instance.drone_id = self.id
-
             elif message[0] == 'request':
                 self.drone_instance.drone(self.plot_points)
 
-    def remove_bytes_array_denotors(self, data):
+    @staticmethod
+    def remove_bytes_array_denotors(data):
         data = data[2:-1]
         return data
 
