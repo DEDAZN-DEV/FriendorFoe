@@ -1,11 +1,13 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
-import asyncio
-import aiohttp
+# import asyncio
+# import aiohttp
+import requests
 import math
 import sys
 import matplotlib.pyplot as plt
 import json
+import time
 
 import WorkingBuild.global_cfg as cfg
 import WorkingBuild.gps_ops as gps
@@ -50,29 +52,26 @@ class Drone:
         if debug:
             print("******FINISHED INITIALIZATION******")
 
-    async def drone(self, debug, plot_points):
+    def drone(self, plot_points):
         """
         Default drone control algorithm. Uses input from ATE-3 Sim to control
         drones.
-        :param debug:
         :param plot_points: whether or not to open the plot
         :return: Nothing
         """
         try:
-            while True:
-                print("\nDrone: ", self.drone_id)
-                self.gps_calculations.request_gps_fix(self.connection, self.cardata)
-                await self.message_passing.post_gps_data(self.cardata)
-                velocity_vector = await self.execute_turn()
-                if plot_points:
-                    self.plotting.plot_car_path(self.cardata, debug, self.drone_id, velocity_vector)
-                await asyncio.sleep(0)
+            print("\nDrone: ", self.drone_id)
+            self.gps_calculations.request_gps_fix(self.connection)
+            # self.message_passing.post_gps_data(self.cardata)
+            velocity_vector = self.execute_turn()
+            if plot_points:
+                self.plotting.plot_car_path(self.cardata, self.debug, self.drone_id, velocity_vector)
         except KeyboardInterrupt:
             self.connection.client_tx('disconnect')
             sys.exit()
 
-    async def execute_turn(self):
-        velocity_vector = await self.message_passing.get_velocity_data()
+    def execute_turn(self):
+        velocity_vector = self.message_passing.get_velocity_data()
         desired_heading = self.turning.calculate_desired_heading(self.cardata, self.debug)
         self.turning.find_vehicle_speed(self.cardata, velocity_vector)
         turn_data = self.turning.initialize_turn_data(self.cardata, desired_heading)
@@ -90,33 +89,31 @@ class ServerMessagePassing:
             print('******INITIALIZED API SERVER CONNECTION******')
 
     @staticmethod
-    async def post_gps_data(cardata):
+    def post_gps_data(gps_data, drone_id):
         """
         Uses aiohttp to post gps data from a webserver
-        :param cardata:
+        :param gps_data: list of [x position, y position]
+        :param drone_id: drone id
         :return: true if successful
         """
-        gps_data_dict = {"ypos": cardata.YPOS, "xpos": cardata.XPOS, "id": cardata.ID}
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                    cfg.SERVER_BASE_ADDRESS + cfg.SERVER_POST_ADDRESS,
-                    json=gps_data_dict) \
-                    as response:
-                print(response.status)
-                print(await response.text())
-
-        pass
+        gps_data_dict = {"xpos": gps_data[0], "ypos": gps_data[1], "id": drone_id}
+#       with aiohttp.ClientSession() as session:
+#           with session.post(
+        response = requests.post(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_POST_ADDRESS, json=gps_data_dict)
+        print(response.status_code)
+        print(response.text)
 
     @staticmethod
-    async def get_velocity_data():
+    def get_velocity_data():
         """
         Uses aiohttp to get velocity data for the car from a webserver
         :return:
         """
-        async with aiohttp.ClientSession() as session:
-            async with session.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS) as response:
-                print(response.status)
-                velocity_info = await response.text()
+#       with aiohttp.ClientSession() as session:
+#           response = session.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
+        response = requests.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
+        print(response.status_code)
+        velocity_info = response.text
 
         print("New Velocity Info: " + velocity_info)
         velocity_info = json.loads(velocity_info)
@@ -193,7 +190,9 @@ class CarConnection:
 #       return response
 
     def client_tx(self, data):
-        self.transport.write(data)
+        print("About to send: ", data)
+        self.transport.write(bytearray(data, 'utf-8'))
+        time.sleep(1)
 
 #   def socket_rx(self):
 #       output = DebugOutput()

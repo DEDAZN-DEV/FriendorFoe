@@ -27,7 +27,7 @@ class GPSCalculations:
             if message[char] == ',':
                 separator.append(char)
 
-        print(separator)
+        print("Separator: ", separator)
 
         dlat = ''
         mlat = ''
@@ -35,7 +35,7 @@ class GPSCalculations:
         mlong = ''
 
         # bytes 17 - 26
-        print(message)
+        print("GPS Message: ", message)
         for i in range(separator[1] + 1, separator[1] + 3):
             dlat = dlat + message[i]
         for j in range(separator[1] + 3, separator[2]):
@@ -188,17 +188,18 @@ class GPSCalculations:
 
         return X_RATIO, Y_RATIO
 
-    def request_gps_fix(self, connection, cardata):
-        message = connection.client_tx('gps')
-        try:
-            cardata.XPOS = self.parse_gps_msg(str(message))[0]
-            cardata.YPOS = self.parse_gps_msg(str(message))[1]
-        except ValueError:
-            # if debug:
-            #     print('Invalid GPS Message...Exiting')
-            # socket_tx('disconnect', sock)
-            # sock.close()
-            # sys.exit()
+    @staticmethod
+    def request_gps_fix(connection):
+        connection.client_tx('gps')
+#       try:
+#           cardata.XPOS = self.parse_gps_msg(str(message))[0]
+#           cardata.YPOS = self.parse_gps_msg(str(message))[1]
+#       except ValueError:
+#           # if debug:
+#           #     print('Invalid GPS Message...Exiting')
+#           # socket_tx('disconnect', sock)
+#           # sock.close()
+#           # sys.exit()
 
-            cardata.XPOS = 222
-            cardata.YPOS = 222
+#           cardata.XPOS = 222
+#           cardata.YPOS = 222
