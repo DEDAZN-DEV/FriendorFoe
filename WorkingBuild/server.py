@@ -2,6 +2,7 @@
 
 # import asyncio
 # import aiohttp
+import traceback
 import requests
 import math
 import sys
@@ -71,7 +72,7 @@ class Drone:
 
     def execute_turn(self):
         velocity_vector = self.message_passing.get_velocity_data()
-        desired_heading = self.turning.calculate_desired_heading(self.cardata, self.debug)
+        desired_heading = self.turning.calculate_desired_heading(self.cardata)
         self.turning.find_vehicle_speed(self.cardata, velocity_vector)
         turn_data = self.turning.initialize_turn_data(self.cardata, desired_heading)
         turn_data = self.turning.stepped_turning_algorithm(turn_data)
@@ -164,73 +165,18 @@ class CarConnection:
         if debug:
             print('******INITIALIZED CONNECTION*******')
 
-#   def socket_tx(self, data):
-#       """
-#       Transmits specified data to drone through sockets
-#       :param data: String, data to be transmitted
-#       :return: 0 on successful completion
-#       """
-#       output = DebugOutput()
-#       try:
-#           print('SENDING: ' + data)
-#           self.client_socket.sendall(data.encode('utf8'))
-#           print('SERVER SENT: ' + data)
-#           print(output.OKGREEN + "Data Sent Successfully..." + output.ENDC)
-#       except socket.herror:
-#           print(output.FAIL + "Connection refused...." + output.ENDC)
-#       except socket.timeout:
-#           print(output.FAIL + "Connection timed out...." + output.ENDC)
-
-#       response = self.socket_rx()
-#       while not response:
-#           print(response)
-#           pass
-#       print('Client Response: ' + response)
-#       return response
-
     def client_tx(self, data):
         print("About to send: ", data)
-        self.transport.write(bytearray(data + "\\", 'utf-8'))
-        # time.sleep(1)
-
-#   def socket_rx(self):
-#       output = DebugOutput()
-#       try:
-#           message = self.client_socket.recv(128).decode('utf8')
-#           # print(output.OKGREEN + "Data Received Successfully..." + output.ENDC)
-#           return message
-#       except socket.herror:
-#           print(output.FAIL + "Connection refused...." + output.ENDC)
-#       except socket.timeout:
-#           print(output.FAIL + "Connection timed out...." + output.ENDC)
+        try:
+            self.transport.write(bytearray(data + "\\", 'utf-8'))
+        except self.transport.socket.error:
+            traceback.print_exc()
 
     def send_turn_to_car(self, speed_signal, turn_signal):
         print("ABOUT TO SEND: " + str(cfg.STEERING) + str(turn_signal))
         print("AND: " + str(cfg.ESC) + str(speed_signal))
         self.client_tx(str(cfg.STEERING) + str(turn_signal))
         self.client_tx(str(cfg.ESC) + str(speed_signal))
-
-#   def connect_to_client(self):
-#       connection = None
-#       if self.debug:
-#           print("Connecting on ", cfg.CLIENT_PORTS[self.drone_number])
-#       try:
-#           self.client_socket.bind(('', cfg.CLIENT_PORTS[self.drone_number]))
-#           self.client_socket.listen()
-#       except socket.error as emsg1:
-#           print("Error message on listening: ", emsg1)
-
-#       try:
-#           print("Listening on port: ", cfg.CLIENT_PORTS[self.drone_number])
-#           connection, address = self.client_socket.accept()
-#           print("Connected. IP: ", address[0], ", PORT: ", address[1])
-#       except socket.error as emsg2:
-#           print("Error message on connecting", emsg2)
-
-#       try:
-#           connection.sendall(b'keepalive')
-#       except socket.error as emsg3:
-#           print("Error message on sending: ", emsg3)
 
 
 class DebugOutput:

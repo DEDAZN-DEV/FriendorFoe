@@ -13,12 +13,11 @@ import sys
 
 import WorkingBuild.global_cfg as cfg
 
-debug = False
-
 
 class Turning:
     def __init__(self, debug):
-        if debug:
+        self.debug = debug
+        if self.debug:
             print('******INITIALIZED TURNING*******')
 
     @staticmethod
@@ -128,11 +127,11 @@ class Turning:
         self.find_speed_components(car_data)
 
         car_data["advanced_x_position"] = car_data["initial_x_position"] + \
-                                          car_data["time_step"] * car_data["x_speed_component"]
+            car_data["time_step"] * car_data["x_speed_component"]
         car_data["advanced_y_position"] = car_data["initial_y_position"] + \
-                                          car_data["time_step"] * car_data["y_speed_component"]
+            car_data["time_step"] * car_data["y_speed_component"]
 
-        if debug:
+        if self.debug:
             printer = pprint.PrettyPrinter(indent=4)
             printer.pprint(car_data)
             print("\n")
@@ -235,9 +234,9 @@ class Turning:
         return turn_data
 
     @staticmethod
-    def calculate_desired_heading(cardata, debug):
+    def calculate_desired_heading(self, cardata):
         desired_heading = math.atan2((cardata.TGTYPOS - cardata.YPOS), (cardata.TGTXPOS - cardata.XPOS))
-        if debug:
+        if self.debug:
             print('Last Angle Orientation: ', math.degrees(desired_heading))
         return desired_heading
 
@@ -285,25 +284,28 @@ class Turning:
         print("Turn Signal: " + str(speed_signal))
         return speed_signal
 
-    if __name__ == "__main__":
-        if debug:
-            print("Current Heading: " + sys.argv[1] + "\nDesired Heading: " + sys.argv[2] + "\nSpeed: " + sys.argv[3] +
-                  "\nCurrent Position: (" + sys.argv[4] + ", " + sys.argv[5] + ")\nTime step: " + sys.argv[6])
+
+if __name__ == "__main__":
+    debug_mode = True
+    if debug_mode:
+        print("Current Heading: " + sys.argv[1] + "\nDesired Heading: " + sys.argv[2] + "\nSpeed: " + sys.argv[3] +
+              "\nCurrent Position: (" + sys.argv[4] + ", " + sys.argv[5] + ")\nTime step: " + sys.argv[6])
 
         car = {
-            "current_heading": float(sys.argv[1]),
-            "desired_heading": float(sys.argv[2]),
-            "speed": float(sys.argv[3]),
-            "initial_x_position": float(sys.argv[4]),
-            "initial_y_position": float(sys.argv[5]),
-            "time_step": float(sys.argv[6])
-        }
+                "current_heading": float(sys.argv[1]),
+                "desired_heading": float(sys.argv[2]),
+                "speed": float(sys.argv[3]),
+                "initial_x_position": float(sys.argv[4]),
+                "initial_y_position": float(sys.argv[5]),
+                "time_step": float(sys.argv[6])
+                }
 
-        car = stepped_turning_algorithm(car)
+    turning = Turning(debug_mode)
+    car = turning.stepped_turning_algorithm(car)
 
-        if debug:
-            pp = pprint.PrettyPrinter(indent=4)
-            pp.pprint(car)
-            print("Next Position: (" + str(car["advanced_x_position"]) + ", " + str(car["advanced_y_position"]) + ")")
-            print("Turning Angle: " + str(car["turning_angle"]))
-            print("Turn Speed: " + str(car["speed"]))
+    if debug_mode:
+        pp = pprint.PrettyPrinter(indent=4)
+        pp.pprint(car)
+        print("Next Position: (" + str(car["advanced_x_position"]) + ", " + str(car["advanced_y_position"]) + ")")
+        print("Turning Angle: " + str(car["turning_angle"]))
+        print("Turn Speed: " + str(car["speed"]))
