@@ -1,13 +1,14 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
+import json
+import math
+import sys
 # import asyncio
 # import aiohttp
 import traceback
-import requests
-import math
-import sys
+
 import matplotlib.pyplot as plt
-import json
+import requests
 
 import WorkingBuild.global_cfg as cfg
 import WorkingBuild.gps_ops as gps
@@ -72,7 +73,7 @@ class Drone:
 
     def execute_turn(self):
         velocity_vector = self.message_passing.get_velocity_data()
-        desired_heading = self.turning.calculate_desired_heading(self.cardata)
+        desired_heading = self.turning.calculate_desired_heading(self, self.cardata)
         self.turning.find_vehicle_speed(self.cardata, velocity_vector)
         turn_data = self.turning.initialize_turn_data(self.cardata, desired_heading)
         turn_data = self.turning.stepped_turning_algorithm(turn_data)
