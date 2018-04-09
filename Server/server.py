@@ -10,9 +10,9 @@ import traceback
 import matplotlib.pyplot as plt
 import requests
 
-import WorkingBuild.global_cfg as cfg
-import WorkingBuild.gps_ops as gps
-from WorkingBuild.stepped_turning import Turning
+import Server.gps_ops as gps
+from Client import client_cfg as cfg
+from Server.stepped_turning import Turning
 
 BUFFERSIZE = 50
 

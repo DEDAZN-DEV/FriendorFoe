@@ -2,8 +2,8 @@ import math
 
 import pygame
 
-import WorkingBuild.car_controller as controller
-import WorkingBuild.global_cfg as cfg
+import Server.car_controller as controller
+from Client import client_cfg as cfg
 
 # Globals
 velocity_vector = [0, 0]

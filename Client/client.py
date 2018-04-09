@@ -3,9 +3,10 @@ import socket
 import sys
 import time
 
-# This is intentionally wrong, do not change or everything will burn!
-import global_cfg as cfg
 import maestro as maestro
+
+# This is intentionally wrong, do not change or everything will burn!
+from Client import client_cfg as cfg
 
 
 def main():

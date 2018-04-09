@@ -1,12 +1,13 @@
+import random
 import socket
 import sys
 import time
 import traceback
-import random
+
+import maestro as maestro
 
 # This is intentionally wrong, do not change or everything will burn!
-import global_cfg as cfg
-import maestro as maestro
+from Client import client_cfg as cfg
 
 
 class Client:

@@ -2,11 +2,11 @@
 Stripped down version of server.py for testing purposes only
 """
 
+import random
 import sys
 import time
-import random
 
-from WorkingBuild.car_controller import CarController as Controller
+from Server.car_controller import CarController as Controller
 
 if __name__ == '__main__':
     controller = Controller()

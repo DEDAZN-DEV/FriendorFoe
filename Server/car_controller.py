@@ -4,8 +4,9 @@ Purpose: To provide functions with which to control server.py
 """
 
 import asyncio
-from WorkingBuild.gps_ops import GPSCalculations as GPS
-from WorkingBuild.server import Drone
+
+from Server.gps_ops import GPSCalculations as GPS
+from Server.server import Drone
 
 
 class CarController:

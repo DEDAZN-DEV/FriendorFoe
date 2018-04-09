@@ -11,7 +11,7 @@ import math
 import pprint
 import sys
 
-import WorkingBuild.global_cfg as cfg
+from Client import client_cfg as cfg
 
 
 class Turning:

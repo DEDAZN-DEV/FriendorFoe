@@ -1,7 +1,7 @@
 import math
 import random
 
-import WorkingBuild.global_cfg as cfg
+from Client import client_cfg as cfg
 
 
 def gen_random_vector():
