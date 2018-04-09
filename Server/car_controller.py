@@ -5,11 +5,13 @@ Purpose: To provide functions with which to control server.py
 
 import asyncio
 
+import Server.server_cfg as cfg
 from Server.gps_ops import GPSCalculations as GPS
 from Server.server import Drone
 
 
 class CarController:
+
     def start_cars(self, debug, plot_points):
         """
         Initializes server with a given velocity vector
@@ -27,19 +29,30 @@ class CarController:
 
     @staticmethod
     def run_server(event_loop, debug, plot_points):
-        server_coroutine = event_loop.create_server(
-            lambda: ServerClientProtocol(debug, plot_points),
-            '',
-            7878
-        )
-        server = event_loop.run_until_complete(server_coroutine)
-        print("Serving on : ", server.sockets[0].getsockname())
+
+        servers = []
+
+        for i in range(cfg.NUM_DRONES):
+            server_coroutine = event_loop.create_server(
+                # lambda: ServerClientProtocol(debug, plot_points),
+                # '',
+                # 7878
+
+                asyncio.start_server(ServerClientProtocol, ' ', 8000 + i, loop=event_loop)
+            )
+
+            server = event_loop.run_until_complete(server_coroutine)
+            servers.append(server)
+            print("Serving on : ", server.sockets[0].getsockname())
         try:
             event_loop.run_forever()
         except KeyboardInterrupt:
             pass
-        server.close()
-        event_loop.run_until_complete(server.wait_closed())
+
+        for i, server in enumerate(servers):
+            server.close()
+            event_loop.run_until_complete(server.wait_closed())
+        event_loop.close()
 
 
 class ServerClientProtocol(asyncio.Protocol):
@@ -69,8 +82,8 @@ class ServerClientProtocol(asyncio.Protocol):
         for message in data_array:
             message = message.split(':')
             print("Message: ", message)
-#           print("Data identifier: ", message[0])
-#           print("Data value: ", message[1])
+            #           print("Data identifier: ", message[0])
+            #           print("Data value: ", message[1])
 
             if message[0] == 'status':
                 print('Vehicle status: ', message[1])

@@ -1,7 +1,6 @@
 """
 Global configuration values, all constants set before start
 """
-
 # CAR VALUES #
 ACCELERATION = 15  # of car in m/s**2
 CENTER = 1500
@@ -19,7 +18,7 @@ TURNDIAMETER = 1.5
 TURNFACTOR = 0.001
 DEGPERPOINT = 2000 / TURNDIAMETER
 SPDSCALE = 2000 / MAXVELOCITY
-NUM_DRONES = 2
+NUM_DRONES = 3
 
 # TEST VALUES #
 MAX_TEST_SPEED = 6500
