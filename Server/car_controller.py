@@ -33,15 +33,14 @@ class CarController:
         servers = []
 
         for i in range(cfg.NUM_DRONES):
-            server_coroutine = event_loop.create_server(
-                # lambda: ServerClientProtocol(debug, plot_points),
-                # '',
-                # 7878
+            # server_coroutine = event_loop.create_server(
+            #     lambda: ServerClientProtocol(debug, plot_points),
+            #     '',
+            #     7878
+            # )
 
-                asyncio.start_server(ServerClientProtocol, ' ', 8000 + i, loop=event_loop)
-            )
-
-            server = event_loop.run_until_complete(server_coroutine)
+            server = event_loop.run_until_complete(
+                asyncio.start_server(ServerClientProtocol, '127.0.0.1', 8000 + i, loop=event_loop))
             servers.append(server)
             print("Serving on : ", server.sockets[0].getsockname())
         try:
