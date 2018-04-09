@@ -11,10 +11,8 @@ Y_RATIO = 1
 class GPSCalculations:
 
     def __init__(self, debug):
-        self.calc_originxy()
-        self.set_xy_ratio()
         if debug:
-            print('******INITIALIZED DEBUG******')
+            print('******INITIALIZED GPS******')
 
     def parse_gps_msg(self, message):
         """
@@ -29,7 +27,7 @@ class GPSCalculations:
             if message[char] == ',':
                 separator.append(char)
 
-        print(separator)
+        print("Separator: ", separator)
 
         dlat = ''
         mlat = ''
@@ -37,7 +35,7 @@ class GPSCalculations:
         mlong = ''
 
         # bytes 17 - 26
-        print(message)
+        print("GPS Message: ", message)
         for i in range(separator[1] + 1, separator[1] + 3):
             dlat = dlat + message[i]
         for j in range(separator[1] + 3, separator[2]):
@@ -138,7 +136,10 @@ class GPSCalculations:
         print(self.scale_xy(corner))
 
         print("\n*** Center ***")
-        center = self.gps_to_xy((cfg.ORIGIN_LATITUDE + cfg.CORNER_LAT) / 2, (cfg.ORIGIN_LONGITUDE + cfg.CORNER_LONG) / 2)
+        center = self.gps_to_xy(
+            (cfg.ORIGIN_LATITUDE + cfg.CORNER_LAT) / 2,
+            (cfg.ORIGIN_LONGITUDE + cfg.CORNER_LONG) / 2
+        )
         print(center)
         print(self.scale_xy(center))
 
@@ -187,17 +188,18 @@ class GPSCalculations:
 
         return X_RATIO, Y_RATIO
 
-    def request_gps_fix(self, connection, cardata, debug):
-        message = connection.socket_tx('gps')
-        try:
-            cardata.XPOS = self.parse_gps_msg(str(message))[0]
-            cardata.YPOS = self.parse_gps_msg(str(message))[1]
-        except ValueError:
-            # if debug:
-            #     print('Invalid GPS Message...Exiting')
-            # socket_tx('disconnect', sock)
-            # sock.close()
-            # sys.exit()
+    @staticmethod
+    def request_gps_fix(connection):
+        connection.client_tx('gps')
+#       try:
+#           cardata.XPOS = self.parse_gps_msg(str(message))[0]
+#           cardata.YPOS = self.parse_gps_msg(str(message))[1]
+#       except ValueError:
+#           # if debug:
+#           #     print('Invalid GPS Message...Exiting')
+#           # socket_tx('disconnect', sock)
+#           # sock.close()
+#           # sys.exit()
 
-            cardata.XPOS = 222
-            cardata.YPOS = 222
+#           cardata.XPOS = 222
+#           cardata.YPOS = 222

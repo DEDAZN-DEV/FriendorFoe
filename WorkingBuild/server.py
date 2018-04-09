@@ -1,13 +1,12 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
-import asyncio
-import json
+# import asyncio
+# import aiohttp
+import requests
 import math
-import socket
 import sys
-
-import aiohttp
 import matplotlib.pyplot as plt
+import json
 
 import WorkingBuild.global_cfg as cfg
 import WorkingBuild.gps_ops as gps
@@ -21,7 +20,7 @@ class CarData:
     Data structure for drone metrics
     """
 
-    def __init__(self, debug):
+    def __init__(self, debug, drone_id):
         self.LAT = 0.0
         self.LONG = 0.0
         self.XPOS = 0.0
@@ -32,67 +31,53 @@ class CarData:
         self.TURNANGLE = 0.0
         self.SPEED = 0.0
         self.DIST_TRAVELED = 0.0
-        self.ID = 0
+        self.ID = drone_id
         if debug:
             print("******INITIALIZED CARDATA*******")
 
 
-class Drones:
-    @staticmethod
-    async def drone(dronename, ip, port, debug, plot_points):
+class Drone:
+    def __init__(self, debug, drone_number, transport):
+        if debug:
+            print("\n******BEGINNING INITIALIZATION******")
+        self.debug = debug
+        self.drone_id = drone_number
+        self.connection = CarConnection(debug, transport)
+        self.turning = Turning(debug)
+        self.message_passing = ServerMessagePassing(debug)
+        self.plotting = Plotting(debug)
+        self.gps_calculations = gps.GPSCalculations(debug)
+        self.cardata = CarData(debug, self.drone_id)
+        if debug:
+            print("******FINISHED INITIALIZATION******")
+
+    def drone(self, plot_points):
         """
         Default drone control algorithm. Uses input from ATE-3 Sim to control
         drones.
-        :param debug:
-        :param dronename: String, name of drone
-        :param ip: String, LAN IP address of drone
-        :param port: LAN Port of drone to be controlled, not necessary but can be
-        changed.
         :param plot_points: whether or not to open the plot
         :return: Nothing
         """
-        turning = Turning(debug)
-        message_passing = ServerMessagePassing(debug)
-        connection = CarConnection(ip, port, debug)
-        plotting = Plotting(debug)
-        gps_calculations = gps.GPSCalculations(debug)
-        cardata = CarData(debug)
-        cardata.ID = dronename
-
         try:
-            while True:
-                print("\n")
-                gps_calculations.request_gps_fix(connection, cardata, debug)
-                message_passing.post_gps_data(cardata)
-
-                # await asyncio.sleep(0)
-
-                velocity_vector = await Drones.execute_turn(cardata,
-                                                            connection,
-                                                            debug,
-                                                            message_passing,
-                                                            turning
-                                                            )
-
-                await asyncio.sleep(0)
-
-                if plot_points:
-                    plotting.plot_car_path(cardata, debug, dronename, velocity_vector)
+            print("\nDrone: ", self.drone_id)
+            self.gps_calculations.request_gps_fix(self.connection)
+            # self.message_passing.post_gps_data(self.cardata)
+            velocity_vector = self.execute_turn()
+            if plot_points:
+                self.plotting.plot_car_path(self.cardata, self.debug, self.drone_id, velocity_vector)
         except KeyboardInterrupt:
-            connection.socket_tx('disconnect')
-            connection.sock.close()
+            self.connection.client_tx('disconnect')
             sys.exit()
 
-    @staticmethod
-    async def execute_turn(cardata, connection, debug, message_passing, turning):
-        velocity_vector = await message_passing.get_velocity_data()
-        desired_heading = turning.calculate_desired_heading(cardata, debug)
-        turning.find_vehicle_speed(cardata, velocity_vector)
-        turn_data = turning.initialize_turn_data(cardata, desired_heading)
-        turn_data = turning.stepped_turning_algorithm(turn_data)
-        turning.apply_turn_to_cardata(cardata, turn_data)
-        turn_signal, speed_signal = turning.generate_servo_signals(cardata)
-        connection.send_turn_to_car(speed_signal, turn_signal)
+    def execute_turn(self):
+        velocity_vector = self.message_passing.get_velocity_data()
+        desired_heading = self.turning.calculate_desired_heading(self.cardata, self.debug)
+        self.turning.find_vehicle_speed(self.cardata, velocity_vector)
+        turn_data = self.turning.initialize_turn_data(self.cardata, desired_heading)
+        turn_data = self.turning.stepped_turning_algorithm(turn_data)
+        self.turning.apply_turn_to_cardata(self.cardata, turn_data)
+        turn_signal, speed_signal = self.turning.generate_servo_signals(self.cardata)
+        self.connection.send_turn_to_car(speed_signal, turn_signal)
         return velocity_vector
 
 
@@ -103,73 +88,37 @@ class ServerMessagePassing:
             print('******INITIALIZED API SERVER CONNECTION******')
 
     @staticmethod
-    async def post_gps_data(cardata):
+    def post_gps_data(gps_data, drone_id):
         """
         Uses aiohttp to post gps data from a webserver
-        :param cardata:
+        :param gps_data: list of [x position, y position]
+        :param drone_id: drone id
         :return: true if successful
         """
-        gps_data_dict = {"ypos": cardata.YPOS, "xpos": cardata.XPOS, "id": cardata.ID}
-        gps_data_string = json.dumps(gps_data_dict)
-        gps_data_bytes = bytearray(gps_data_string, 'utf-8')
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                    cfg.SERVER_BASE_ADDRESS + cfg.SERVER_POST_ADDRESS,
-                    data=gps_data_bytes) \
-                    as response:
-                print(response.status)
-                print(await response.text())
-
-        pass
+        gps_data_dict = {"xpos": gps_data[0], "ypos": gps_data[1], "id": drone_id}
+#       with aiohttp.ClientSession() as session:
+#           with session.post(
+        response = requests.post(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_POST_ADDRESS, json=gps_data_dict)
+        print(response.status_code)
+        print(response.text)
 
     @staticmethod
-    async def get_velocity_data():
+    def get_velocity_data():
         """
         Uses aiohttp to get velocity data for the car from a webserver
         :return:
         """
-        async with aiohttp.ClientSession() as session:
-            async with session.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS) as response:
-                print(response.status)
-                velocity_info = await response.text()
+#       with aiohttp.ClientSession() as session:
+#           response = session.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
+        response = requests.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
+        print(response.status_code)
+        velocity_info = response.text
 
         print("New Velocity Info: " + velocity_info)
         velocity_info = json.loads(velocity_info)
         print("Decoded Velocity Info: " + str(velocity_info))
 
         velocity_vector = [velocity_info["xvel"], velocity_info["yvel"]]
-        return velocity_vector
-
-    @staticmethod
-    def update_shared_gps_data(car_controller, cardata):
-        """
-        Updates the shared memory with GPS data from the car
-        :param car_controller:
-        :param cardata:
-        :return:
-        """
-        with car_controller.shared_gps_data.get_lock():
-            car_controller.shared_gps_data[0] = cardata.XPOS
-            car_controller.shared_gps_data[1] = cardata.YPOS
-            print('Updated Car GPS Position: ',
-                  car_controller.shared_gps_data[0],
-                  car_controller.shared_gps_data[0]
-                  )
-
-    @staticmethod
-    def update_velocity_vector(car_controller):
-        """
-        Updates the velocity vector that the server uses with new info from the user
-        :param car_controller:
-        :return:
-        """
-        velocity_vector = [0, 0]
-        with car_controller.shared_velocity_vector.get_lock():
-            velocity_vector[0] = car_controller.shared_velocity_vector[0]
-            velocity_vector[1] = car_controller.shared_velocity_vector[1]
-            print('Shared Vel Vector: ', car_controller.shared_velocity_vector[0],
-                  ', ', car_controller.shared_velocity_vector[1])
-            print('Received Vel Vector: ', velocity_vector)
         return velocity_vector
 
 
@@ -209,59 +158,82 @@ class Plotting:
 
 
 class CarConnection:
-    def __init__(self, ip, port, debug):
-        try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.connect((ip, port))
-            if debug:
-                print('******INITIALIZED CONNECTION*******')
-        except KeyboardInterrupt:
-            sys.exit()
+    def __init__(self, debug, transport):
+        self.debug = debug
+        self.transport = transport
+        if debug:
+            print('******INITIALIZED CONNECTION*******')
 
-    def socket_tx(self, data):
-        """
-        Transmits specified data to drone through sockets
-        :param data: String, data to be transmitted
-        :return: 0 on successful completion
-        """
-        output = DebugOutput()
-        try:
-            print('SENDING: ' + data)
-            self.sock.sendall(data.encode('utf8'))
-            print('SERVER SENT: ' + data)
-            print(output.OKGREEN + "Data Sent Successfully..." + output.ENDC)
-        except socket.herror:
-            print(output.FAIL + "Connection refused...." + output.ENDC)
-        except socket.timeout:
-            print(output.FAIL + "Connection timed out...." + output.ENDC)
+#   def socket_tx(self, data):
+#       """
+#       Transmits specified data to drone through sockets
+#       :param data: String, data to be transmitted
+#       :return: 0 on successful completion
+#       """
+#       output = DebugOutput()
+#       try:
+#           print('SENDING: ' + data)
+#           self.client_socket.sendall(data.encode('utf8'))
+#           print('SERVER SENT: ' + data)
+#           print(output.OKGREEN + "Data Sent Successfully..." + output.ENDC)
+#       except socket.herror:
+#           print(output.FAIL + "Connection refused...." + output.ENDC)
+#       except socket.timeout:
+#           print(output.FAIL + "Connection timed out...." + output.ENDC)
 
-        response = self.socket_rx()
-        while not response:
-            print(response)
-            pass
-        print('Client Response: ' + response)
-        return response
+#       response = self.socket_rx()
+#       while not response:
+#           print(response)
+#           pass
+#       print('Client Response: ' + response)
+#       return response
 
-    def socket_rx(self):
-        output = DebugOutput()
-        try:
-            message = self.sock.recv(128).decode('utf8')
-            # print(output.OKGREEN + "Data Received Successfully..." + output.ENDC)
-            return message
-        except socket.herror:
-            print(output.FAIL + "Connection refused...." + output.ENDC)
-        except socket.timeout:
-            print(output.FAIL + "Connection timed out...." + output.ENDC)
+    def client_tx(self, data):
+        print("About to send: ", data)
+        self.transport.write(bytearray(data + "\\", 'utf-8'))
+        # time.sleep(1)
+
+#   def socket_rx(self):
+#       output = DebugOutput()
+#       try:
+#           message = self.client_socket.recv(128).decode('utf8')
+#           # print(output.OKGREEN + "Data Received Successfully..." + output.ENDC)
+#           return message
+#       except socket.herror:
+#           print(output.FAIL + "Connection refused...." + output.ENDC)
+#       except socket.timeout:
+#           print(output.FAIL + "Connection timed out...." + output.ENDC)
 
     def send_turn_to_car(self, speed_signal, turn_signal):
         print("ABOUT TO SEND: " + str(cfg.STEERING) + str(turn_signal))
         print("AND: " + str(cfg.ESC) + str(speed_signal))
-        self.socket_tx(str(cfg.STEERING) + str(turn_signal))
-        self.socket_tx(str(cfg.ESC) + str(speed_signal))
+        self.client_tx(str(cfg.STEERING) + str(turn_signal))
+        self.client_tx(str(cfg.ESC) + str(speed_signal))
+
+#   def connect_to_client(self):
+#       connection = None
+#       if self.debug:
+#           print("Connecting on ", cfg.CLIENT_PORTS[self.drone_number])
+#       try:
+#           self.client_socket.bind(('', cfg.CLIENT_PORTS[self.drone_number]))
+#           self.client_socket.listen()
+#       except socket.error as emsg1:
+#           print("Error message on listening: ", emsg1)
+
+#       try:
+#           print("Listening on port: ", cfg.CLIENT_PORTS[self.drone_number])
+#           connection, address = self.client_socket.accept()
+#           print("Connected. IP: ", address[0], ", PORT: ", address[1])
+#       except socket.error as emsg2:
+#           print("Error message on connecting", emsg2)
+
+#       try:
+#           connection.sendall(b'keepalive')
+#       except socket.error as emsg3:
+#           print("Error message on sending: ", emsg3)
 
 
 class DebugOutput:
-
     def __init__(self):
         self.HEADER = '\033[95m'
         self.OKBLUE = '\033[94m'

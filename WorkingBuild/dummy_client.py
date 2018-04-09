@@ -1,6 +1,8 @@
 import socket
 import sys
 import time
+import traceback
+import random
 
 # This is intentionally wrong, do not change or everything will burn!
 import global_cfg as cfg
@@ -16,39 +18,42 @@ def main():
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.bind(('', cfg.PORT))
-    except socket.error as emsg1:
-        print(emsg1)
-        sys.exit()
+        sock.connect((cfg.HOST_IP, cfg.HOST_PORT))
+    except socket.error:
+        traceback.print_exc()
+        sys.exit(1)
 
-    sock.listen(5)
-    print('[NETWORK] SERVER ESTABLISHED, IP: ' + cfg.CLIENT_IP_A + ', PORT: ' + str(cfg.PORT) + '....')
+    print("Connected on port ", cfg.HOST_PORT, ". Ready to receive data.")
 
     while True:
-        (conn, address) = sock.accept()
         try:
-            while True:
-                try:
-                    data = conn.recv(64).decode('utf8')
-                    if data:
-                        print('[DEBUG] Recieved data from: ' +
-                              conn.getpeername().__str__() +
-                              '\t\t' +
-                              data.__str__())
-                        result = execute_data(data, conn)
+            print("Sending: request:velocity")
+            server_tx(sock, 'request:velocity')
+            data = sock.recv(64).decode('utf8')
+            if data:
+                data = data[0: -1]
+                data_array = data.split("\\")
+                print("Message Received: ", data_array)
+                for message in data_array:
+                    print('[DEBUG] Recieved data from: ' +
+                          sock.getpeername().__str__() +
+                          '\t\t' +
+                          message.__str__())
+                    result = execute_data(message, sock)
 
-                        if result == 404:
-                            break
+                    if result == 404:
+                        break
 
-                except TypeError as emsg2:
-                    print('[WARN] ' + str(emsg2))
-                    conn.close()
-                    sys.exit()
-                except socket.error:
-                    print('[WARN][NETWORK] Socket error')
-                    break
+        except TypeError:
+            print(traceback.print_exc())
+            sock.close()
+            sys.exit()
+        except socket.error:
+            print('[NETWORK] Socket Error: \n', traceback.print_exc())
+            break
         except KeyboardInterrupt:
-            execute_data('stop', conn)
+            execute_data('stop', sock)
+            break
 
 
 def test_device():
@@ -86,6 +91,10 @@ def test_device():
     return 0
 
 
+def server_tx(sock, data):
+    sock.sendall(bytearray(data + '\\', 'utf-8'))
+
+
 def servo_ctl(servo_num, val):
     """
     Function to send signal to Maestro servo Device for execution
@@ -106,37 +115,39 @@ def servo_ctl(servo_num, val):
     return 0
 
 
-def execute_data(data, conn):
+def execute_data(data, sock):
     """
     Function to handle data processing and socket network disconnect
 
     :param data: <String> data to be processed
-    :param conn: <Connection object> created after successful connect
+    :param sock: <Connection object> created after successful connect
     :return:    <Int> 404 if servo disconnects
                 <Int> 0 on success
     """
     # data = data[2:len(data)-1]
-    print("__" + data + "__")
 
     if data == 'kill':
-        conn.close()
+        sock.close()
         print('[DEBUG] Terminating Client')
         sys.exit()
     elif data == 'start':
-        conn.sendall(b'started')
+        server_tx(sock, 'status:started')
         pass
     elif data == 'stop':
         print('[DEBUG] ***** Stopping')
-        conn.sendall(b'stopped')
+        server_tx(sock, 'status:stopped')
     elif data == 'gps':
         # conn.sendall(b'getting gps fix')
-        get_gps(conn)
+        get_gps(sock)
     elif data == 'disconnect':
         print('[NETWORK] Disconnect')
-        conn.sendall(b'disconnecting')
+        server_tx(sock, 'status:disconnecting')
         time.sleep(10)
-        conn.close()
+        sock.close()
         return 404
+    elif data == 'id_collision':
+        drone_id = random.randint(0, 999)
+        server_tx(sock, "id:" + str(drone_id))
     else:
 
         tgt = int(data[0])
@@ -152,7 +163,7 @@ def execute_data(data, conn):
                 print('[SERVO] Entering servo_ctl function with value of: ' +
                       str(val))
 
-        conn.sendall(b'turn received')
+        server_tx(sock, 'status:turn received')
 
     print('[DEBUG] Exiting execute_data function')
 
@@ -169,7 +180,7 @@ def get_gps(conn):
     message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893, \
               M,-25.669,M,2.0,0031*4F"
     print('[GPS] ' + message)
-    conn.sendall(message.encode('utf8'))
+    server_tx(conn, 'gps:' + message)
     print('[GPS] GPS SENT')
     print('[DEBUG] Exiting get_gps function')
 
