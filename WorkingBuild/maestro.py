@@ -100,8 +100,8 @@ class Device(object):
             print(e)
             log("Link to TTL Port -", ser_port, "- failed!")
 
-        self.isInitialized = (self.con != None and self.ser != None)
-        if (self.isInitialized):
+        self.isInitialized = (self.con is not None and self.ser is not None)
+        if self.isInitialized:
             err_flags = self.get_errors()
             log("Device error flags read (", err_flags, ") and cleared")
         log("Device initialized:", self.isInitialized)
@@ -234,7 +234,7 @@ class Device(object):
                 self.write(0x87, s, lowbits << 2, highbits)
                 # log("SINGLE: channel %s; speed %s"%(s,speeds))
             else:
-                log("Set Speed: <Type> Error");
+                log("Set Speed: <Type> Error")
                 return
 
     ###########################################################################################################################
@@ -334,7 +334,9 @@ class Device(object):
     # Source: http://www.pololu.com/docs/pdf/0J40/maestro.pdf
     # WARNING: BUGGY! 0x01 always returned althoug it has stopped
     def get_moving_state(self):
-        if not self.isInitialized: log("Not initialized"); return None
+        if not self.isInitialized:
+            log("Not initialized")
+            return None
         self.write(0x93)
         data = self.ser.read(1)
         if data:
@@ -368,22 +370,22 @@ class Device(object):
     ###########################################################################################################################
     ## a helper function for Set Target
     def wait_until_at_target(self):
-        while (self.get_moving_state()):
+        while self.get_moving_state():
             time.sleep(0.01)
 
     ###########################################################################################################################
     ## Lets close and clean when we are done
     def __del__(self):
         try:
-            if (self.ser):
+            if self.ser:
                 self.ser.close()
-                del (self.ser)
+                del self.ser
         except Exception as e:
             print(e)
         try:
-            if (self.con):
+            if self.con:
                 self.con.close()
-                del (self.conf)
+                del self.conf
         except Exception as e:
             print(e)
 
