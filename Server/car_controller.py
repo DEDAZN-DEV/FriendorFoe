@@ -52,7 +52,6 @@ class CarController:
         for i, server in enumerate(servers):
             server.close()
             event_loop.run_until_complete(server.wait_closed())
-        event_loop.close()
 
 
 class ServerClientProtocol(asyncio.Protocol):
