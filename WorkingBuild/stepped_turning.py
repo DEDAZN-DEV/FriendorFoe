@@ -12,12 +12,11 @@ import pprint
 import sys
 import WorkingBuild.global_cfg as cfg
 
-debug = False
-
 
 class Turning:
     def __init__(self, debug):
-        if debug:
+        self.debug = debug
+        if self.debug:
             print('******INITIALIZED TURNING*******')
 
     @staticmethod
@@ -131,7 +130,7 @@ class Turning:
         car_data["advanced_y_position"] = car_data["initial_y_position"] + \
             car_data["time_step"] * car_data["y_speed_component"]
 
-        if debug:
+        if self.debug:
             printer = pprint.PrettyPrinter(indent=4)
             printer.pprint(car_data)
             print("\n")
@@ -190,7 +189,7 @@ class Turning:
             car_data["turning_angle"] = no_turn
             speed_coefficient = 1
 
-        car_data["speed"] *= speed_coefficient
+        car_data["speed"] = cfg.TEST_SPEED * speed_coefficient
         car_data = self.find_advanced_position(car_data)
         self.find_distance_travelled(car_data)
 
@@ -203,7 +202,7 @@ class Turning:
         :return:
         """
         turn_signal = self.gen_turn_signal(cardata.TURNANGLE)
-        speed_signal = self.gen_spd_signal(cardata.SPEED, cardata.TURNANGLE)
+        speed_signal = cfg.TEST_SPEED
 
         return turn_signal, speed_signal
 
@@ -238,14 +237,14 @@ class Turning:
         }
         return turn_data
 
-    @staticmethod
-    def calculate_desired_heading(cardata, debug):
+    def calculate_desired_heading(self, cardata):
         desired_heading = math.atan2((cardata.TGTYPOS - cardata.YPOS), (cardata.TGTXPOS - cardata.XPOS))
-        if debug:
+        if self.debug:
             print('Last Angle Orientation: ', math.degrees(desired_heading))
         return desired_heading
 
-    def gen_turn_signal(self, angle):
+    @staticmethod
+    def gen_turn_signal(angle):
         """
         Generates turn signal for MSC and transmits to drone
         :param angle: Float, angle of turn for drone
@@ -297,25 +296,28 @@ class Turning:
         print("Turn Signal: " + str(speed_signal))
         return speed_signal
 
-    if __name__ == "__main__":
-        if debug:
-            print("Current Heading: " + sys.argv[1] + "\nDesired Heading: " + sys.argv[2] + "\nSpeed: " + sys.argv[3] +
-                  "\nCurrent Position: (" + sys.argv[4] + ", " + sys.argv[5] + ")\nTime step: " + sys.argv[6])
 
-        car = {
-                "current_heading": float(sys.argv[1]),
-                "desired_heading": float(sys.argv[2]),
-                "speed": float(sys.argv[3]),
-                "initial_x_position": float(sys.argv[4]),
-                "initial_y_position": float(sys.argv[5]),
-                "time_step": float(sys.argv[6])
-                }
+if __name__ == "__main__":
+    debug_mode = True
+    if debug_mode:
+        print("Current Heading: " + sys.argv[1] + "\nDesired Heading: " + sys.argv[2] + "\nSpeed: " + sys.argv[3] +
+              "\nCurrent Position: (" + sys.argv[4] + ", " + sys.argv[5] + ")\nTime step: " + sys.argv[6])
 
-        car = stepped_turning_algorithm(car)
+    car = {
+            "current_heading": float(sys.argv[1]),
+            "desired_heading": float(sys.argv[2]),
+            "speed": float(sys.argv[3]),
+            "initial_x_position": float(sys.argv[4]),
+            "initial_y_position": float(sys.argv[5]),
+            "time_step": float(sys.argv[6])
+            }
 
-        if debug:
-            pp = pprint.PrettyPrinter(indent=4)
-            pp.pprint(car)
-            print("Next Position: (" + str(car["advanced_x_position"]) + ", " + str(car["advanced_y_position"]) + ")")
-            print("Turning Angle: " + str(car["turning_angle"]))
-            print("Turn Speed: " + str(car["speed"]))
+    turning = Turning(debug_mode)
+    car = turning.stepped_turning_algorithm(car)
+
+    if debug_mode:
+        pp = pprint.PrettyPrinter(indent=4)
+        pp.pprint(car)
+        print("Next Position: (" + str(car["advanced_x_position"]) + ", " + str(car["advanced_y_position"]) + ")")
+        print("Turning Angle: " + str(car["turning_angle"]))
+        print("Turn Speed: " + str(car["speed"]))
