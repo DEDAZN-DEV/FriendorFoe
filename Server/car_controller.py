@@ -1,13 +1,13 @@
 """
 Author: Julian Pryde
-Purpose: To provide functions with which to control server.py
+Purpose: To provide functions with which to control data_handling.py
 """
 
 import asyncio
 
 import Server.server_cfg as cfg
+from Server.data_handling import Drone
 from Server.gps_ops import GPSCalculations as GPS
-from Server.server import Drone
 
 
 class CarController:

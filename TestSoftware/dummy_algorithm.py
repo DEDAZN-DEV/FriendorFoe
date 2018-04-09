@@ -1,5 +1,5 @@
 """
-Stripped down version of server.py for testing purposes only
+Stripped down version of data_handling.py for testing purposes only
 """
 
 import random

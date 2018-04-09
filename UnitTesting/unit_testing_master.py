@@ -1,6 +1,6 @@
 import unittest
 
-import Server.server as server
+import Server.data_handling as server
 import Server.stepped_turning as turn
 import TestSoftware.joystick_input as joystick
 import TestSoftware.mock_sim_inputs as mock
