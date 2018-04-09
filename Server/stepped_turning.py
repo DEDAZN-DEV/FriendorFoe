@@ -229,7 +229,7 @@ class Turning:
             "speed": cardata.SPEED,
             "initial_x_position": cardata.XPOS,
             "initial_y_position": cardata.YPOS,
-            "time_step": cfg.UPDATE_INTERVAL
+            "time_step": cfg.UPDATE_INTERVAL  # TODO: Revise this because we don't have a fixed interval
         }
         return turn_data
 

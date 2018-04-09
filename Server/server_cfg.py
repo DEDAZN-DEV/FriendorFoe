@@ -1,54 +1,33 @@
-"""
-Global configuration values, all constants set before start
-"""
-# CAR VALUES #
-ACCELERATION = 15  # of car in m/s**2
+# CAR SPECIFIC VALUES
 CENTER = 1500
-ESC = 3
 MAX_RIGHT = 1000
-NEUTRAL = 1500
 MAX_LEFT = 2000
+
+NEUTRAL = 1500
 MAX_SPEED = 2000
-MAX_TURN_RADIUS = 30  # degrees
-MAXVELOCITY = 13.4  # m/s
-STEERING = 5
+MAX_VELOCITY = 13.4  # m/s
 MIN_MOVE_SPEED = 1567
-TURNDELAY = 30
-TURNDIAMETER = 1.5
-TURNFACTOR = 0.001
-DEGPERPOINT = 2000 / TURNDIAMETER
-SPDSCALE = 2000 / MAXVELOCITY
+
 NUM_DRONES = 3
 
-# TEST VALUES #
-MAX_TEST_SPEED = 6500
-SPDLIMITER = MAX_SPEED - MAX_TEST_SPEED
-
-# NETWORK VALUES #
-HOST_IP = "10.33.83.153"  # <-- This is the internal IP on the machine running car_controller.py (ipconfig/ifconfig)
-COM_PORT = ''
-HOST = ''
-HOST_PORT = 7878
-
-# GPS VALUES #
-ORIGIN = [0, 0]
-ORIGIN_LATITUDE = 29.189537
-ORIGIN_LONGITUDE = -81.046341
-CORNER_LAT = 29.198097
-CORNER_LONG = -81.046161
-ROTATION_ANGLE = -45
-RADIUS_OF_EARTH = 6378137  # m
-NOISE = 0.0000005
-
-# MOCK SIM VALUES #
-DIRCHANGEFACTOR = 0.25  # % chance of changing velocity input for testing
-TEST_ITERATIONS = 25
-LENGTH_X = 90
-LENGTH_Y = 120
-UPDATE_INTERVAL = 0.5  # 2Hz refresh rate
+ESC = 3
+STEERING = 5
 
 # TODO Change this on getting server information from customer
 # SIMULATION SERVER
 SERVER_BASE_ADDRESS = 'http://pages.erau.edu/~prydej/friendorfoe'
 SERVER_POST_ADDRESS = '/post_gps_data.py'
 SERVER_GET_ADDRESS = '/get_velocity_vector.py'
+
+# TODO: Update interval will need to be replaced/reworked
+UPDATE_INTERVAL = 0.5
+
+# AREA OF OPERATION DIMENSIONS
+ORIGIN_LATITUDE = 29.189537
+ORIGIN_LONGITUDE = -81.046341
+CORNER_LAT = 29.198097
+CORNER_LONG = -81.046161
+ROTATION_ANGLE = -45
+
+LENGTH_X = 90
+LENGTH_Y = 120
