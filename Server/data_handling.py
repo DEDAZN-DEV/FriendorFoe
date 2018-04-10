@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import requests
 
 import Server.gps_ops as gps
-from Client import client_cfg as cfg
+from Server import server_cfg as cfg
 from Server.stepped_turning import Turning
 
 BUFFERSIZE = 50

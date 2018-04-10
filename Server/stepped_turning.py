@@ -11,7 +11,7 @@ import math
 import pprint
 import sys
 
-from Client import client_cfg as cfg
+from Server import server_cfg as cfg
 
 
 class Turning:
@@ -127,9 +127,9 @@ class Turning:
         self.find_speed_components(car_data)
 
         car_data["advanced_x_position"] = car_data["initial_x_position"] + \
-            car_data["time_step"] * car_data["x_speed_component"]
+                                          car_data["time_step"] * car_data["x_speed_component"]
         car_data["advanced_y_position"] = car_data["initial_y_position"] + \
-            car_data["time_step"] * car_data["y_speed_component"]
+                                          car_data["time_step"] * car_data["y_speed_component"]
 
         if self.debug:
             printer = pprint.PrettyPrinter(indent=4)
@@ -230,6 +230,7 @@ class Turning:
             "initial_x_position": cardata.XPOS,
             "initial_y_position": cardata.YPOS,
             "time_step": cfg.UPDATE_INTERVAL  # TODO: Revise this because we don't have a fixed interval
+            # TODO: Possibly implement a timer between start and finish of entire interval execution
         }
         return turn_data
 
@@ -252,9 +253,9 @@ class Turning:
             raise ValueError
 
         if angle < 0:
-            turn_signal = int(round(cfg.CENTER + (abs(angle) * cfg.DEGPERPOINT)))
+            turn_signal = int(round(cfg.CENTER + (abs(angle) * cfg.DEGREE_GRADIENT)))
         else:
-            turn_signal = int(round(cfg.CENTER - (angle * cfg.DEGPERPOINT)))
+            turn_signal = int(round(cfg.CENTER - (angle * cfg.DEGREE_GRADIENT)))
 
         if turn_signal > cfg.MAX_LEFT:
             turn_signal = cfg.MAX_LEFT
@@ -276,7 +277,7 @@ class Turning:
         if speed == 0:
             speed_signal = cfg.NEUTRAL
         else:
-            speed_signal = round(cfg.MIN_MOVE_SPEED + ((cfg.MAX_SPEED - cfg.MIN_MOVE_SPEED) / cfg.MAXVELOCITY))
+            speed_signal = round(cfg.MIN_MOVE_SPEED + (speed * cfg.VELOCITY_GRADIENT))
 
             if speed_signal > cfg.MAX_SPEED:
                 speed_signal = cfg.MAX_SPEED
@@ -292,13 +293,13 @@ if __name__ == "__main__":
               "\nCurrent Position: (" + sys.argv[4] + ", " + sys.argv[5] + ")\nTime step: " + sys.argv[6])
 
         car = {
-                "current_heading": float(sys.argv[1]),
-                "desired_heading": float(sys.argv[2]),
-                "speed": float(sys.argv[3]),
-                "initial_x_position": float(sys.argv[4]),
-                "initial_y_position": float(sys.argv[5]),
-                "time_step": float(sys.argv[6])
-                }
+            "current_heading": float(sys.argv[1]),
+            "desired_heading": float(sys.argv[2]),
+            "speed": float(sys.argv[3]),
+            "initial_x_position": float(sys.argv[4]),
+            "initial_y_position": float(sys.argv[5]),
+            "time_step": float(sys.argv[6])
+        }
 
     turning = Turning(debug_mode)
     car = turning.stepped_turning_algorithm(car)
