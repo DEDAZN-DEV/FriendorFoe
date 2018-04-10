@@ -67,15 +67,19 @@ class Drone:
         """
         try:
             print("\nDrone: ", self.drone_id)
+
             start_time = timer()
+
             self.gps_calculations.request_gps_fix(self.connection)
             # self.message_passing.post_gps_data(self.cardata)
             velocity_vector = self.execute_turn()
             if plot_points:
                 self.plotting.plot_car_path(self.cardata, self.debug, self.drone_id, velocity_vector)
+
             stop_time = timer()
 
-            self.cardata.update_last_interval_time(stop_time - start_time)
+            self.cardata.update_last_interval_time(
+                (((stop_time - start_time) * 0.75) + (self.cardata.INTERVAL_TIMER * 0.25)) / 2)
 
         except KeyboardInterrupt:
             self.connection.client_tx('disconnect')
