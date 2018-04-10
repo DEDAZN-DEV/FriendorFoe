@@ -11,6 +11,7 @@ Y_RATIO = 1
 class GPSCalculations:
 
     def __init__(self, debug):
+        self.debug = debug
         if debug:
             print('******INITIALIZED GPS******')
 
@@ -27,7 +28,8 @@ class GPSCalculations:
             if message[char] == ',':
                 separator.append(char)
 
-        print("Separator: ", separator)
+        if self.debug:
+            print("Separator: ", separator)
 
         dlat = ''
         mlat = ''
@@ -35,7 +37,8 @@ class GPSCalculations:
         mlong = ''
 
         # bytes 17 - 26
-        print("GPS Message: ", message)
+        if self.debug:
+            print("GPS Message: ", message)
         for i in range(separator[1] + 1, separator[1] + 3):
             dlat = dlat + message[i]
         for j in range(separator[1] + 3, separator[2]):
@@ -49,7 +52,8 @@ class GPSCalculations:
         if message[separator[2] + 1] == 'S':
             latitude = -latitude
 
-        print(latitude)
+        if self.debug:
+            print("Latitude: ", latitude)
 
         # bytes 30 - 40
         for k in range(separator[3] + 1, separator[3] + 4):
@@ -65,7 +69,8 @@ class GPSCalculations:
         if message[separator[4] + 1] == 'W':
             longitude = -longitude
 
-        print(longitude)
+        if self.debug:
+            print("Longitude: ", longitude)
 
         data = self.scale_xy(self.gps_to_xy(latitude, longitude))
 

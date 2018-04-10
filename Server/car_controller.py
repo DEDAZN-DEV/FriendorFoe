@@ -39,8 +39,12 @@ class CarController:
             #     7878
             # )
 
-            server = event_loop.run_until_complete(
-                asyncio.start_server(ServerClientProtocol, '127.0.0.1', 8000 + i, loop=event_loop))
+            coroutine = event_loop.create_server(
+                lambda: ServerClientProtocol(debug, plot_points),
+                '',
+                8000 + i
+            )
+            server = event_loop.run_until_complete(coroutine)
             servers.append(server)
             print("Serving on : ", server.sockets[0].getsockname())
         try:
@@ -61,7 +65,8 @@ class ServerClientProtocol(asyncio.Protocol):
         self.plot_points = plot_points
         self.id = None
         self.gps = GPS(debug)
-        print("******INITIALIZED SERVER******")
+        if self.debug:
+            print("******INITIALIZED SERVER******")
 
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
@@ -79,7 +84,8 @@ class ServerClientProtocol(asyncio.Protocol):
 
         for message in data_array:
             message = message.split(':')
-            print("Message: ", message)
+            if self.debug:
+                print("Message: ", message)
             #           print("Data identifier: ", message[0])
             #           print("Data value: ", message[1])
 
@@ -87,11 +93,13 @@ class ServerClientProtocol(asyncio.Protocol):
                 print('Vehicle status: ', message[1])
 
             elif message[0] == 'gps':
-                print("Received GPS message: ", message[1])
+                if self.debug:
+                    print("Received GPS message: ", message[1])
                 try:
                     gps_data = self.gps.parse_gps_msg(message[1])
                     self.drone_instance.message_passing.post_gps_data(gps_data, self.id)
-                    print('GPS Message: ', gps_data)
+                    if self.debug:
+                        print('GPS Message: ', gps_data)
                 except ValueError:
                     if self.debug:
                         print('Invalid GPS Message...Exiting')
@@ -111,6 +119,6 @@ class ServerClientProtocol(asyncio.Protocol):
 if __name__ == "__main__":
     car_controller = CarController()
     car_controller.start_cars(
-        debug=True,
+        debug=False,
         plot_points=False
     )

@@ -3,13 +3,10 @@
 import json
 import math
 import sys
-# import asyncio
-# import aiohttp
 import traceback
-from timeit import default_timer as timer
-
-import matplotlib.pyplot as plt
 import requests
+from timeit import default_timer as timer
+import matplotlib.pyplot as plt
 
 import Server.gps_ops as gps
 from Server import server_cfg as cfg
@@ -66,7 +63,9 @@ class Drone:
         :return: Nothing
         """
         try:
-            print("\nDrone: ", self.drone_id)
+            if self.debug:
+                print("\n")
+            print("Drone: ", self.drone_id, " executing turn")
 
             start_time = timer()
 
@@ -74,7 +73,7 @@ class Drone:
             # self.message_passing.post_gps_data(self.cardata)
             velocity_vector = self.execute_turn()
             if plot_points:
-                self.plotting.plot_car_path(self.cardata, self.debug, self.drone_id, velocity_vector)
+                self.plotting.plot_car_path(self.cardata, self.drone_id, velocity_vector)
 
             stop_time = timer()
 
@@ -87,7 +86,7 @@ class Drone:
 
     def execute_turn(self):
         velocity_vector = self.message_passing.get_velocity_data()
-        desired_heading = self.turning.calculate_desired_heading(self, self.cardata)
+        desired_heading = self.turning.calculate_desired_heading(self.cardata)
         self.turning.find_vehicle_speed(self.cardata, velocity_vector)
         turn_data = self.turning.initialize_turn_data(self.cardata, desired_heading)
         turn_data = self.turning.stepped_turning_algorithm(turn_data)
@@ -100,11 +99,11 @@ class Drone:
 class ServerMessagePassing:
 
     def __init__(self, debug):
-        if debug:
+        self.debug = debug
+        if self.debug:
             print('******INITIALIZED API SERVER CONNECTION******')
 
-    @staticmethod
-    def post_gps_data(gps_data, drone_id):
+    def post_gps_data(self, gps_data, drone_id):
         """
         Uses aiohttp to post gps data from a webserver
         :param gps_data: list of [x position, y position]
@@ -115,11 +114,11 @@ class ServerMessagePassing:
         #       with aiohttp.ClientSession() as session:
         #           with session.post(
         response = requests.post(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_POST_ADDRESS, json=gps_data_dict)
-        print(response.status_code)
-        print(response.text)
+        if self.debug:
+            print(response.status_code)
+            print(response.text)
 
-    @staticmethod
-    def get_velocity_data():
+    def get_velocity_data(self):
         """
         Uses aiohttp to get velocity data for the car from a webserver
         :return:
@@ -127,12 +126,16 @@ class ServerMessagePassing:
         #       with aiohttp.ClientSession() as session:
         #           response = session.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
         response = requests.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
-        print(response.status_code)
+        if self.debug:
+            print(response.status_code)
+            print("New velocity vector: ", response.text)
         velocity_info = response.text
 
-        print("New Velocity Info: " + velocity_info)
+        if self.debug:
+            print("New Velocity Info: " + velocity_info)
         velocity_info = json.loads(velocity_info)
-        print("Decoded Velocity Info: " + str(velocity_info))
+        if self.debug:
+            print("Decoded Velocity Info: " + str(velocity_info))
 
         velocity_vector = [velocity_info["xvel"], velocity_info["yvel"]]
         return velocity_vector
@@ -144,15 +147,17 @@ class Plotting:
         plt.ion()
         self.xpos = []
         self.ypos = []
-        if debug:
+        self.debug = debug
+        if self.debug:
             print('******INITIALIZED PLOTTING******')
 
-    def plot_car_path(self, cardata, debug, dronename, velocity_vector):
+    def plot_car_path(self, cardata, dronename, velocity_vector):
         if math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2) != 0:
             pause_interval = cardata.INTERVAL_TIMER
         else:
             pause_interval = 1e-6  # <-- This is a starter to the program
-        print("Pause Interval: " + str(pause_interval))
+        if self.debug:
+            print("Pause Interval: " + str(pause_interval))
         if len(self.xpos) > BUFFERSIZE:
             self.xpos.pop(0)
             self.ypos.pop(0)
@@ -160,12 +165,12 @@ class Plotting:
         self.ypos.append(cardata.YPOS)
         plt.clf()
         plt.title(dronename)
-        if not debug:
+        if not self.debug:
             plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
         plt.plot(self.xpos, self.ypos, 'k-')
         plt.plot(cardata.TGTXPOS, cardata.TGTYPOS, 'rx')
         plt.grid(True)
-        if debug:
+        if self.debug:
             print('Calculated Tgt Pos: ', cardata.TGTXPOS, cardata.TGTYPOS)
             print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
             # print('Interval Time: ', interval_time)
@@ -181,15 +186,17 @@ class CarConnection:
             print('******INITIALIZED CONNECTION*******')
 
     def client_tx(self, data):
-        print("About to send: ", data)
+        if self.debug:
+            print("ABOUT TO SEND: ", data)
         try:
             self.transport.write(bytearray(data + "\\", 'utf-8'))
         except self.transport.socket.error:
             traceback.print_exc()
 
     def send_turn_to_car(self, speed_signal, turn_signal):
-        print("ABOUT TO SEND: " + str(cfg.STEERING) + str(turn_signal))
-        print("AND: " + str(cfg.ESC) + str(speed_signal))
+        if self.debug:
+            print("ABOUT TO SEND TURN SIGNAL: " + str(cfg.STEERING) + str(turn_signal))
+            print("AND STEERING SIGNAL: " + str(cfg.ESC) + str(speed_signal))
         self.client_tx(str(cfg.STEERING) + str(turn_signal))
         self.client_tx(str(cfg.ESC) + str(speed_signal))
 

@@ -3,23 +3,32 @@ import sys
 import time
 import traceback
 
-from Client import client_cfg as cfg
-
 # This is intentionally wrong, do not change or everything will burn!
 import maestro as maestro
+import client_cfg as cfg
 
 
 class Client:
     def __init__(self, debug):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.sock.connect((cfg.HOST_IP, cfg.HOST_PORT))
-        except socket.error:
-            traceback.print_exc()
-            sys.exit(1)
-        print("Connected on port ", cfg.HOST_PORT, ". Ready to receive data.")
+        self.connect_to_server()
+        print("Connected on port ", cfg.HOST_PORTS, ". Ready to receive data.")
         self.servo = maestro.Device()
         self.debug = debug
+
+    def connect_to_server(self):
+        connected = False
+        port_number = 0
+        while not connected:
+            try:
+                self.sock.connect((cfg.HOST_IP, cfg.HOST_PORTS[0]))
+                connected = True
+            except socket.error:
+                port_number += 1
+                traceback.print_exc()
+                sys.exit(1)
+
+        return cfg.HOST_PORTS[port_number]
 
     def main(self):
         """

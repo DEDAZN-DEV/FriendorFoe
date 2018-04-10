@@ -20,9 +20,9 @@ STEERING = 5
 
 # TODO Change this on getting server information from customer
 # SIMULATION SERVER
-SERVER_BASE_ADDRESS = 'http://pages.erau.edu/~prydej/friendorfoe'
-SERVER_POST_ADDRESS = '/post_gps_data.py'
-SERVER_GET_ADDRESS = '/get_velocity_vector.py'
+SERVER_BASE_ADDRESS = 'http://localhost/cgi-bin'
+SERVER_POST_ADDRESS = '/post_gps_data.cgi'
+SERVER_GET_ADDRESS = '/get_velocity_vector.cgi'
 
 # AREA OF OPERATION DIMENSIONS
 ORIGIN_LATITUDE = 29.189537

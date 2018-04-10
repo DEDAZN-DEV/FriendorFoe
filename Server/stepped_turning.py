@@ -127,9 +127,9 @@ class Turning:
         self.find_speed_components(car_data)
 
         car_data["advanced_x_position"] = car_data["initial_x_position"] + \
-                                          car_data["time_step"] * car_data["x_speed_component"]
+            car_data["time_step"] * car_data["x_speed_component"]
         car_data["advanced_y_position"] = car_data["initial_y_position"] + \
-                                          car_data["time_step"] * car_data["y_speed_component"]
+            car_data["time_step"] * car_data["y_speed_component"]
 
         if self.debug:
             printer = pprint.PrettyPrinter(indent=4)
@@ -233,15 +233,13 @@ class Turning:
         }
         return turn_data
 
-    @staticmethod
     def calculate_desired_heading(self, cardata):
         desired_heading = math.atan2((cardata.TGTYPOS - cardata.YPOS), (cardata.TGTXPOS - cardata.XPOS))
         if self.debug:
             print('Last Angle Orientation: ', math.degrees(desired_heading))
         return desired_heading
 
-    @staticmethod
-    def gen_turn_signal(angle):
+    def gen_turn_signal(self, angle):
         """
         Generates turn signal for MSC and transmits to drone
         :param angle: Float, angle of turn for drone
@@ -261,12 +259,12 @@ class Turning:
         elif turn_signal < cfg.MAX_RIGHT:
             turn_signal = cfg.MAX_RIGHT
 
-        print("Turn Signal: " + str(turn_signal))
+        if self.debug:
+            print("Turn Signal: " + str(turn_signal))
 
         return turn_signal
 
-    @staticmethod
-    def gen_spd_signal(speed):
+    def gen_spd_signal(self, speed):
         """
         Generates speed signal for MSC and transmits to drone
         :param speed: Float, speed to be reached
@@ -281,7 +279,8 @@ class Turning:
             if speed_signal > cfg.MAX_SPEED:
                 speed_signal = cfg.MAX_SPEED
 
-        print("Turn Signal: " + str(speed_signal))
+        if self.debug:
+            print("Turn Signal: " + str(speed_signal))
         return speed_signal
 
 
@@ -291,14 +290,14 @@ if __name__ == "__main__":
         print("Current Heading: " + sys.argv[1] + "\nDesired Heading: " + sys.argv[2] + "\nSpeed: " + sys.argv[3] +
               "\nCurrent Position: (" + sys.argv[4] + ", " + sys.argv[5] + ")\nTime step: " + sys.argv[6])
 
-        car = {
-            "current_heading": float(sys.argv[1]),
-            "desired_heading": float(sys.argv[2]),
-            "speed": float(sys.argv[3]),
-            "initial_x_position": float(sys.argv[4]),
-            "initial_y_position": float(sys.argv[5]),
-            "time_step": float(sys.argv[6])
-        }
+    car = {
+        "current_heading": float(sys.argv[1]),
+        "desired_heading": float(sys.argv[2]),
+        "speed": float(sys.argv[3]),
+        "initial_x_position": float(sys.argv[4]),
+        "initial_y_position": float(sys.argv[5]),
+        "time_step": float(sys.argv[6])
+    }
 
     turning = Turning(debug_mode)
     car = turning.stepped_turning_algorithm(car)

@@ -204,3 +204,6 @@ venv/Scripts/sphinx-quickstart.exe
 venv/Scripts/wheel.exe
 venv/pip-selfcheck.json
 venv/tcl/
+
+# Project Files
+
