@@ -6,6 +6,7 @@ import sys
 # import asyncio
 # import aiohttp
 import traceback
+from timeit import default_timer as timer
 
 import matplotlib.pyplot as plt
 import requests
@@ -34,8 +35,12 @@ class CarData:
         self.SPEED = 0.0
         self.DIST_TRAVELED = 0.0
         self.ID = drone_id
+        self.INTERVAL_TIMER = 0.25
         if debug:
             print("******INITIALIZED CARDATA*******")
+
+    def update_last_interval_time(self, new_time):
+        self.INTERVAL_TIMER = new_time
 
 
 class Drone:
@@ -62,11 +67,16 @@ class Drone:
         """
         try:
             print("\nDrone: ", self.drone_id)
+            start_time = timer()
             self.gps_calculations.request_gps_fix(self.connection)
             # self.message_passing.post_gps_data(self.cardata)
             velocity_vector = self.execute_turn()
             if plot_points:
                 self.plotting.plot_car_path(self.cardata, self.debug, self.drone_id, velocity_vector)
+            stop_time = timer()
+
+            self.cardata.update_last_interval_time(stop_time - start_time)
+
         except KeyboardInterrupt:
             self.connection.client_tx('disconnect')
             sys.exit()
@@ -98,8 +108,8 @@ class ServerMessagePassing:
         :return: true if successful
         """
         gps_data_dict = {"xpos": gps_data[0], "ypos": gps_data[1], "id": drone_id}
-#       with aiohttp.ClientSession() as session:
-#           with session.post(
+        #       with aiohttp.ClientSession() as session:
+        #           with session.post(
         response = requests.post(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_POST_ADDRESS, json=gps_data_dict)
         print(response.status_code)
         print(response.text)
@@ -110,8 +120,8 @@ class ServerMessagePassing:
         Uses aiohttp to get velocity data for the car from a webserver
         :return:
         """
-#       with aiohttp.ClientSession() as session:
-#           response = session.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
+        #       with aiohttp.ClientSession() as session:
+        #           response = session.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
         response = requests.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
         print(response.status_code)
         velocity_info = response.text

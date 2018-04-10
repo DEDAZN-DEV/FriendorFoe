@@ -2,7 +2,6 @@
 CENTER = 1500
 MAX_RIGHT = 1000
 MAX_LEFT = 2000
-
 MAX_DEGREE_TURN = 50
 
 NEUTRAL = 1500
@@ -24,9 +23,6 @@ STEERING = 5
 SERVER_BASE_ADDRESS = 'http://pages.erau.edu/~prydej/friendorfoe'
 SERVER_POST_ADDRESS = '/post_gps_data.py'
 SERVER_GET_ADDRESS = '/get_velocity_vector.py'
-
-# TODO: Update interval will need to be replaced/reworked
-UPDATE_INTERVAL = 0.5
 
 # AREA OF OPERATION DIMENSIONS
 ORIGIN_LATITUDE = 29.189537
