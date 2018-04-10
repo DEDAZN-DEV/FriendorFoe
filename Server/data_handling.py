@@ -149,7 +149,7 @@ class Plotting:
 
     def plot_car_path(self, cardata, debug, dronename, velocity_vector):
         if math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2) != 0:
-            pause_interval = cardata.DIST_TRAVELED / cardata.SPEED
+            pause_interval = cardata.INTERVAL_TIMER
         else:
             pause_interval = 1e-6  # <-- This is a starter to the program
         print("Pause Interval: " + str(pause_interval))
