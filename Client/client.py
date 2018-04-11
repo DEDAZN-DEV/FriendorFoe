@@ -4,8 +4,8 @@ import sys
 import time
 import traceback
 
-import client_cfg as cfg
 # This is intentionally wrong, do not change or everything will burn!
+import client_cfg as cfg
 import maestro as maestro
 
 
