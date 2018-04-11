@@ -10,12 +10,13 @@ import maestro as maestro
 
 
 class Client:
-    def __init__(self, debug):
+    def __init__(self, debug, servo_attached):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect_to_server()
         print("Connected on port ", cfg.HOST_PORTS, ". Ready to receive data.")
         self.servo = maestro.Device()
         self.debug = debug
+        self.servo_attached = servo_attached
 
     def connect_to_server(self):
         connected = False
@@ -190,7 +191,8 @@ class Client:
                 if cfg.MAX_RIGHT <= val <= cfg.MAX_LEFT:
                     print('[SERVO] Entering servo_ctl function with value of: ' +
                           str(val))
-                    maestro.servo_ctl(tgt, val, self.servo)
+                    if self.servo_attached:
+                        maestro.servo_ctl(tgt, val, self.servo)
                     self.server_tx('status:turn executed')
 
         print('[DEBUG] Exiting execute_data function')
@@ -198,8 +200,9 @@ class Client:
         return 0
 
     def center_steering_stop_car(self):
-        maestro.servo_ctl(cfg.ESC, cfg.NEUTRAL, self.servo)
-        maestro.servo_ctl(cfg.STEERING, 1000, self.servo)
+        if self.servo_attached:
+            maestro.servo_ctl(cfg.ESC, cfg.NEUTRAL, self.servo)
+            maestro.servo_ctl(cfg.STEERING, 1000, self.servo)
 
     def get_gps(self):
         """
@@ -223,5 +226,5 @@ class Client:
 
 
 if __name__ == "__main__":
-    client = Client(debug=True)
+    client = Client(debug=True, servo_attached=False)
     client.main()

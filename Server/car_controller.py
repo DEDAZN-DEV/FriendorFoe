@@ -94,9 +94,14 @@ class ServerClientProtocol(asyncio.Protocol):
 
             elif message[0] == 'gps':
                 if self.debug:
+                    pass
                     print("Received GPS message: ", message[1])
+
                 try:
                     gps_data = self.gps.parse_gps_msg(message[1])
+                    self.drone_instance.cardata.XPOS = gps_data[0]
+                    self.drone_instance.cardata.YPOS = gps_data[1]
+
                     self.drone_instance.message_passing.post_gps_data(gps_data, self.id)
                     if self.debug:
                         print('GPS Message: ', gps_data)
@@ -120,5 +125,5 @@ if __name__ == "__main__":
     car_controller = CarController()
     car_controller.start_cars(
         debug=False,
-        plot_points=False
+        plot_points=True
     )

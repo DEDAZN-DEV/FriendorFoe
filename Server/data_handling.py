@@ -23,8 +23,8 @@ class CarData:
     def __init__(self, debug, drone_id):
         self.LAT = 0.0
         self.LONG = 0.0
-        self.XPOS = 0.0
-        self.YPOS = 0.0
+        self.XPOS = 10.0
+        self.YPOS = 15.0
         self.TGTXPOS = 0.0
         self.TGTYPOS = 0.0
         self.HEADING = 0.0
@@ -163,12 +163,15 @@ class Plotting:
             self.ypos.pop(0)
         self.xpos.append(cardata.XPOS)
         self.ypos.append(cardata.YPOS)
+
+        print("xpos: ", self.xpos)
+        print("ypos: ", self.ypos)
+
         plt.clf()
         plt.title(dronename)
         if not self.debug:
             plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
         plt.plot(self.xpos, self.ypos, 'k-')
-        plt.plot(cardata.TGTXPOS, cardata.TGTYPOS, 'rx')
         plt.grid(True)
         if self.debug:
             print('Calculated Tgt Pos: ', cardata.TGTXPOS, cardata.TGTYPOS)
