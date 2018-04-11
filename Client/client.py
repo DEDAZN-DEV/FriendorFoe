@@ -1,11 +1,12 @@
+import re
 import socket
 import sys
 import time
 import traceback
 
+import client_cfg as cfg
 # This is intentionally wrong, do not change or everything will burn!
 import maestro as maestro
-import client_cfg as cfg
 
 
 class Client:
@@ -205,8 +206,14 @@ class Client:
         Polls the GPS chip from the RPi3 and sends it to the server
         :return: <Int> 0 on success
         """
-        message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893, \
-                  M,-25.669,M,2.0,0031*4F"
+        # message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893, \
+        #           M,-25.669,M,2.0,0031*4F"
+
+        file_buffer = open('/dev/ttyACM2', 'r')
+
+        search = re.match('^.GPGGA', file_buffer.readline())
+        message = search.group(0)
+
         print('[GPS] ' + message)
         self.server_tx('gps:' + message)
         print('[GPS] GPS SENT')
