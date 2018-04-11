@@ -1,4 +1,5 @@
 import math
+import random
 
 from Server import server_cfg as cfg
 
@@ -73,6 +74,11 @@ class GPSCalculations:
             print("Longitude: ", longitude)
 
         data = self.scale_xy(self.gps_to_xy(latitude, longitude))
+
+        xposition = random.randint(0, cfg.LENGTH_X)
+        yposition = random.randint(0, cfg.LENGTH_Y)
+
+        data = [xposition, yposition]
 
         return data
 
@@ -196,15 +202,3 @@ class GPSCalculations:
     @staticmethod
     def request_gps_fix(connection):
         connection.client_tx('gps')
-#       try:
-#           cardata.XPOS = self.parse_gps_msg(str(message))[0]
-#           cardata.YPOS = self.parse_gps_msg(str(message))[1]
-#       except ValueError:
-#           # if debug:
-#           #     print('Invalid GPS Message...Exiting')
-#           # socket_tx('disconnect', sock)
-#           # sock.close()
-#           # sys.exit()
-
-#           cardata.XPOS = 222
-#           cardata.YPOS = 222
