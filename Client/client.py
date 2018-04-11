@@ -202,7 +202,7 @@ class Client:
     def center_steering_stop_car(self):
         if self.servo_attached:
             maestro.servo_ctl(cfg.ESC, cfg.NEUTRAL, self.servo)
-            maestro.servo_ctl(cfg.STEERING, 1000, self.servo)
+            maestro.servo_ctl(cfg.STEERING, cfg.CENTER, self.servo)
 
     def get_gps(self):
         """
