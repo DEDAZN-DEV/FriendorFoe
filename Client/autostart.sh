@@ -22,7 +22,7 @@ git pull
 
 sudo pip3 install -r ./requirements.txt
 
-cd ./Client/
+cd ~/git/FriendorFoe/Client
 
 echo '*****************************************'
 echo '********** Autostarting Client **********'
