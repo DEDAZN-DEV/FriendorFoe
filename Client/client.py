@@ -217,7 +217,7 @@ class Client:
         search = re.match('.GPGGA\S*', file_buffer.readline())
 
         while not search:
-            search = re.match('^.GPGGA', file_buffer.readline())
+            search = re.match('.GPGGA\S*', file_buffer.readline())
 
         message = search.group(0)
 
