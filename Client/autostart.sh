@@ -9,7 +9,7 @@ echo Checking for python3.6: $PKG_OK
 if [ "" == "$PKG_OK" ]; then
   echo "Missing python3.6. Setting up python3.6."
   sudo apt-get update
-  sudo apt-get --yes install python3.6 python3-pip
+  sudo apt-get --yes install python3.5 python3-pip
 fi
 
 echo '*****************************************'
@@ -28,4 +28,4 @@ echo '*****************************************'
 echo '********** Autostarting Client **********'
 echo '*****************************************'
 
-python3.6 client.py
+python3.5 client.py
