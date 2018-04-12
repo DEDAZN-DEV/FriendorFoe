@@ -5,7 +5,7 @@ echo '*********** Python Ver. Check ***********'
 echo '*****************************************'
 
 PKG_OK=$(dpkg-query -W --showformat='${Status}\n' python3.6|grep "install ok installed")
-echo Checking for python3.6: $PKG_OK
+echo Checking for python3.5: $PKG_OK
 if [ "" == "$PKG_OK" ]; then
   echo "Missing python3.5. Setting up python3.5 and pip."
   sudo apt-get update
