@@ -5,8 +5,8 @@ import time
 import traceback
 
 # This is intentionally wrong, do not change or everything will burn!
-import client_cfg as cfg
-import maestro as maestro
+import Client.client_cfg as cfg
+import Client.maestro as maestro
 
 
 class Client:
@@ -124,8 +124,7 @@ class Client:
     def server_tx(self, data):
         self.sock.sendall(bytearray(data + '\\', 'utf-8'))
 
-    @staticmethod
-    def servo_ctl(servo_num, val):
+    def servo_ctl(self, servo_num, val):
         """
         Function to send signal to Maestro servo Device for execution
 
@@ -133,12 +132,11 @@ class Client:
         :param val: <Int> qms pulse value for the servo to execute
         :return: <Int> 0 on success
         """
-        servo = maestro.Device()
 
-        servo.set_acceleration(cfg.STEERING, 50)
-        servo.set_acceleration(cfg.ESC, 100)
+        self.servo.set_acceleration(cfg.STEERING, 50)
+        self.servo.set_acceleration(cfg.ESC, 100)
 
-        servo.set_target(servo_num, val)
+        self.servo.set_target(servo_num, val)
         print('[DEBUG] Exiting servo_ctl function')
 
         return 0
@@ -192,7 +190,7 @@ class Client:
                     print('[SERVO] Entering servo_ctl function with value of: ' +
                           str(val))
                     if self.servo_attached:
-                        maestro.servo_ctl(tgt, val, self.servo)
+                        self.servo_ctl(tgt, val)
                     self.server_tx('status:turn executed')
 
         print('[DEBUG] Exiting execute_data function')
@@ -201,8 +199,8 @@ class Client:
 
     def center_steering_stop_car(self):
         if self.servo_attached:
-            maestro.servo_ctl(cfg.ESC, cfg.NEUTRAL, self.servo)
-            maestro.servo_ctl(cfg.STEERING, cfg.CENTER, self.servo)
+            self.servo_ctl(cfg.ESC, cfg.NEUTRAL)
+            self.servo_ctl(cfg.STEERING, cfg.CENTER)
 
     def get_gps(self):
         """
