@@ -8,6 +8,7 @@ PKG_OK=$(dpkg-query -W --showformat='${Status}\n' python3.6|grep "install ok ins
 echo Checking for python3.6: $PKG_OK
 if [ "" == "$PKG_OK" ]; then
   echo "Missing python3.6. Setting up python3.6."
+  sudo apt-get update
   sudo apt-get --yes install python3.6 python3-pip
 fi
 
