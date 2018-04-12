@@ -5,8 +5,8 @@ import time
 import traceback
 
 # This is intentionally wrong, do not change or everything will burn!
-import Client.client_cfg as cfg
-import Client.maestro as maestro
+import client_cfg as cfg
+import maestro as maestro
 
 
 class Client:
