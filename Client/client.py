@@ -23,7 +23,7 @@ class Client:
         port_number = 0
         while not connected:
             try:
-                self.sock.connect((cfg.HOST_IP, cfg.HOST_PORTS[0]))
+                self.sock.connect((cfg.HOST_IP_FOF, cfg.HOST_PORTS[0]))
                 connected = True
             except socket.error:
                 port_number += 1
