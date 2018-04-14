@@ -8,9 +8,9 @@ import requests
 from timeit import default_timer as timer
 import matplotlib.pyplot as plt
 
-import Server.gps_ops as gps
-from Server import server_cfg as cfg
-from Server.stepped_turning import Turning
+import gps_ops as gps
+import server_cfg as cfg
+from stepped_turning import Turning
 
 BUFFERSIZE = 50
 
@@ -41,21 +41,23 @@ class CarData:
 
 
 class Drone:
-    def __init__(self, debug, drone_number, transport):
+    def __init__(self, plot_points, debug, drone_number, transport):
         if debug:
             print("\n******BEGINNING INITIALIZATION******")
         self.debug = debug
+        self.plot_points = plot_points
         self.drone_id = drone_number
         self.connection = CarConnection(debug, transport)
         self.turning = Turning(debug)
         self.message_passing = ServerMessagePassing(debug)
-        self.plotting = Plotting(debug)
+        if self.plot_points:
+            self.plotting = Plotting(debug)
         self.gps_calculations = gps.GPSCalculations(debug)
         self.cardata = CarData(debug, self.drone_id)
         if debug:
             print("******FINISHED INITIALIZATION******")
 
-    def drone(self, plot_points):
+    def drone(self):
         """
         Default drone control algorithm. Uses input from ATE-3 Sim to control
         drones.
@@ -72,7 +74,7 @@ class Drone:
             self.gps_calculations.request_gps_fix(self.connection)
             # self.message_passing.post_gps_data(self.cardata)
             velocity_vector = self.execute_turn()
-            if plot_points:
+            if self.plot_points:
                 self.plotting.plot_car_path(self.cardata, self.drone_id, velocity_vector)
 
             stop_time = timer()

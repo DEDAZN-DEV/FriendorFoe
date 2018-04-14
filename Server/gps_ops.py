@@ -1,7 +1,7 @@
 import math
 import random
 
-from Server import server_cfg as cfg
+import server_cfg as cfg
 
 BASE_X = 0
 BASE_Y = 0

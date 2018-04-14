@@ -11,7 +11,7 @@ import math
 import pprint
 import sys
 
-from Server import server_cfg as cfg
+import server_cfg as cfg
 
 
 class Turning:

@@ -2,6 +2,7 @@ import socket
 import sys
 import time
 import traceback
+import os
 
 # This is intentionally wrong, do not change or everything will burn!
 import maestro as maestro
