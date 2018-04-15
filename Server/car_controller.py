@@ -34,26 +34,21 @@ class CarController:
         servers = []
 
         for i in range(cfg.NUM_DRONES):
-            # server_coroutine = event_loop.create_server(
-            #     lambda: ServerClientProtocol(debug, plot_points),
-            #     '',
-            #     7878
-            # )
-
             coroutine = event_loop.create_server(
                 lambda: ServerClientProtocol(debug, plot_points, gps_connected),
-                '',
+                '192.168.0.105',
                 8000 + i
             )
             server = event_loop.run_until_complete(coroutine)
-            servers.append(server)
             print("Serving on : ", server.sockets[0].getsockname())
+            servers.append(server)
+
         try:
             event_loop.run_forever()
         except KeyboardInterrupt:
             pass
 
-        for i, server in enumerate(servers):
+        for j, server in enumerate(servers):
             server.close()
             event_loop.run_until_complete(server.wait_closed())
 
