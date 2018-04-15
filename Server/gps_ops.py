@@ -11,7 +11,8 @@ Y_RATIO = 1
 
 class GPSCalculations:
 
-    def __init__(self, debug):
+    def __init__(self, debug, gps_connected):
+        self.gps_connected = gps_connected
         self.debug = debug
         if debug:
             print('******INITIALIZED GPS******')
@@ -23,62 +24,64 @@ class GPSCalculations:
         :param message: <String> the GGA message that is to be parsed, a string
         :return: <Array> a two element array that contains the lat and long
         """
-        separator = []
+        if self.gps_connected:
+            separator = []
 
-        for char in range(0, len(message)):
-            if message[char] == ',':
-                separator.append(char)
+            for char in range(0, len(message)):
+                if message[char] == ',':
+                    separator.append(char)
 
-        if self.debug:
-            print("Separator: ", separator)
+            if self.debug:
+                print("Separator: ", separator)
 
-        dlat = ''
-        mlat = ''
-        dlong = ''
-        mlong = ''
+            dlat = ''
+            mlat = ''
+            dlong = ''
+            mlong = ''
 
-        # bytes 17 - 26
-        if self.debug:
-            print("GPS Message: ", message)
-        for i in range(separator[1] + 1, separator[1] + 3):
-            dlat = dlat + message[i]
-        for j in range(separator[1] + 3, separator[2]):
-            mlat = mlat + message[j]
+            # bytes 17 - 26
+            if self.debug:
+                print("GPS Message: ", message)
+            for i in range(separator[1] + 1, separator[1] + 3):
+                dlat = dlat + message[i]
+            for j in range(separator[1] + 3, separator[2]):
+                mlat = mlat + message[j]
 
-        dlat = int(dlat)
-        mlat = float(mlat)
-        mlat = mlat / 60
-        latitude = dlat + mlat
+            dlat = int(dlat)
+            mlat = float(mlat)
+            mlat = mlat / 60
+            latitude = dlat + mlat
 
-        if message[separator[2] + 1] == 'S':
-            latitude = -latitude
+            if message[separator[2] + 1] == 'S':
+                latitude = -latitude
 
-        if self.debug:
-            print("Latitude: ", latitude)
+            if self.debug:
+                print("Latitude: ", latitude)
 
-        # bytes 30 - 40
-        for k in range(separator[3] + 1, separator[3] + 4):
-            dlong = dlong + message[k]
-        for n in range(separator[3] + 4, separator[4]):
-            mlong = mlong + message[n]
+            # bytes 30 - 40
+            for k in range(separator[3] + 1, separator[3] + 4):
+                dlong = dlong + message[k]
+            for n in range(separator[3] + 4, separator[4]):
+                mlong = mlong + message[n]
 
-        dlong = int(dlong)
-        mlong = float(mlong)
-        mlong = mlong / 60
-        longitude = dlong + mlong
+            dlong = int(dlong)
+            mlong = float(mlong)
+            mlong = mlong / 60
+            longitude = dlong + mlong
 
-        if message[separator[4] + 1] == 'W':
-            longitude = -longitude
+            if message[separator[4] + 1] == 'W':
+                longitude = -longitude
 
-        if self.debug:
-            print("Longitude: ", longitude)
+            if self.debug:
+                print("Longitude: ", longitude)
 
-        data = self.scale_xy(self.gps_to_xy(latitude, longitude))
+            data = self.scale_xy(self.gps_to_xy(latitude, longitude))
 
-        xposition = random.randint(0, cfg.LENGTH_X)
-        yposition = random.randint(0, cfg.LENGTH_Y)
+        else:
+            xposition = random.randint(0, cfg.LENGTH_X)
+            yposition = random.randint(0, cfg.LENGTH_Y)
 
-        data = [xposition, yposition]
+            data = [xposition, yposition]
 
         return data
 

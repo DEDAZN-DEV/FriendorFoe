@@ -41,18 +41,19 @@ class CarData:
 
 
 class Drone:
-    def __init__(self, plot_points, debug, drone_number, transport):
+    def __init__(self, plot_points, debug, drone_number, transport, gps_connected):
         if debug:
             print("\n******BEGINNING INITIALIZATION******")
         self.debug = debug
         self.plot_points = plot_points
+        self.gps_connected = gps_connected
         self.drone_id = drone_number
         self.connection = CarConnection(debug, transport)
         self.turning = Turning(debug)
         self.message_passing = ServerMessagePassing(debug)
         if self.plot_points:
             self.plotting = Plotting(debug)
-        self.gps_calculations = gps.GPSCalculations(debug)
+        self.gps_calculations = gps.GPSCalculations(debug, self.gps_connected)
         self.cardata = CarData(debug, self.drone_id)
         if debug:
             print("******FINISHED INITIALIZATION******")

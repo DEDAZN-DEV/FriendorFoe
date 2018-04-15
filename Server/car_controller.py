@@ -5,33 +5,31 @@ Purpose: To provide functions with which to control data_handling.py
 
 import asyncio
 
-#import Server.server_cfg as cfg
-#from Server.data_handling import Drone
-#from Server.gps_ops import GPSCalculations as GPS
-
 import server_cfg as cfg
 from data_handling import Drone
 from gps_ops import GPSCalculations as GPS
 
+
 class CarController:
 
-    def start_cars(self, debug, plot_points):
+    def start_cars(self, debug, plot_points, gps_connected):
         """
         Initializes server with a given velocity vector
 
         :param debug: <Boolean> Debug mode (T/F)
         :param plot_points: whether or not to plot points as the drone moves
+        :param gps_connected: whether or not there is a gps connected
         :return: <Int> 0 on success
         """
         # drones = self.instantiate_drones(cfg.NUM_DRONES, debug)
 
         event_loop = asyncio.get_event_loop()
         # futures = [asyncio.ensure_future(drone.drone(debug, plot_points)) for drone in drones]
-        self.run_server(event_loop, debug, plot_points)
+        self.run_server(event_loop, debug, plot_points, gps_connected)
         event_loop.close()
 
     @staticmethod
-    def run_server(event_loop, debug, plot_points):
+    def run_server(event_loop, debug, plot_points, gps_connected):
 
         servers = []
 
@@ -43,7 +41,7 @@ class CarController:
             # )
 
             coroutine = event_loop.create_server(
-                lambda: ServerClientProtocol(debug, plot_points),
+                lambda: ServerClientProtocol(debug, plot_points, gps_connected),
                 '',
                 8000 + i
             )
@@ -61,11 +59,12 @@ class CarController:
 
 
 class ServerClientProtocol(asyncio.Protocol):
-    def __init__(self, debug, plot_points):
+    def __init__(self, debug, plot_points, gps_connected):
         self.transport = None
         self.drone_instance = None
         self.debug = debug
         self.plot_points = plot_points
+        self.gps_connected = gps_connected
         self.id = None
         self.gps = GPS(debug)
         if self.debug:
@@ -76,7 +75,7 @@ class ServerClientProtocol(asyncio.Protocol):
         print('Connection from: ', peername)
         self.id = peername[1]  # port
         self.transport = transport
-        self.drone_instance = Drone(self.plot_points, self.debug, self.id, self.transport)
+        self.drone_instance = Drone(self.plot_points, self.debug, self.id, self.transport, self.gps_connected)
 
     def data_received(self, data):
         data = str(data)
@@ -126,7 +125,4 @@ class ServerClientProtocol(asyncio.Protocol):
 
 if __name__ == "__main__":
     car_controller = CarController()
-    car_controller.start_cars(
-        debug=False,
-        plot_points=False
-    )
+    car_controller.start_cars(debug=False, plot_points=False, gps_connected=False)
