@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sleep 5
+
 echo '*****************************************'
 echo '*********** Python Ver. Check ***********'
 echo '*****************************************'
@@ -11,6 +13,8 @@ if [ "" == "$PKG_OK" ]; then
   sudo apt-get update
   sudo apt-get --yes install python3.5 python3-pip
 fi
+
+sleep 5
 
 echo '*****************************************'
 echo '************ Git Repo Update ************'
