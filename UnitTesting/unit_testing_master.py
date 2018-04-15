@@ -2,7 +2,7 @@ import unittest
 
 import Server.data_handling as server
 import Server.stepped_turning as turn
-import TestSoftware.joystick_input as joystick
+import WebServer.joystick_input as joystick
 import TestSoftware.mock_sim_inputs as mock
 from Client import client_cfg as cfg
 

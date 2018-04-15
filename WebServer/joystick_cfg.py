@@ -1,0 +1,2 @@
+MAXVELOCITY = 13.4  # m/s
+

@@ -1,9 +1,6 @@
 import math
-
 import pygame
-
-import Server.car_controller as controller
-from Client import client_cfg as cfg
+import joystick_cfg as cfg
 
 # Globals
 velocity_vector = [0, 0]
@@ -69,11 +66,12 @@ def init_joystick():
     pygame.joystick.init()
 
     # Get ready to print
-    textPrint = TextPrint()
+    text_print = TextPrint()
 
     try:
         # -------- Main Program Loop -----------
-        while ~done:
+        while not done:
+
             # EVENT PROCESSING STEP
             for event in pygame.event.get():  # User did something
                 if event.type == pygame.QUIT:  # If user clicked close
@@ -89,34 +87,34 @@ def init_joystick():
             # First, clear the screen to white. Don't put other drawing commands
             # above this, or they will be erased with this command.
             screen.fill(WHITE)
-            textPrint.reset()
+            text_print.reset()
 
             # Get count of joysticks
             joystick_count = pygame.joystick.get_count()
 
-            textPrint.print(screen, "Number of joysticks: {}".format(joystick_count))
+            text_print.print(screen, "Number of joysticks: {}".format(joystick_count))
 
             # For each joystick:
             for i in range(joystick_count):
                 joystick = pygame.joystick.Joystick(i)
                 joystick.init()
-                textPrint.indent()
-                textPrint.print(screen, "Joystick {}".format(i))
+                text_print.indent()
+                text_print.print(screen, "Joystick {}".format(i))
 
                 # Get the name from the OS for the controller/joystick
                 name = joystick.get_name()
-                textPrint.print(screen, "Joystick name: {}".format(name))
+                text_print.print(screen, "Joystick name: {}".format(name))
 
                 # Usually axis run in pairs, up/down for one, and left/right for
                 # the other.
                 axes = joystick.get_numaxes()
-                textPrint.print(screen, "Number of axes: {}".format(axes))
+                text_print.print(screen, "Number of axes: {}".format(axes))
 
-                textPrint.indent()
+                text_print.indent()
                 for j in range(axes):
                     axis = joystick.get_axis(j)
-                    textPrint.print(screen, "Axis {} value: {:>6.3f}".format(j, axis))
-                textPrint.unindent()
+                    text_print.print(screen, "Axis {} value: {:>6.3f}".format(j, axis))
+                text_print.unindent()
 
                 # Print the outputted velocity vector
                 y_axis = -joystick.get_axis(1)
@@ -124,31 +122,31 @@ def init_joystick():
 
                 deg_angle, velocity_vector = gen_velocity_vector(x_axis, y_axis)
 
-                textPrint.print(screen, "Joystick angle: {:>6.3f}".format(deg_angle))
+                text_print.print(screen, "Joystick angle: {:>6.3f}".format(deg_angle))
 
                 buttons = joystick.get_numbuttons()
-                textPrint.print(screen, "Number of buttons: {}".format(buttons))
+                text_print.print(screen, "Number of buttons: {}".format(buttons))
 
-                textPrint.indent()
+                text_print.indent()
                 for k in range(buttons):
                     button = joystick.get_button(k)
-                    textPrint.print(screen, "Button {:>2} value: {}".format(k, button))
-                textPrint.unindent()
+                    text_print.print(screen, "Button {:>2} value: {}".format(k, button))
+                text_print.unindent()
 
                 # Hat switch. All or nothing for direction, not like joysticks.
                 # Value comes back in an array.
                 hats = joystick.get_numhats()
-                textPrint.print(screen, "Number of hats: {}".format(hats))
+                text_print.print(screen, "Number of hats: {}".format(hats))
 
-                textPrint.indent()
+                text_print.indent()
                 for n in range(hats):
                     hat = joystick.get_hat(n)
-                    textPrint.print(screen, "Hat {} value: {}".format(n, str(hat)))
-                textPrint.unindent()
+                    text_print.print(screen, "Hat {} value: {}".format(n, str(hat)))
+                text_print.unindent()
 
             if joystick_count == 0:
-                textPrint.indent()
-                textPrint.print(screen, "Arrow Key Input")
+                text_print.indent()
+                text_print.print(screen, "Arrow Key Input")
 
                 # Arrow Key Input
                 x_axis = 0
@@ -172,11 +170,11 @@ def init_joystick():
                     # velocity_vector[1] = -cfg.MAXVELOCITY
                     y_axis = -1
 
-                if keys[pygame.K_UP] == False and keys[pygame.K_DOWN] == False:
+                if keys[pygame.K_UP] is False and keys[pygame.K_DOWN] is False:
                     # velocity_vector[1] = 0
                     y_axis = 0
 
-                if keys[pygame.K_LEFT] == False and keys[pygame.K_RIGHT] == False:
+                if keys[pygame.K_LEFT] is False and keys[pygame.K_RIGHT] is False:
                     # velocity_vector[0] = 0
                     x_axis = 0
 
@@ -199,27 +197,14 @@ def init_joystick():
                 angle, velocity_vector = gen_velocity_vector(x_axis, y_axis)
                 velocity_vector = [speed_factor * n for n in velocity_vector]
 
-                textPrint.indent()
-                textPrint.print(screen, "X-Axis: {:>d}".format(x_axis))
-                textPrint.print(screen, "Y-Axis: {:>d}".format(y_axis))
-                textPrint.print(screen, "Speed factor: {:>6.3f}x".format(speed_factor))
+                text_print.indent()
+                text_print.print(screen, "X-Axis: {:>d}".format(x_axis))
+                text_print.print(screen, "Y-Axis: {:>d}".format(y_axis))
+                text_print.print(screen, "Speed factor: {:>6.3f}x".format(speed_factor))
 
             # Velocity vector input to simulation
-            controller.set_velocity_vectors(velocity_vector)
-
-            # Display coordinates on screen
-            [x, y] = controller.get_gps_data()
-            if joystick_count == 0:
-                textPrint.unindent()
-            else:
-                textPrint.indent()
-
-            textPrint.print(screen, "")
-            textPrint.print(screen, "*** OUTPUT ***")
-            textPrint.print(screen, "Velocity vector: {:>6.3f} {:>6.3f}".
-                            format(velocity_vector[0], velocity_vector[1]))
-
-            textPrint.print(screen, "X: {:>6.3f} Y: {:>6.3f}".format(x, y))
+            with open("/var/www/cgi-bin/velocity_vectors", "w") as velocity_vector_file:
+                velocity_vector_file.write(str(velocity_vector))
 
             # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
 
@@ -273,7 +258,6 @@ def gen_velocity_vector(x_input, y_input):
 
 
 def start():
-    controller.start_server(velocity_vector, True)
     init_joystick()
 
 

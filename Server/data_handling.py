@@ -61,7 +61,6 @@ class Drone:
         """
         Default drone control algorithm. Uses input from ATE-3 Sim to control
         drones.
-        :param plot_points: whether or not to open the plot
         :return: Nothing
         """
         try:
@@ -133,8 +132,8 @@ class ServerMessagePassing:
             print("New velocity vector: ", response.text)
         velocity_info = response.text
 
-        if self.debug:
-            print("New Velocity Info: " + velocity_info)
+        # if self.debug:
+        print("New Velocity Info: " + velocity_info)
         velocity_info = json.loads(velocity_info)
         if self.debug:
             print("Decoded Velocity Info: " + str(velocity_info))

@@ -3,7 +3,6 @@ import socket
 import sys
 import time
 import traceback
-import os
 
 # This is intentionally wrong, do not change or everything will burn!
 import client_cfg as cfg
@@ -11,7 +10,8 @@ import maestro as maestro
 
 
 class Client:
-    def __init__(self, debug, servo_attached):
+    def __init__(self, debug, servo_attached, gps_attached):
+        self.gps_attached = gps_attached
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect_to_server()
         print("Connected on port ", cfg.HOST_PORTS, ". Ready to receive data.")
@@ -24,7 +24,7 @@ class Client:
         port_number = 0
         while not connected:
             try:
-                self.sock.connect((cfg.HOST_IP_FOF, cfg.HOST_PORTS[0]))
+                self.sock.connect((cfg.HOST_IP, cfg.HOST_PORTS[0]))
                 connected = True
             except socket.error:
                 port_number += 1
@@ -208,17 +208,19 @@ class Client:
         Polls the GPS chip from the RPi3 and sends it to the server
         :return: <Int> 0 on success
         """
-        # message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893, \
-        #           M,-25.669,M,2.0,0031*4F"
 
-        file_buffer = open('/dev/ttyACM2', 'r')
+        if self.gps_attached:
+            file_buffer = open('/dev/ttyACM2', 'r')
 
-        search = re.match('.GPGGA\S*', file_buffer.readline())
-
-        while not search:
             search = re.match('.GPGGA\S*', file_buffer.readline())
 
-        message = search.group(0)
+            while not search:
+                search = re.match('.GPGGA\S*', file_buffer.readline())
+
+            message = search.group(0)
+        else:
+            message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893, \
+                       M,-25.669,M,2.0,0031*4F"
 
         print('[GPS] ' + message)
         self.server_tx('gps:' + message)
@@ -229,5 +231,5 @@ class Client:
 
 
 if __name__ == "__main__":
-    client = Client(debug=True, servo_attached=False)
+    client = Client(debug=True, servo_attached=False, gps_attached=False)
     client.main()
