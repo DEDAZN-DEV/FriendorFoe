@@ -16,16 +16,16 @@ echo '*****************************************'
 echo '************ Git Repo Update ************'
 echo '*****************************************'
 
-cd ~/git/FriendorFoe
+cd /home/pi/git/FriendorFoe
 
 git pull
 
 sudo pip3 install -r ./requirements.txt
 
-cd ~/git/FriendorFoe/Client
+cd /home/pi/git/FriendorFoe/Client
 
 echo '*****************************************'
 echo '********** Autostarting Client **********'
 echo '*****************************************'
 
-python3.5 client.py
+python3.5 client.py &
