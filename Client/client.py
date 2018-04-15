@@ -3,6 +3,7 @@ import socket
 import sys
 import time
 import traceback
+import os
 
 # This is intentionally wrong, do not change or everything will burn!
 import client_cfg as cfg
@@ -171,9 +172,8 @@ class Client:
             self.center_steering_stop_car()
             print('[NETWORK] Disconnect')
             self.server_tx('status:disconnecting')
-            time.sleep(10)
-            self.sock.close()
-            return 404
+            time.sleep(5)
+            sys.exit()
         else:
 
             tgt = int(data[0])
@@ -210,14 +210,23 @@ class Client:
         """
 
         if self.gps_attached:
-            file_buffer = open('/dev/ttyACM2', 'r')
+            #print('********************')
+            #file_buffer = open('/dev/ttyACM2', 'r')
 
-            search = re.match('.GPGGA\S*', file_buffer.readline())
+            #search = re.match('.GPGGA.\S*', file_buffer.readline())
 
-            while not search:
-                search = re.match('.GPGGA\S*', file_buffer.readline())
+            #while not search:
+            #    search = re.match('.GPGGA.\S*', file_buffer.readline())
+            #    print('test')
 
-            message = search.group(0)
+            #message = search.group(0)
+
+            os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
+            myfile = open('gps.txt', 'r')
+            message = myfile.read()
+            myfile.close()
+            message = message[:-1]
+
         else:
             message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893, \
                        M,-25.669,M,2.0,0031*4F"
@@ -231,5 +240,5 @@ class Client:
 
 
 if __name__ == "__main__":
-    client = Client(debug=True, servo_attached=False, gps_attached=False)
+    client = Client(debug=True, servo_attached=True, gps_attached=True)
     client.main()
