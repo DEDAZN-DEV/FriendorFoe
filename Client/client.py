@@ -12,12 +12,13 @@ import maestro as maestro
 class Client:
     def __init__(self, debug, servo_attached, gps_attached):
         self.gps_attached = gps_attached
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connect_to_server()
-        print("Connected on port ", cfg.HOST_PORTS, ". Ready to receive data.")
-        self.servo = maestro.Device()
-        self.debug = debug
         self.servo_attached = servo_attached
+        self.debug = debug
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        host_port = self.connect_to_server()
+        print("Connected on port ", host_port, ". Ready to receive data.")
+        if self.servo_attached:
+            self.servo = maestro.Device()
 
     def connect_to_server(self):
         connected = False
@@ -231,5 +232,5 @@ class Client:
 
 
 if __name__ == "__main__":
-    client = Client(debug=True, servo_attached=False, gps_attached=False)
+    client = Client(debug=True, servo_attached=True, gps_attached=True)
     client.main()
