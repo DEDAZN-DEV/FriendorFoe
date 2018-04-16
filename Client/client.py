@@ -3,6 +3,7 @@ import socket
 import sys
 import time
 import traceback
+import os
 
 # This is intentionally wrong, do not change or everything will burn!
 import client_cfg as cfg
@@ -12,20 +13,20 @@ import maestro as maestro
 class Client:
     def __init__(self, debug, servo_attached, gps_attached):
         self.gps_attached = gps_attached
-        self.servo_attached = servo_attached
-        self.debug = debug
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        host_port = self.connect_to_server()
-        print("Connected on port ", host_port, ". Ready to receive data.")
-        if self.servo_attached:
-            self.servo = maestro.Device()
+        self.sock.settimeout(0.1)
+        self.connect_to_server()
+        print("Connected on port ", cfg.HOST_PORTS, ". Ready to receive data.")
+        self.servo = maestro.Device()
+        self.debug = debug
+        self.servo_attached = servo_attached
 
     def connect_to_server(self):
         connected = False
         port_number = 0
         while not connected:
             try:
-                self.sock.connect((cfg.HOST_IP, cfg.HOST_PORTS[0]))
+                self.sock.connect((cfg.HOST_IP_FOF, cfg.HOST_PORTS[port_number]))
                 connected = True
             except socket.error:
                 port_number += 1
@@ -37,18 +38,21 @@ class Client:
     def main(self):
         """
         Main executing function for client
-
         :return: <Exception> Will raise exception upon crash or disconnect:
             socket.error, TypeError, KeyboardInterrupt
         """
-
-        while True:
+        #init gps transmit to server
+        self.get_gps()
+        while(True):
             try:
                 data = self.request_velocity_vector()
+                print(data)
                 if data:
                     data_array = self.separate_data(data)
                     self.execute_each_message(data_array)
-
+                    self.get_gps()
+                else:
+                    print('No data in socket')
             except TypeError:
                 print(traceback.print_exc())
                 self.sock.close()
@@ -83,16 +87,15 @@ class Client:
         return data_array
 
     def request_velocity_vector(self):
-        print("Sending: request:velocity")
-        self.server_tx('request:velocity')
-        data = self.sock.recv(64).decode('utf8')
-        return data
+        try:
+            data = self.sock.recv(64).decode('utf8')
+        except socket.timeout:
+            print('*')
 
     @staticmethod
     def test_device():
         """
         Initial arming and testing of Maestro servo Device.
-
         :return: <Int> 0 on success
         """
         servo = maestro.Device()
@@ -129,7 +132,6 @@ class Client:
     def servo_ctl(self, servo_num, val):
         """
         Function to send signal to Maestro servo Device for execution
-
         :param servo_num: <Int> 3 for speed, 5 for steering
         :param val: <Int> qms pulse value for the servo to execute
         :return: <Int> 0 on success
@@ -146,7 +148,6 @@ class Client:
     def execute_data(self, data):
         """
         Function to handle data processing and socket network disconnect
-
         :param data: <String> data to be processed
         :return:    <Int> 404 if servo disconnects
                     <Int> 0 on success
@@ -166,17 +167,13 @@ class Client:
             self.center_steering_stop_car()
             print('[DEBUG] ***** Stopping')
             self.server_tx('status:stopped')
-        elif data == 'gps':
-            self.get_gps()
         elif data == 'disconnect':
             self.center_steering_stop_car()
             print('[NETWORK] Disconnect')
             self.server_tx('status:disconnecting')
-            time.sleep(10)
-            self.sock.close()
-            return 404
+            time.sleep(5)
+            sys.exit()
         else:
-
             tgt = int(data[0])
             val = int(data[1:len(data)])
 
@@ -185,7 +182,7 @@ class Client:
             print("target: " + str(tgt) + "\nvalue: " + str(val))
 
             # Guard statement to protect servossy
-            if tgt == cfg.ESC and val > cfg.MAX_TEST_SPEED:
+            if tgt == cfg.ESC and val > cfg.MAX_SPEED:
                 print('[WARN] Speed would exceed testing limits!')
             else:
                 if cfg.MAX_RIGHT <= val <= cfg.MAX_LEFT:
@@ -211,14 +208,23 @@ class Client:
         """
 
         if self.gps_attached:
-            file_buffer = open('/dev/ttyACM2', 'r')
+            #print('********************')
+            #file_buffer = open('/dev/ttyACM2', 'r')
 
-            search = re.match('.GPGGA\S*', file_buffer.readline())
+            #search = re.match('.GPGGA.\S*', file_buffer.readline())
 
-            while not search:
-                search = re.match('.GPGGA\S*', file_buffer.readline())
+            #while not search:
+            #    search = re.match('.GPGGA.\S*', file_buffer.readline())
+            #    print('test')
 
-            message = search.group(0)
+            #message = search.group(0)
+
+            os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
+            myfile = open('gps.txt', 'r')
+            message = myfile.read()
+            myfile.close()
+            message = message[:-1]
+
         else:
             message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893, \
                        M,-25.669,M,2.0,0031*4F"
@@ -228,7 +234,7 @@ class Client:
         print('[GPS] GPS SENT')
         print('[DEBUG] Exiting get_gps function')
 
-        return 0
+        return message
 
 
 if __name__ == "__main__":
