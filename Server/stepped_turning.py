@@ -280,7 +280,7 @@ class Turning:
                 speed_signal = cfg.MAX_SPEED
 
         if self.debug:
-            print("Turn Signal: " + str(speed_signal))
+            print("Speed Signal: " + str(speed_signal))
         return speed_signal
 
 

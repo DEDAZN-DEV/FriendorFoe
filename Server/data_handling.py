@@ -70,7 +70,7 @@ class Drone:
 
             start_time = timer()
 
-            self.gps_calculations.request_gps_fix(self.connection)
+            # self.gps_calculations.request_gps_fix(self.connection)
             # self.message_passing.post_gps_data(self.cardata)
             velocity_vector = self.execute_turn()
             if self.plot_points:
@@ -200,7 +200,7 @@ class CarConnection:
     def send_turn_to_car(self, speed_signal, turn_signal):
         if self.debug:
             print("ABOUT TO SEND TURN SIGNAL: " + str(cfg.STEERING) + str(turn_signal))
-            print("AND STEERING SIGNAL: " + str(cfg.ESC) + str(speed_signal))
+            print("AND SPEED SIGNAL: " + str(cfg.ESC) + str(speed_signal))
         self.client_tx(str(cfg.STEERING) + str(turn_signal))
         self.client_tx(str(cfg.ESC) + str(speed_signal))
 

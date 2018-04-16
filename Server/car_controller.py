@@ -5,13 +5,10 @@ Purpose: To provide functions with which to control data_handling.py
 
 import asyncio
 
-#import Server.server_cfg as cfg
-#from Server.data_handling import Drone
-#from Server.gps_ops import GPSCalculations as GPS
-
 import server_cfg as cfg
 from data_handling import Drone
 from gps_ops import GPSCalculations as GPS
+
 
 class CarController:
 
@@ -108,6 +105,9 @@ class ServerClientProtocol(asyncio.Protocol):
                     self.drone_instance.message_passing.post_gps_data(gps_data, self.id)
                     if self.debug:
                         print('GPS Message: ', gps_data)
+
+                    self.drone_instance.drone()
+
                 except ValueError:
                     if self.debug:
                         print('Invalid GPS Message...Exiting')
@@ -115,8 +115,8 @@ class ServerClientProtocol(asyncio.Protocol):
                     self.drone_instance.cardata.XPOS = 222
                     self.drone_instance.cardata.YPOS = 222
 
-            elif message[0] == 'request':
-                self.drone_instance.drone()
+#           elif message[0] == 'request':
+#               self.drone_instance.drone()
 
     @staticmethod
     def remove_bytes_array_denotors(data):
@@ -127,6 +127,6 @@ class ServerClientProtocol(asyncio.Protocol):
 if __name__ == "__main__":
     car_controller = CarController()
     car_controller.start_cars(
-        debug=False,
+        debug=True,
         plot_points=False
     )
