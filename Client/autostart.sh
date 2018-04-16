@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sleep 30
+sleep 5
 
 echo '*****************************************'
 echo '*********** Python Ver. Check ***********'
@@ -22,7 +22,7 @@ echo '*****************************************'
 
 cd /home/pi/git/FriendorFoe
 
-git pull
+#git pull
 
 sudo pip3 install -r ./requirements.txt
 
