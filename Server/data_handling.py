@@ -194,6 +194,7 @@ class CarConnection:
             print("ABOUT TO SEND: ", data)
         try:
             self.transport.write(bytearray(data + "\\", 'utf-8'))
+            print("SENT: ", data)
         except self.transport.socket.error:
             traceback.print_exc()
 

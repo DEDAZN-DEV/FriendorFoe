@@ -238,5 +238,5 @@ class Client:
 
 
 if __name__ == "__main__":
-    client = Client(debug=True, servo_attached=True, gps_attached=True)
+    client = Client(debug=True, servo_attached=False, gps_attached=False)
     client.main()

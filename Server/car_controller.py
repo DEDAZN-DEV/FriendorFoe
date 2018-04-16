@@ -78,42 +78,51 @@ class ServerClientProtocol(asyncio.Protocol):
     def data_received(self, data):
         data = str(data)
         data = self.remove_bytes_array_denotors(data)
-        data_array = data.split('\\')
+        data_array = data.split('\\\\')
         if self.debug:
             print("Received Data: ", data)
+            print("Data Array: ", data_array)
+            print("Array Size: ", len(data_array))
 
-        for message in data_array:
-            message = message.split(':')
+        data = data_array[len(data_array) - 2]
+
+        if self.debug:
+            print("\nNew Data")
+            print("Received Data: ", data)
+
+        data = data.split(':')
+
+        if self.debug:
+            print("Message: ", data)
+            print("Data identifier: ", data[0])
+            print("Data value: ", data[1])
+
+        if data[0] == 'status':
+            print('Vehicle status: ', data[1])
+
+        elif data[0] == 'gps':
             if self.debug:
-                print("Message: ", message)
-            #           print("Data identifier: ", message[0])
-            #           print("Data value: ", message[1])
+                pass
+                print("Received GPS data: ", data[1])
 
-            if message[0] == 'status':
-                print('Vehicle status: ', message[1])
+            try:
+                gps_data = self.gps.parse_gps_msg(data[1])
+                self.drone_instance.cardata.XPOS = gps_data[0]
+                self.drone_instance.cardata.YPOS = gps_data[1]
 
-            elif message[0] == 'gps':
+                self.drone_instance.message_passing.post_gps_data(gps_data, self.id)
                 if self.debug:
-                    pass
-                    print("Received GPS message: ", message[1])
+                    print('GPS Message: ', gps_data)
 
-                try:
-                    gps_data = self.gps.parse_gps_msg(message[1])
-                    self.drone_instance.cardata.XPOS = gps_data[0]
-                    self.drone_instance.cardata.YPOS = gps_data[1]
+                self.drone_instance.drone()
 
-                    self.drone_instance.message_passing.post_gps_data(gps_data, self.id)
-                    if self.debug:
-                        print('GPS Message: ', gps_data)
+            except ValueError:
+                if self.debug:
+                    print('Invalid GPS Message...Exiting')
+                self.drone_instance.connection.client_tx('disconnect')
+                self.drone_instance.cardata.XPOS = 222
+                self.drone_instance.cardata.YPOS = 222
 
-                    self.drone_instance.drone()
-
-                except ValueError:
-                    if self.debug:
-                        print('Invalid GPS Message...Exiting')
-                    self.drone_instance.connection.client_tx('disconnect')
-                    self.drone_instance.cardata.XPOS = 222
-                    self.drone_instance.cardata.YPOS = 222
 
 #           elif message[0] == 'request':
 #               self.drone_instance.drone()
