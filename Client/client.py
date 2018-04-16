@@ -14,6 +14,7 @@ class Client:
     def __init__(self, debug, servo_attached, gps_attached):
         self.gps_attached = gps_attached
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(0.1)
         self.connect_to_server()
         print("Connected on port ", cfg.HOST_PORTS, ". Ready to receive data.")
         self.servo = maestro.Device()
@@ -41,14 +42,18 @@ class Client:
         :return: <Exception> Will raise exception upon crash or disconnect:
             socket.error, TypeError, KeyboardInterrupt
         """
-
-        while True:
+        #init gps transmit to server
+        self.get_gps()
+        while(True):
             try:
                 data = self.request_velocity_vector()
+                print(data)
                 if data:
                     data_array = self.separate_data(data)
                     self.execute_each_message(data_array)
-
+                    self.get_gps()
+                else:
+                    print('No data in socket')
             except TypeError:
                 print(traceback.print_exc())
                 self.sock.close()
@@ -83,10 +88,10 @@ class Client:
         return data_array
 
     def request_velocity_vector(self):
-        print("Sending: request:velocity")
-        self.server_tx('request:velocity')
-        data = self.sock.recv(64).decode('utf8')
-        return data
+        try:
+            data = self.sock.recv(64).decode('utf8')
+        except socket.timeout:
+            print('*')
 
     @staticmethod
     def test_device():
@@ -166,8 +171,6 @@ class Client:
             self.center_steering_stop_car()
             print('[DEBUG] ***** Stopping')
             self.server_tx('status:stopped')
-        elif data == 'gps':
-            self.get_gps()
         elif data == 'disconnect':
             self.center_steering_stop_car()
             print('[NETWORK] Disconnect')
@@ -175,7 +178,6 @@ class Client:
             time.sleep(5)
             sys.exit()
         else:
-
             tgt = int(data[0])
             val = int(data[1:len(data)])
 
@@ -184,7 +186,7 @@ class Client:
             print("target: " + str(tgt) + "\nvalue: " + str(val))
 
             # Guard statement to protect servossy
-            if tgt == cfg.ESC and val > cfg.MAX_TEST_SPEED:
+            if tgt == cfg.ESC and val > cfg.MAX_SPEED:
                 print('[WARN] Speed would exceed testing limits!')
             else:
                 if cfg.MAX_RIGHT <= val <= cfg.MAX_LEFT:
@@ -236,7 +238,7 @@ class Client:
         print('[GPS] GPS SENT')
         print('[DEBUG] Exiting get_gps function')
 
-        return 0
+        return message
 
 
 if __name__ == "__main__":
