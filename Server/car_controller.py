@@ -76,15 +76,20 @@ class ServerClientProtocol(asyncio.Protocol):
         self.drone_instance = Drone(self.plot_points, self.debug, self.id, self.transport)
 
     def data_received(self, data):
-        data = str(data)
-        data = self.remove_bytes_array_denotors(data)
-        data_array = data.split('\\\\')
+        data = data.decode()
+        # data = str(data)
+        # data = self.remove_bytes_array_denotors(data)
+        data_array = data.split('\\')
+
+        with open('/dev/null', 'w') as null:
+            print("Received Data: ", data, flush=True, file=null)
+
         if self.debug:
-            print("Received Data: ", data)
+            # print("Received Data: ")
             print("Data Array: ", data_array)
             print("Array Size: ", len(data_array))
 
-        data = data_array[len(data_array) - 2]
+        # data = data_array[len(data_array) - 2]
 
         if self.debug:
             print("\nNew Data")

@@ -13,5 +13,6 @@ pyparsing==2.2.0
 pyserial==3.4
 python-dateutil==2.7.2
 pytz==2018.3
+requests==2.9.1
 six==1.11.0
 yarl==1.1.1
