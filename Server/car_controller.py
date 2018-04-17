@@ -75,14 +75,14 @@ class ServerClientProtocol(asyncio.Protocol):
         self.transport = transport
         self.drone_instance = Drone(self.plot_points, self.debug, self.id, self.transport)
 
-    def data_received(self, data):
-        data = data.decode()
+    def data_received(self, data_stream):
+        data = data_stream.decode()
         # data = str(data)
         # data = self.remove_bytes_array_denotors(data)
         data_array = data.split('\\')
 
         with open('/dev/null', 'w') as null:
-            print("Received Data: ", data, flush=True, file=null)
+            print("Received Data: ", data_stream, flush=True, file=null)
 
         if self.debug:
             # print("Received Data: ")
@@ -112,6 +112,8 @@ class ServerClientProtocol(asyncio.Protocol):
 
             try:
                 gps_data = self.gps.parse_gps_msg(data[1])
+                self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS
+                self.drone_instance.cardata.YPOS_PREV = self.drone_instance.cardata.YPOS
                 self.drone_instance.cardata.XPOS = gps_data[0]
                 self.drone_instance.cardata.YPOS = gps_data[1]
 
@@ -120,6 +122,11 @@ class ServerClientProtocol(asyncio.Protocol):
                     print('GPS Message: ', gps_data)
 
                 self.drone_instance.drone()
+
+                self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS
+                self.drone_instance.cardata.YPOS_PREV = self.drone_instance.cardata.YPOS
+                self.drone_instance.cardata.XPOS = gps_data[0]
+                self.drone_instance.cardata.YPOS = gps_data[1]
 
             except ValueError:
                 if self.debug:
@@ -141,6 +148,6 @@ class ServerClientProtocol(asyncio.Protocol):
 if __name__ == "__main__":
     car_controller = CarController()
     car_controller.start_cars(
-        debug=True,
+        debug=False,
         plot_points=False
     )

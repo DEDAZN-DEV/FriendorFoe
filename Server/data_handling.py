@@ -23,10 +23,12 @@ class CarData:
     def __init__(self, debug, drone_id):
         self.LAT = 0.0
         self.LONG = 0.0
-        self.XPOS = 10.0
-        self.YPOS = 15.0
-        self.TGTXPOS = 0.0
-        self.TGTYPOS = 0.0
+        self.XPOS = 0.0
+        self.YPOS = 0.0
+        self.XPOS_PREV = None
+        self.YPOS_PREV = None
+#       self.TGTXPOS = 0.0
+#       self.TGTYPOS = 0.0
         self.HEADING = 0.0
         self.TURNANGLE = 0.0
         self.SPEED = 0.0
@@ -54,6 +56,8 @@ class Drone:
             self.plotting = Plotting(debug)
         self.gps_calculations = gps.GPSCalculations(debug)
         self.cardata = CarData(debug, self.drone_id)
+        self.HEADING = 0
+
         if debug:
             print("******FINISHED INITIALIZATION******")
 
@@ -86,15 +90,27 @@ class Drone:
             sys.exit()
 
     def execute_turn(self):
+        self.print_cardata()
         velocity_vector = self.message_passing.get_velocity_data()
-        desired_heading = self.turning.calculate_desired_heading(self.cardata)
+        desired_heading = self.turning.calculate_heading_from_velocity(velocity_vector)
         self.turning.find_vehicle_speed(self.cardata, velocity_vector)
         turn_data = self.turning.initialize_turn_data(self.cardata, desired_heading)
         turn_data = self.turning.stepped_turning_algorithm(turn_data)
         self.turning.apply_turn_to_cardata(self.cardata, turn_data)
         turn_signal, speed_signal = self.turning.generate_servo_signals(self.cardata)
         self.connection.send_turn_to_car(speed_signal, turn_signal)
+        self.print_cardata()
         return velocity_vector
+
+    def print_cardata(self):
+        print("\n****CAR VALUES****")
+        print(self.cardata.XPOS)
+        print(self.cardata.YPOS)
+        print(self.cardata.XPOS_PREV)
+        print(self.cardata.YPOS_PREV)
+        print(self.cardata.HEADING)
+        print(self.cardata.TURNANGLE)
+        print(self.cardata.SPEED)
 
 
 class ServerMessagePassing:

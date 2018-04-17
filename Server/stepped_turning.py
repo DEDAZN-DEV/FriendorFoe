@@ -18,7 +18,8 @@ class Turning:
     def __init__(self, debug):
         self.debug = debug
         if self.debug:
-            print('******INITIALIZED TURNING*******')
+            pass
+        print('******INITIALIZED TURNING*******')
 
     @staticmethod
     def find_angular_difference(heading_1, heading_2):
@@ -71,29 +72,23 @@ class Turning:
             #     print("Left Turn")
             return False
 
-    def choose_wheel_turn_angle(self, current_heading, desired_heading, turn_angles, speed_coefficients):
+    def choose_wheel_turn_angle(self, current_heading, desired_heading):
         """
         Choose the angle at which the wheels have to turn
         :param current_heading:
         :param desired_heading:
-        :param turn_angles:
-        :param speed_coefficients:
         :return:
         """
-        tolerance_for_small_turn = 5
-        tolerance_for_large_turn = 45
+        # tolerance_for_small_turn = 5
+        # tolerance_for_large_turn = 45
 
-        if self.check_if_within_heading(current_heading, desired_heading, tolerance=tolerance_for_small_turn):
-            # print("\nWithin 5 degrees")
-            return turn_angles[0], speed_coefficients[0]
+        tolerance = 20
 
-        elif self.check_if_within_heading(current_heading, desired_heading, tolerance=tolerance_for_large_turn):
-            # print("\nWithin 45 degrees")
-            return turn_angles[1], speed_coefficients[1]
+        if self.check_if_within_heading(current_heading, desired_heading, tolerance=tolerance):
+            turn_angle = self.subtract_angles(desired_heading, current_heading)
+            speed_coefficient = (20 - turn_angle) * cfg.MAX_SPEED
 
-        else:
-            # print("\nMore than 45 degrees")
-            return turn_angles[2], speed_coefficients[2]
+            return turn_angle, speed_coefficient
 
     def choose_wheel_turn_angle_and_direction(self, current_heading, desired_heading):
         """
@@ -102,19 +97,18 @@ class Turning:
         :param desired_heading:
         :return:
         """
-        left_turns = (-5, -10, -15)
-        right_turns = (5, 10, 15)
-        speed_coefficients = (0.75, 0.50, 0.25)
+        # left_turns = (-5, -10, -15)
+        # right_turns = (5, 10, 15)
+        # speed_coefficients = (0.75, 0.50, 0.25)
 
-        if self.check_right_turn(current_heading, desired_heading):
-            chosen_direction = right_turns
-        else:
-            chosen_direction = left_turns
-        turn_angle, speed_coefficient = self.choose_wheel_turn_angle(current_heading,
-                                                                     desired_heading,
-                                                                     chosen_direction,
-                                                                     speed_coefficients
-                                                                     )
+#       if self.check_right_turn(current_heading, desired_heading):
+#           chosen_direction = right_turns
+#       else:
+#           chosen_direction = left_turns
+        print("Current Heading: ", current_heading)
+        print("Desired Heading: ", desired_heading)
+
+        turn_angle, speed_coefficient = self.choose_wheel_turn_angle(current_heading, desired_heading)
         return turn_angle, speed_coefficient
 
     def find_advanced_position(self, car_data):
@@ -132,24 +126,41 @@ class Turning:
             car_data["time_step"] * car_data["y_speed_component"]
 
         if self.debug:
-            printer = pprint.PrettyPrinter(indent=4)
-            printer.pprint(car_data)
-            print("\n")
+            pass
+        printer = pprint.PrettyPrinter(indent=4)
+        printer.pprint(car_data)
+        print("\n")
 
         return car_data
 
     @staticmethod
     def find_speed_components(car_data):
-        car_data["x_speed_component"] = car_data["speed"] * math.sin(math.radians(car_data["final_heading"]))
-        car_data["y_speed_component"] = car_data["speed"] * math.cos(math.radians(car_data["final_heading"]))
+        car_data["x_speed_component"] = \
+            math.degrees(car_data["speed"] * math.sin(math.radians(car_data["final_heading"])))
+        car_data["y_speed_component"] = \
+            math.degrees(car_data["speed"] * math.cos(math.radians(car_data["final_heading"])))
 
     @staticmethod
     def add_angles(angle_1, angle_2):
         angle_sum = angle_1 + angle_2
+        print("Angle Sum: ", angle_sum)
+
         if angle_sum < 0:
             angle_sum += 360
 
+        print("Corrected Angle Sum: ", angle_sum)
         return angle_sum
+
+    @staticmethod
+    def subtract_angles(angle_1, angle_2):
+        angle_difference = angle_1 - angle_2
+        print("Angle Difference: ", angle_difference)
+
+        if angle_difference < 0:
+            angle_difference += 360
+
+        print("Corrected Angle Difference: ", angle_difference)
+        return angle_difference
 
     # Direction must be a string with either 'x' or 'y'
     @staticmethod
@@ -184,6 +195,9 @@ class Turning:
         """
         no_turn = 0
         if not self.check_if_within_heading(car_data["speed"], car_data["desired_heading"], tolerance=0.1):
+            print("Current Heading: ", car_data["current_heading"])
+            print("Desired Heading: ", car_data["desired_heading"])
+
             car_data["turning_angle"], speed_coefficient = self.choose_wheel_turn_angle_and_direction(
                 car_data["current_heading"], car_data["desired_heading"])
         else:
@@ -207,11 +221,17 @@ class Turning:
 
         return turn_signal, speed_signal
 
-    @staticmethod
-    def apply_turn_to_cardata(cardata, turn_data):
+    def apply_turn_to_cardata(self, cardata, turn_data):
         cardata.DIST_TRAVELED = turn_data["distance_travelled"]
         cardata.TURNANGLE = turn_data["turning_angle"]
-        cardata.HEADING = turn_data["final_heading"]
+        # cardata.HEADING = turn_data["final_heading"]
+
+        new_heading = self.calculate_heading_from_velocity(
+            [cardata.XPOS - cardata.XPOS_PREV, cardata.YPOS - cardata.YPOS_PREV]
+        )
+        if cardata.XPOS - cardata.XPOS_PREV == 0 and cardata.YPOS - cardata.YPOS_PREV == 0:
+            cardata.HEADING = new_heading
+
         cardata.SPEED = turn_data["speed"]
         cardata.TGTXPOS = turn_data["advanced_x_position"]
         cardata.TGTYPOS = turn_data["advanced_y_position"]
@@ -233,11 +253,13 @@ class Turning:
         }
         return turn_data
 
-    def calculate_desired_heading(self, cardata):
-        desired_heading = math.atan2((cardata.TGTYPOS - cardata.YPOS), (cardata.TGTXPOS - cardata.XPOS))
+    def calculate_heading_from_velocity(self, velocity_vector):
+        # desired_heading = math.atan2((cardata.TGTYPOS - cardata.YPOS), (cardata.TGTXPOS - cardata.XPOS))
+        output_heading = math.degrees(math.atan2(velocity_vector[1], velocity_vector[0]))
         if self.debug:
-            print('Last Angle Orientation: ', math.degrees(desired_heading))
-        return desired_heading
+            pass
+        print('Angle Orientation: ', output_heading)
+        return output_heading
 
     def gen_turn_signal(self, angle):
         """
@@ -260,7 +282,8 @@ class Turning:
             turn_signal = cfg.MAX_RIGHT
 
         if self.debug:
-            print("Turn Signal: " + str(turn_signal))
+            pass
+        print("Turn Signal: " + str(turn_signal))
 
         return turn_signal
 
@@ -280,7 +303,8 @@ class Turning:
                 speed_signal = cfg.MAX_SPEED
 
         if self.debug:
-            print("Speed Signal: " + str(speed_signal))
+            pass
+        print("Speed Signal: " + str(speed_signal))
         return speed_signal
 
 

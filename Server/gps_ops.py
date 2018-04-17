@@ -1,5 +1,5 @@
 import math
-# import random
+import random
 
 import server_cfg as cfg
 
@@ -75,10 +75,10 @@ class GPSCalculations:
 
         data = self.scale_xy(self.gps_to_xy(latitude, longitude))
 
-#       xposition = random.randint(0, cfg.LENGTH_X)
-#       yposition = random.randint(0, cfg.LENGTH_Y)
+        xposition = random.randint(0, cfg.LENGTH_X)
+        yposition = random.randint(0, cfg.LENGTH_Y)
 
-#       data = [xposition, yposition]
+        data = [xposition, yposition]
 
         return data
 
