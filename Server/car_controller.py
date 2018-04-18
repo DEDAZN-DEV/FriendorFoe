@@ -114,8 +114,10 @@ class ServerClientProtocol(asyncio.Protocol):
                 gps_data = self.gps.parse_gps_msg(data[1])
                 self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS
                 self.drone_instance.cardata.YPOS_PREV = self.drone_instance.cardata.YPOS
-                self.drone_instance.cardata.XPOS = gps_data[0]
-                self.drone_instance.cardata.YPOS = gps_data[1]
+                self.drone_instance.cardata.XPOS = self.drone_instance.cardata.TGTXPOS
+                self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS
+#               self.drone_instance.cardata.XPOS = gps_data[0]
+#               self.drone_instance.cardata.YPOS = gps_data[1]
 
                 self.drone_instance.message_passing.post_gps_data(gps_data, self.id)
                 if self.debug:
@@ -123,10 +125,10 @@ class ServerClientProtocol(asyncio.Protocol):
 
                 self.drone_instance.drone()
 
-                self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS
-                self.drone_instance.cardata.YPOS_PREV = self.drone_instance.cardata.YPOS
-                self.drone_instance.cardata.XPOS = gps_data[0]
-                self.drone_instance.cardata.YPOS = gps_data[1]
+#               self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS
+#               self.drone_instance.cardata.YPOS_PREV = self.drone_instance.cardata.YPOS
+#               self.drone_instance.cardata.XPOS = gps_data[0]
+#               self.drone_instance.cardata.YPOS = gps_data[1]
 
             except ValueError:
                 if self.debug:

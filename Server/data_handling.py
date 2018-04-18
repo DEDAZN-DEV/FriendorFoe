@@ -27,8 +27,8 @@ class CarData:
         self.YPOS = 0.0
         self.XPOS_PREV = None
         self.YPOS_PREV = None
-#       self.TGTXPOS = 0.0
-#       self.TGTYPOS = 0.0
+        self.TGTXPOS = 0.0
+        self.TGTYPOS = 0.0
         self.HEADING = 0.0
         self.TURNANGLE = 0.0
         self.SPEED = 0.0

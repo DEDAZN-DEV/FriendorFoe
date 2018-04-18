@@ -46,9 +46,14 @@ class Turning:
         :param tolerance:
         :return:
         """
+        print('#')
         angular_difference = self.find_angular_difference(current_heading, desired_heading)
-        within_tolerance = abs(angular_difference) <= tolerance
-
+        print('##')
+        if abs(angular_difference) <= tolerance:
+            within_tolerance = True
+        else:
+            within_tolerance = False
+        print(within_tolerance)
         # if debug:
         #     print("Angular Difference: " + str(angular_difference))
         #     print("Tolerance: " + str(tolerance))
@@ -83,12 +88,19 @@ class Turning:
         # tolerance_for_large_turn = 45
 
         tolerance = 20
-
-        if self.check_if_within_heading(current_heading, desired_heading, tolerance=tolerance):
+        print('*')
+        temp = self.check_if_within_heading(current_heading, desired_heading, tolerance)
+        print(temp)
+        if temp:
+            print('**')
             turn_angle = self.subtract_angles(desired_heading, current_heading)
-            speed_coefficient = (20 - turn_angle) * cfg.MAX_SPEED
+            print('***')
+            speed_coefficient = (20 - abs(turn_angle))/20 * cfg.MAX_VELOCITY
+        else:
+            turn_angle = 20
+            speed_coefficient = 0.1
 
-            return turn_angle, speed_coefficient
+        return turn_angle, speed_coefficient
 
     def choose_wheel_turn_angle_and_direction(self, current_heading, desired_heading):
         """
@@ -109,6 +121,7 @@ class Turning:
         print("Desired Heading: ", desired_heading)
 
         turn_angle, speed_coefficient = self.choose_wheel_turn_angle(current_heading, desired_heading)
+
         return turn_angle, speed_coefficient
 
     def find_advanced_position(self, car_data):

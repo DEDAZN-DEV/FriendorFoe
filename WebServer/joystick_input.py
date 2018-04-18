@@ -201,7 +201,7 @@ def init_joystick():
                 text_print.print(screen, "X-Axis: {:>d}".format(x_axis))
                 text_print.print(screen, "Y-Axis: {:>d}".format(y_axis))
                 text_print.print(screen, "Speed factor: {:>6.3f}x".format(speed_factor))
-
+                text_print.print(screen, "Output Vector: {:>6.3f}, {:>6.3f}".format(velocity_vector[0], velocity_vector[1]))
             # Velocity vector input to simulation
             with open("/var/www/cgi-bin/velocity_vectors", "w") as velocity_vector_file:
                 velocity_vector_file.write(str(velocity_vector))
