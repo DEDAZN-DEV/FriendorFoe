@@ -1,7 +1,6 @@
 # 12 turn, max power 40.24 watts @ 7772 RPM
 
 import json
-import math
 import sys
 import traceback
 from timeit import default_timer as timer
@@ -34,7 +33,7 @@ class CarData:
         self.SPEED = 0.0
         self.DIST_TRAVELED = 0.0
         self.ID = drone_id
-        self.INTERVAL_TIMER = 0.25
+        self.INTERVAL_TIMER = 1e-6
         if debug:
             print("******INITIALIZED CARDATA*******")
 
@@ -172,10 +171,7 @@ class Plotting:
             print('******INITIALIZED PLOTTING******')
 
     def plot_car_path(self, cardata, dronename, velocity_vector):
-        if math.sqrt(velocity_vector[0] ** 2 + velocity_vector[1] ** 2) != 0:
-            pause_interval = cardata.INTERVAL_TIMER
-        else:
-            pause_interval = 1e-6  # <-- This is a starter to the program
+        pause_interval = cardata.INTERVAL_TIMER
         if self.debug:
             print("Pause Interval: " + str(pause_interval))
         if len(self.xpos) > BUFFERSIZE:
