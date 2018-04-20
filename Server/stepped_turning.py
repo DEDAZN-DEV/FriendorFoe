@@ -85,9 +85,17 @@ class Turning:
 
         tolerance = 20
         half_circle_difference = desired_heading - current_heading
+
+        if half_circle_difference > 180:
+            half_circle_difference = half_circle_difference - 360
+        elif half_circle_difference < -180:
+            half_circle_difference = half_circle_difference + 360
+        else:
+            print("TURN ANGLE CHECK [OK]")
+
         if self.check_if_within_heading(current_heading, desired_heading, tolerance):
             turn_angle = half_circle_difference
-            speed_coefficient = (25 - abs(turn_angle))/25
+            speed_coefficient = (25 - abs(turn_angle)) / 25
         elif half_circle_difference > 0:
             turn_angle = 20
             speed_coefficient = 0.1
@@ -121,9 +129,9 @@ class Turning:
         self.find_speed_components(car_data)
 
         car_data["advanced_x_position"] = car_data["initial_x_position"] + \
-            car_data["time_step"] * car_data["x_speed_component"]
+                                          car_data["time_step"] * car_data["x_speed_component"]
         car_data["advanced_y_position"] = car_data["initial_y_position"] + \
-            car_data["time_step"] * car_data["y_speed_component"]
+                                          car_data["time_step"] * car_data["y_speed_component"]
 
         if self.debug:
             pass
