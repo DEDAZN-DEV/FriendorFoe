@@ -3,7 +3,6 @@
 import json
 import sys
 import traceback
-from timeit import default_timer as timer
 
 import gps_ops as gps
 import matplotlib.pyplot as plt
@@ -71,7 +70,7 @@ class Drone:
                 print("\n")
             print("Drone: ", self.drone_id, " executing turn")
 
-            start_time = timer()
+            # start_time = timer()
 
             # self.gps_calculations.request_gps_fix(self.connection)
             # self.message_passing.post_gps_data(self.cardata)
@@ -79,12 +78,12 @@ class Drone:
             if self.plot_points:
                 self.plotting.plot_car_path(self.cardata, self.drone_id, velocity_vector)
 
-            stop_time = timer()
+            # stop_time = timer()
 
-            self.cardata.update_last_interval_time(stop_time - start_time)
-
-            if self.debug:
-                print('***[TIMER} ' + str(self.cardata.INTERVAL_TIMER))
+            # self.cardata.update_last_interval_time(stop_time - start_time)
+            #
+            # if self.debug:
+            #     print('***[TIMER] ' + str(self.cardata.INTERVAL_TIMER))
 
         except KeyboardInterrupt:
             self.connection.client_tx('disconnect')

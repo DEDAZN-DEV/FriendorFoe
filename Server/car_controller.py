@@ -4,6 +4,7 @@ Purpose: To provide functions with which to control data_handling.py
 """
 
 import asyncio
+from timeit import default_timer as timer
 
 import server_cfg as cfg
 from data_handling import Drone
@@ -76,6 +77,7 @@ class ServerClientProtocol(asyncio.Protocol):
         self.drone_instance = Drone(self.plot_points, self.debug, self.id, self.transport)
 
     def data_received(self, data_stream):
+        start = timer()
         data = data_stream.decode()
         # data = str(data)
         # data = self.remove_bytes_array_denotors(data)
@@ -128,6 +130,11 @@ class ServerClientProtocol(asyncio.Protocol):
             if self.debug:
                 print('GPS Message: ', gps_data)
             self.drone_instance.drone()
+        stop = timer()
+
+        self.drone_instance.cardata.INTERVAL_TIMER = (stop - start)
+
+        print('[TIME] ' + str(self.drone_instance.cardata.INTERVAL_TIMER))
 
     def set_position_variables(self, gps_data):
         self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS
