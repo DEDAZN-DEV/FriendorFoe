@@ -82,8 +82,10 @@ class Drone:
 
             stop_time = timer()
 
-            self.cardata.update_last_interval_time(
-                (((stop_time - start_time) * 0.75) + (self.cardata.INTERVAL_TIMER * 0.25)) / 2)
+            self.cardata.update_last_interval_time(stop_time - start_time)
+
+            if self.debug:
+                print(self.cardata.INTERVAL_TIMER)
 
         except KeyboardInterrupt:
             self.connection.client_tx('disconnect')
