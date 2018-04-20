@@ -125,13 +125,15 @@ class Turning:
         :param car_data:
         :return:
         """
+
+        print("TIMESTEP: ", car_data["time_step"])
         car_data["final_heading"] = self.add_angles(car_data["current_heading"], car_data["turning_angle"])
         self.find_speed_components(car_data)
 
         car_data["advanced_x_position"] = car_data["initial_x_position"] + \
-                                          car_data["time_step"] * car_data["x_speed_component"]
+            car_data["time_step"] * car_data["x_speed_component"]
         car_data["advanced_y_position"] = car_data["initial_y_position"] + \
-                                          car_data["time_step"] * car_data["y_speed_component"]
+            car_data["time_step"] * car_data["y_speed_component"]
 
         if self.debug:
             pass
@@ -144,9 +146,9 @@ class Turning:
     @staticmethod
     def find_speed_components(car_data):
         car_data["x_speed_component"] = \
-            math.degrees(car_data["speed"] * math.sin(math.radians(car_data["final_heading"])))
+            car_data["speed"] * math.sin(math.radians(car_data["final_heading"]))
         car_data["y_speed_component"] = \
-            math.degrees(car_data["speed"] * math.cos(math.radians(car_data["final_heading"])))
+            car_data["speed"] * math.cos(math.radians(car_data["final_heading"]))
 
     @staticmethod
     def add_angles(angle_1, angle_2):
@@ -320,6 +322,8 @@ class Turning:
 
             if speed_signal > cfg.MAX_SPEED:
                 speed_signal = cfg.MAX_SPEED
+            elif speed_signal < cfg.MIN_MOVE_SPEED:
+                speed_signal = cfg.MIN_MOVE_SPEED
 
         if self.debug:
             pass

@@ -76,7 +76,7 @@ class Drone:
             # self.message_passing.post_gps_data(self.cardata)
             velocity_vector = self.execute_turn()
             if self.plot_points:
-                self.plotting.plot_car_path(self.cardata, self.drone_id, velocity_vector)
+                self.plotting.plot_car_path(self.cardata, self.drone_id)
 
             # stop_time = timer()
 
@@ -140,8 +140,6 @@ class ServerMessagePassing:
         Uses aiohttp to get velocity data for the car from a webserver
         :return:
         """
-        #       with aiohttp.ClientSession() as session:
-        #           response = session.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
         response = requests.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
         if self.debug:
             print(response.status_code)
@@ -169,8 +167,8 @@ class Plotting:
         if self.debug:
             print('******INITIALIZED PLOTTING******')
 
-    def plot_car_path(self, cardata, dronename, velocity_vector):
-        pause_interval = cardata.INTERVAL_TIMER
+    def plot_car_path(self, cardata, dronename):
+        pause_interval = 1e-6
         if self.debug:
             print("Pause Interval: " + str(pause_interval))
         if len(self.xpos) > BUFFERSIZE:
