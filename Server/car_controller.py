@@ -110,36 +110,30 @@ class ServerClientProtocol(asyncio.Protocol):
                 pass
                 print("Received GPS data: ", data[1])
 
+            gps_data = None
+
             try:
                 gps_data = self.gps.parse_gps_msg(data[1])
-                self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS
-                self.drone_instance.cardata.YPOS_PREV = self.drone_instance.cardata.YPOS
-                self.drone_instance.cardata.XPOS = self.drone_instance.cardata.TGTXPOS
-                self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS
-#               self.drone_instance.cardata.XPOS = gps_data[0]
-#               self.drone_instance.cardata.YPOS = gps_data[1]
-
-                self.drone_instance.message_passing.post_gps_data(gps_data, self.id)
-                if self.debug:
-                    print('GPS Message: ', gps_data)
-
-                self.drone_instance.drone()
-
-#               self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS
-#               self.drone_instance.cardata.YPOS_PREV = self.drone_instance.cardata.YPOS
-#               self.drone_instance.cardata.XPOS = gps_data[0]
-#               self.drone_instance.cardata.YPOS = gps_data[1]
 
             except ValueError:
                 if self.debug:
-                    print('Invalid GPS Message...Exiting')
+                    print('Invalid GPS Message. Using projected position')
                 self.drone_instance.connection.client_tx('disconnect')
-                self.drone_instance.cardata.XPOS = 222
-                self.drone_instance.cardata.YPOS = 222
+                self.drone_instance.cardata.XPOS = self.drone_instance.cardata.TGTXPOS
+                self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS
 
+            self.set_position_variables(gps_data)
+            self.drone_instance.turning.update_heading(self.drone_instance.cardata)
+            self.drone_instance.message_passing.post_gps_data(gps_data, self.id)
+            if self.debug:
+                print('GPS Message: ', gps_data)
+            self.drone_instance.drone()
 
-#           elif message[0] == 'request':
-#               self.drone_instance.drone()
+    def set_position_variables(self, gps_data):
+        self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS
+        self.drone_instance.cardata.YPOS_PREV = self.drone_instance.cardata.YPOS
+        self.drone_instance.cardata.XPOS = self.drone_instance.cardata.TGTXPOS  # gps_data[0]
+        self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS  # gps_data[1]
 
     @staticmethod
     def remove_bytes_array_denotors(data):
@@ -150,6 +144,6 @@ class ServerClientProtocol(asyncio.Protocol):
 if __name__ == "__main__":
     car_controller = CarController()
     car_controller.start_cars(
-        debug=False,
-        plot_points=False
+        debug=True,
+        plot_points=True
     )

@@ -23,12 +23,12 @@ class CarData:
     def __init__(self, debug, drone_id):
         self.LAT = 0.0
         self.LONG = 0.0
-        self.XPOS = 0.0
-        self.YPOS = 0.0
+        self.XPOS = 50
+        self.YPOS = 50
         self.XPOS_PREV = None
         self.YPOS_PREV = None
-        self.TGTXPOS = 0.0
-        self.TGTYPOS = 0.0
+        self.TGTXPOS = 50
+        self.TGTYPOS = 50
         self.HEADING = 0.0
         self.TURNANGLE = 0.0
         self.SPEED = 0.0
@@ -104,13 +104,13 @@ class Drone:
 
     def print_cardata(self):
         print("\n****CAR VALUES****")
-        print(self.cardata.XPOS)
-        print(self.cardata.YPOS)
-        print(self.cardata.XPOS_PREV)
-        print(self.cardata.YPOS_PREV)
-        print(self.cardata.HEADING)
-        print(self.cardata.TURNANGLE)
-        print(self.cardata.SPEED)
+        print("X Position: ", self.cardata.XPOS)
+        print("Y Position: ", self.cardata.YPOS)
+        print("Previous X Position: ", self.cardata.XPOS_PREV)
+        print("Previous Y Position: ", self.cardata.YPOS_PREV)
+        print("Heading: ", self.cardata.HEADING)
+        print("Turn Angle: ", self.cardata.TURNANGLE)
+        print("Speed: ", self.cardata.SPEED)
 
 
 class ServerMessagePassing:
@@ -146,7 +146,7 @@ class ServerMessagePassing:
         if self.debug:
             print(response.status_code)
             print("New velocity vector: ", response.text)
-        velocity_info = response.text
+        velocity_info = str(response.text)
 
         # if self.debug:
         print("New Velocity Info: " + velocity_info)
@@ -155,6 +155,7 @@ class ServerMessagePassing:
             print("Decoded Velocity Info: " + str(velocity_info))
 
         velocity_vector = [velocity_info["xvel"], velocity_info["yvel"]]
+        print("Fixed Velocity Vector: ", velocity_vector)
         return velocity_vector
 
 

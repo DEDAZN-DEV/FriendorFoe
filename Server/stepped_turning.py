@@ -46,14 +46,12 @@ class Turning:
         :param tolerance:
         :return:
         """
-        print('#')
         angular_difference = self.find_angular_difference(current_heading, desired_heading)
-        print('##')
         if abs(angular_difference) <= tolerance:
             within_tolerance = True
         else:
             within_tolerance = False
-        print(within_tolerance)
+        print("Within tolerance of ", tolerance, " degrees: ", within_tolerance)
         # if debug:
         #     print("Angular Difference: " + str(angular_difference))
         #     print("Tolerance: " + str(tolerance))
@@ -84,20 +82,17 @@ class Turning:
         :param desired_heading:
         :return:
         """
-        # tolerance_for_small_turn = 5
-        # tolerance_for_large_turn = 45
 
         tolerance = 20
-        print('*')
-        temp = self.check_if_within_heading(current_heading, desired_heading, tolerance)
-        print(temp)
-        if temp:
-            print('**')
-            turn_angle = self.subtract_angles(desired_heading, current_heading)
-            print('***')
-            speed_coefficient = (20 - abs(turn_angle))/20 * cfg.MAX_VELOCITY
-        else:
+        half_circle_difference = desired_heading - current_heading
+        if self.check_if_within_heading(current_heading, desired_heading, tolerance):
+            turn_angle = half_circle_difference
+            speed_coefficient = (25 - abs(turn_angle))/25
+        elif half_circle_difference > 0:
             turn_angle = 20
+            speed_coefficient = 0.1
+        else:
+            turn_angle = -20
             speed_coefficient = 0.1
 
         return turn_angle, speed_coefficient
@@ -109,18 +104,10 @@ class Turning:
         :param desired_heading:
         :return:
         """
-        # left_turns = (-5, -10, -15)
-        # right_turns = (5, 10, 15)
-        # speed_coefficients = (0.75, 0.50, 0.25)
-
-#       if self.check_right_turn(current_heading, desired_heading):
-#           chosen_direction = right_turns
-#       else:
-#           chosen_direction = left_turns
-        print("Current Heading: ", current_heading)
-        print("Desired Heading: ", desired_heading)
 
         turn_angle, speed_coefficient = self.choose_wheel_turn_angle(current_heading, desired_heading)
+        print("Turn Angle: ", turn_angle)
+        print("Speed Coefficient: ", speed_coefficient)
 
         return turn_angle, speed_coefficient
 
@@ -234,20 +221,21 @@ class Turning:
 
         return turn_signal, speed_signal
 
-    def apply_turn_to_cardata(self, cardata, turn_data):
+    @staticmethod
+    def apply_turn_to_cardata(cardata, turn_data):
         cardata.DIST_TRAVELED = turn_data["distance_travelled"]
         cardata.TURNANGLE = turn_data["turning_angle"]
-        # cardata.HEADING = turn_data["final_heading"]
-
-        new_heading = self.calculate_heading_from_velocity(
-            [cardata.XPOS - cardata.XPOS_PREV, cardata.YPOS - cardata.YPOS_PREV]
-        )
-        if cardata.XPOS - cardata.XPOS_PREV == 0 and cardata.YPOS - cardata.YPOS_PREV == 0:
-            cardata.HEADING = new_heading
-
         cardata.SPEED = turn_data["speed"]
         cardata.TGTXPOS = turn_data["advanced_x_position"]
         cardata.TGTYPOS = turn_data["advanced_y_position"]
+
+    def update_heading(self, cardata):
+        new_heading = self.calculate_heading_from_velocity(
+            [cardata.XPOS - cardata.XPOS_PREV, cardata.YPOS - cardata.YPOS_PREV]
+        )
+        if cardata.XPOS - cardata.XPOS_PREV != 0 and cardata.YPOS - cardata.YPOS_PREV != 0:
+            cardata.HEADING = new_heading
+            print("Updated heading: ", new_heading)
 
     @staticmethod
     def find_vehicle_speed(cardata, velocity_vector):
@@ -267,12 +255,22 @@ class Turning:
         return turn_data
 
     def calculate_heading_from_velocity(self, velocity_vector):
-        # desired_heading = math.atan2((cardata.TGTYPOS - cardata.YPOS), (cardata.TGTXPOS - cardata.XPOS))
-        output_heading = math.degrees(math.atan2(velocity_vector[1], velocity_vector[0]))
+        self.fix_negative_zeros(velocity_vector)
+
+        output_heading = math.degrees(math.atan2(velocity_vector[0], velocity_vector[1]))
         if self.debug:
-            pass
-        print('Angle Orientation: ', output_heading)
+            print('Velocity vector: ', velocity_vector)
+            print('Desired Angle Orientation: ', output_heading)
         return output_heading
+
+    @staticmethod
+    def fix_negative_zeros(velocity_vector):
+        if velocity_vector[0] == -0.0:
+            velocity_vector[0] = 0.0
+            print("fixed x zero: ", velocity_vector[0])
+        if velocity_vector[1] == -0.0:
+            velocity_vector[1] = 0.0
+            print("fixed y zero: ", velocity_vector[1])
 
     def gen_turn_signal(self, angle):
         """
