@@ -4,11 +4,11 @@ import json
 import math
 import sys
 import traceback
-import requests
 from timeit import default_timer as timer
-import matplotlib.pyplot as plt
 
 import gps_ops as gps
+import matplotlib.pyplot as plt
+import requests
 import server_cfg as cfg
 from stepped_turning import Turning
 
@@ -187,8 +187,7 @@ class Plotting:
 
         plt.clf()
         plt.title(dronename)
-        if not self.debug:
-            plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
+        plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
         plt.plot(self.xpos, self.ypos, 'k-')
         plt.grid(True)
         if self.debug:
