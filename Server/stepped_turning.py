@@ -18,8 +18,7 @@ class Turning:
     def __init__(self, debug):
         self.debug = debug
         if self.debug:
-            pass
-        print('******INITIALIZED TURNING*******')
+            print('******INITIALIZED TURNING*******')
 
     @staticmethod
     def find_angular_difference(heading_1, heading_2):
@@ -30,7 +29,6 @@ class Turning:
         :return: the difference
         """
         angular_difference = heading_2 - heading_1
-        # print("Wide Angular Difference: " + str(angular_difference))
         if angular_difference >= 180:
             angular_difference -= 360
         elif angular_difference <= -180:
@@ -51,11 +49,8 @@ class Turning:
             within_tolerance = True
         else:
             within_tolerance = False
-        print("Within tolerance of ", tolerance, " degrees: ", within_tolerance)
-        # if debug:
-        #     print("Angular Difference: " + str(angular_difference))
-        #     print("Tolerance: " + str(tolerance))
-        #     print("Within tolerance: " + str(within_tolerance) + "\n")
+        if self.debug:
+            print("Within tolerance of ", tolerance, " degrees: ", within_tolerance)
         return within_tolerance
 
     def check_right_turn(self, current_heading, desired_heading):
@@ -67,12 +62,8 @@ class Turning:
         """
         angular_difference = self.find_angular_difference(current_heading, desired_heading)
         if angular_difference >= 0:
-            # if debug:
-            #     print("Right Turn")
             return True
         else:
-            # if debug:
-            #     print("Left Turn")
             return False
 
     def choose_wheel_turn_angle(self, current_heading, desired_heading):
@@ -91,7 +82,8 @@ class Turning:
         elif half_circle_difference < -180:
             half_circle_difference = half_circle_difference + 360
         else:
-            print("TURN ANGLE CHECK [OK]")
+            if self.debug:
+                print("TURN ANGLE CHECK [OK]")
 
         if self.check_if_within_heading(current_heading, desired_heading, tolerance):
             turn_angle = half_circle_difference
@@ -114,8 +106,9 @@ class Turning:
         """
 
         turn_angle, speed_coefficient = self.choose_wheel_turn_angle(current_heading, desired_heading)
-        print("Turn Angle: ", turn_angle)
-        print("Speed Coefficient: ", speed_coefficient)
+        if self.debug:
+            print("Turn Angle: ", turn_angle)
+            print("Speed Coefficient: ", speed_coefficient)
 
         return turn_angle, speed_coefficient
 
@@ -126,7 +119,8 @@ class Turning:
         :return:
         """
 
-        print("TIMESTEP: ", car_data["time_step"])
+        if self.debug:
+            print("TIMESTEP: ", car_data["time_step"])
         car_data["final_heading"] = self.add_angles(car_data["current_heading"], car_data["turning_angle"])
         self.find_speed_components(car_data)
 
@@ -136,10 +130,9 @@ class Turning:
             car_data["time_step"] * car_data["y_speed_component"]
 
         if self.debug:
-            pass
-        printer = pprint.PrettyPrinter(indent=4)
-        printer.pprint(car_data)
-        print("\n")
+            printer = pprint.PrettyPrinter(indent=4)
+            printer.pprint(car_data)
+            print("\n")
 
         return car_data
 
@@ -150,26 +143,29 @@ class Turning:
         car_data["y_speed_component"] = \
             car_data["speed"] * math.cos(math.radians(car_data["final_heading"]))
 
-    @staticmethod
-    def add_angles(angle_1, angle_2):
+    def add_angles(self, angle_1, angle_2):
         angle_sum = angle_1 + angle_2
-        print("Angle Sum: ", angle_sum)
+        if self.debug:
+            print("Angle Sum: ", angle_sum)
 
         if angle_sum < 0:
             angle_sum += 360
 
-        print("Corrected Angle Sum: ", angle_sum)
+        if self.debug:
+            print("Corrected Angle Sum: ", angle_sum)
         return angle_sum
 
-    @staticmethod
-    def subtract_angles(angle_1, angle_2):
+    def subtract_angles(self, angle_1, angle_2):
         angle_difference = angle_1 - angle_2
-        print("Angle Difference: ", angle_difference)
+
+        if self.debug:
+            print("Angle Difference: ", angle_difference)
 
         if angle_difference < 0:
             angle_difference += 360
 
-        print("Corrected Angle Difference: ", angle_difference)
+        if self.debug:
+            print("Corrected Angle Difference: ", angle_difference)
         return angle_difference
 
     # Direction must be a string with either 'x' or 'y'
@@ -205,8 +201,9 @@ class Turning:
         """
         no_turn = 0
         if not self.check_if_within_heading(car_data["speed"], car_data["desired_heading"], tolerance=0.1):
-            print("Current Heading: ", car_data["current_heading"])
-            print("Desired Heading: ", car_data["desired_heading"])
+            if self.debug:
+                print("Current Heading: ", car_data["current_heading"])
+                print("Desired Heading: ", car_data["desired_heading"])
 
             car_data["turning_angle"], speed_coefficient = self.choose_wheel_turn_angle_and_direction(
                 car_data["current_heading"], car_data["desired_heading"])
@@ -245,7 +242,8 @@ class Turning:
         )
         if cardata.XPOS - cardata.XPOS_PREV != 0 and cardata.YPOS - cardata.YPOS_PREV != 0:
             cardata.HEADING = new_heading
-            print("Updated heading: ", new_heading)
+            if self.debug:
+                print("Updated heading: ", new_heading)
 
     @staticmethod
     def find_vehicle_speed(cardata, velocity_vector):
@@ -273,14 +271,15 @@ class Turning:
             print('Desired Angle Orientation: ', output_heading)
         return output_heading
 
-    @staticmethod
-    def fix_negative_zeros(velocity_vector):
+    def fix_negative_zeros(self, velocity_vector):
         if velocity_vector[0] == -0.0:
             velocity_vector[0] = 0.0
-            print("fixed x zero: ", velocity_vector[0])
+            if self.debug:
+                print("fixed x zero: ", velocity_vector[0])
         if velocity_vector[1] == -0.0:
             velocity_vector[1] = 0.0
-            print("fixed y zero: ", velocity_vector[1])
+            if self.debug:
+                print("fixed y zero: ", velocity_vector[1])
 
     def gen_turn_signal(self, angle):
         """
@@ -303,8 +302,7 @@ class Turning:
             turn_signal = cfg.MAX_RIGHT
 
         if self.debug:
-            pass
-        print("Turn Signal: " + str(turn_signal))
+            print("Turn Signal: " + str(turn_signal))
 
         return turn_signal
 
@@ -326,8 +324,7 @@ class Turning:
                 speed_signal = cfg.MIN_MOVE_SPEED
 
         if self.debug:
-            pass
-        print("Speed Signal: " + str(speed_signal))
+            print("Speed Signal: " + str(speed_signal))
         return speed_signal
 
 

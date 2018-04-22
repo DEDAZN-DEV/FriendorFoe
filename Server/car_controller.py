@@ -32,8 +32,6 @@ class CarController:
     def run_server(event_loop, debug, plot_points):
 
         servers = []
-
-        print("Num Drones: ", cfg.NUM_DRONES)
         coroutine = event_loop.create_server(
             lambda: ServerClientProtocol(debug, plot_points),
             '',
@@ -41,7 +39,7 @@ class CarController:
         )
         server = event_loop.run_until_complete(coroutine)
         servers.append(server)
-        print("Serving on : ", server.sockets[0].getsockname(), "\twith server number: ")
+        print("Serving on : ", server.sockets[0].getsockname())
 
         try:
             event_loop.run_forever()
@@ -68,7 +66,8 @@ class ServerClientProtocol(asyncio.Protocol):
         peername = transport.get_extra_info('peername')
         print('Connection from: ', peername)
         self.clients_connected.append(peername[1])
-        print("Connected Clients: ", self.clients_connected)
+        if self.debug:
+            print("Connected Clients: ", self.clients_connected)
         self.transport = transport
         self.drone_instance = Drone(self.plot_points, self.debug, self.transport)
 
@@ -87,13 +86,15 @@ class ServerClientProtocol(asyncio.Protocol):
         drone_port = data_array[0]
         drone_id = None
         counter = 0
-        print("Clients Connected: ", self.clients_connected)
+        if self.debug:
+            print("Clients Connected: ", self.clients_connected)
         for client in self.clients_connected:
             if int(drone_port) == int(client):
                 drone_id = counter
             counter += 1
 
-        print("Drone ID: ", drone_id)
+        if self.debug:
+            print("Drone ID: ", drone_id)
 
         gga_message = data_array[1]
 
@@ -120,7 +121,8 @@ class ServerClientProtocol(asyncio.Protocol):
 
         self.drone_instance.cardata.INTERVAL_TIMER = (stop - start)
 
-        print('[TIME] ' + str(self.drone_instance.cardata.INTERVAL_TIMER))
+        if self.debug:
+            print('[TIME] ' + str(self.drone_instance.cardata.INTERVAL_TIMER))
 
     def set_position_variables(self, gps_data):
         self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS
@@ -139,6 +141,6 @@ class ServerClientProtocol(asyncio.Protocol):
 if __name__ == "__main__":
     car_controller = CarController()
     car_controller.start_cars(
-        debug=True,
+        debug=False,
         plot_points=True
     )

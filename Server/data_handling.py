@@ -87,7 +87,8 @@ class Drone:
             sys.exit()
 
     def execute_turn(self, drone_id):
-        self.print_cardata()
+        if self.debug:
+            self.print_cardata()
         velocity_vector = self.message_passing.get_velocity_data(drone_id)
         desired_heading = self.turning.calculate_heading_from_velocity(velocity_vector)
         self.turning.find_vehicle_speed(self.cardata, velocity_vector)
@@ -96,7 +97,8 @@ class Drone:
         self.turning.apply_turn_to_cardata(self.cardata, turn_data)
         turn_signal, speed_signal = self.turning.generate_servo_signals(self.cardata)
         self.connection.send_turn_to_car(speed_signal, turn_signal)
-        self.print_cardata()
+        if self.debug:
+            self.print_cardata()
 
     def print_cardata(self):
         print("\n****CAR VALUES****")
@@ -142,24 +144,26 @@ class ServerMessagePassing:
             print("New velocity vector: ", response.text)
         velocity_info = str(response.text)
 
-        # if self.debug:
-        print("New Velocity Info: " + velocity_info)
+        if self.debug:
+            print("New Velocity Info: " + velocity_info)
         velocity_info = json.loads(velocity_info)
         if self.debug:
             print("Decoded Velocity Info: " + str(velocity_info))
 
         velocity_info_current_car = {}
-        print("Server id: ", server_id)
+        if self.debug:
+            print("Server id: ", server_id)
 
         for vector in velocity_info["velocity_info"]:
             if int(vector["car"]) == server_id:
-                print("Got Here")
                 velocity_info_current_car = vector
 
-        print("Velocity Info For Current Car: ", velocity_info_current_car)
+        if self.debug:
+            print("Velocity Info For Current Car: ", velocity_info_current_car)
 
         velocity_vector = [velocity_info_current_car["xvel"], velocity_info_current_car["yvel"]]
-        print("Fixed Velocity Vector: ", velocity_vector)
+        if self.debug:
+            print("Fixed Velocity Vector: ", velocity_vector)
         return velocity_vector
 
 
@@ -183,8 +187,9 @@ class Plotting:
         self.xpos.append(cardata.XPOS)
         self.ypos.append(cardata.YPOS)
 
-        print("xpos: ", self.xpos)
-        print("ypos: ", self.ypos)
+        if self.debug:
+            print("xpos: ", self.xpos)
+            print("ypos: ", self.ypos)
 
         plt.clf()
         plt.title(dronename)
@@ -211,7 +216,8 @@ class CarConnection:
             print("ABOUT TO SEND: ", data)
         try:
             self.transport.write(bytearray(data + "\\", 'utf-8'))
-            print("SENT: ", data)
+            if self.debug:
+                print("SENT: ", data)
         except self.transport.socket.error:
             traceback.print_exc()
 

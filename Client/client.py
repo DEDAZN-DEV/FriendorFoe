@@ -145,7 +145,8 @@ class Client:
         self.servo.set_acceleration(cfg.ESC, 100)
 
         self.servo.set_target(servo_num, val)
-        print('[DEBUG] Exiting servo_ctl function')
+        if self.debug:
+            print('[DEBUG] Exiting servo_ctl function')
 
         return 0
 
@@ -160,7 +161,8 @@ class Client:
 
         if data == 'kill':
             self.sock.close()
-            print('[DEBUG] Terminating Client')
+            if self.debug:
+                print('[DEBUG] Terminating Client')
             self.center_steering_stop_car()
             sys.exit()
         elif data == 'start':
@@ -169,11 +171,13 @@ class Client:
             pass
         elif data == 'stop':
             self.center_steering_stop_car()
-            print('[DEBUG] ***** Stopping')
+            if self.debug:
+                print('[DEBUG] ***** Stopping')
             # self.server_tx('status:stopped')
         elif data == 'disconnect':
             self.center_steering_stop_car()
-            print('[NETWORK] Disconnect')
+            if self.debug:
+                print('[NETWORK] Disconnect')
             # self.server_tx('status:disconnecting')
             time.sleep(5)
             sys.exit()
@@ -183,20 +187,25 @@ class Client:
 
             # self.server_tx('status:turn received')
 
-            print("target: " + str(tgt) + "\nvalue: " + str(val))
+            if self.debug:
+                print("target: " + str(tgt) + "\nvalue: " + str(val))
 
             # Guard statement to protect servossy
             if tgt == cfg.ESC and val > cfg.MAX_SPEED:
-                print('[WARN] Speed would exceed testing limits!')
+                if self.debug:
+                    print('[WARN] Speed would exceed testing limits!')
             else:
                 if cfg.MAX_RIGHT <= val <= cfg.MAX_LEFT:
-                    print('[SERVO] Entering servo_ctl function with value of: ' +
-                          str(val))
+
+                    if self.debug:
+                        print('[SERVO] Entering servo_ctl function with value of: ' +
+                              str(val))
                     if self.servo_attached:
                         self.servo_ctl(tgt, val)
                     # self.server_tx('status:turn executed')
 
-        print('[DEBUG] Exiting execute_data function')
+        if self.debug:
+            print('[DEBUG] Exiting execute_data function')
 
         return 0
 
@@ -232,10 +241,12 @@ class Client:
         else:
             message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"
 
-        print('[GPS] ' + message)
+        if self.debug:
+            print('[GPS] ' + message)
         self.server_tx('gps:' + message)
-        print('[GPS] GPS SENT')
-        print('[DEBUG] Exiting get_gps function')
+        if self.debug:
+            print('[GPS] GPS SENT')
+            print('[DEBUG] Exiting get_gps function')
 
         return message
 
