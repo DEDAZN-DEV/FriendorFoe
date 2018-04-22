@@ -32,14 +32,15 @@ class CarController:
     def run_server(event_loop, debug, plot_points):
 
         servers = []
-        coroutine = event_loop.create_server(
-            lambda: ServerClientProtocol(debug, plot_points),
-            '',
-            8000
-        )
-        server = event_loop.run_until_complete(coroutine)
-        servers.append(server)
-        print("Serving on : ", server.sockets[0].getsockname())
+        for i in range(cfg.NUM_DRONES):
+            coroutine = event_loop.create_server(
+                lambda: ServerClientProtocol(debug, plot_points),
+                '',
+                8000 + i
+            )
+            server = event_loop.run_until_complete(coroutine)
+            servers.append(server)
+            print("Serving on: ", server.sockets[0].getsockname())
 
         try:
             event_loop.run_forever()
@@ -87,7 +88,8 @@ class ServerClientProtocol(asyncio.Protocol):
         drone_id = None
         counter = 0
         if self.debug:
-            print("Clients Connected: ", self.clients_connected)
+            pass
+        print("Clients Connected: ", self.clients_connected)
         for client in self.clients_connected:
             if int(drone_port) == int(client):
                 drone_id = counter
