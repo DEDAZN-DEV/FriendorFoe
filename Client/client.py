@@ -16,24 +16,18 @@ class Client:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # self.sock.settimeout(0.1)
         self.connect_to_server()
-        print("Connected on port ", cfg.HOST_PORTS, ". Ready to receive data.")
-        self.servo = maestro.Device()
+        print("Connected to host. Ready to receive data.")
+        if servo_attached:
+            self.servo = maestro.Device()
         self.debug = debug
         self.servo_attached = servo_attached
 
     def connect_to_server(self):
-        connected = False
-        port_number = 0
-        while not connected:
-            try:
-                self.sock.connect((cfg.HOST_IP, cfg.HOST_PORTS[port_number]))
-                connected = True
-            except socket.error:
-                port_number += 1
-                traceback.print_exc()
-                sys.exit(1)
-
-        return cfg.HOST_PORTS[port_number]
+        try:
+            self.sock.connect((cfg.HOST_IP, cfg.HOST_PORT))
+        except socket.error:
+            traceback.print_exc()
+            sys.exit(1)
 
     def main(self):
         """
@@ -136,7 +130,8 @@ class Client:
         return 0
 
     def server_tx(self, data):
-        self.sock.sendall(bytearray(data + '\\', 'utf-8'))
+        own_socket = self.sock.getsockname()[1]
+        self.sock.sendall(bytearray(str(own_socket) + '\\' + data, 'utf-8'))
 
     def servo_ctl(self, servo_num, val):
         """
@@ -217,16 +212,16 @@ class Client:
         """
 
         if self.gps_attached:
-            #print('********************')
-            #file_buffer = open('/dev/ttyACM2', 'r')
+            # print('********************')
+            # file_buffer = open('/dev/ttyACM2', 'r')
 
-            #search = re.match('.GPGGA.\S*', file_buffer.readline())
+            # search = re.match('.GPGGA.\S*', file_buffer.readline())
 
-            #while not search:
-            #    search = re.match('.GPGGA.\S*', file_buffer.readline())
-            #    print('test')
+            # while not search:
+            #     search = re.match('.GPGGA.\S*', file_buffer.readline())
+            #     print('test')
 
-            #message = search.group(0)
+            # message = search.group(0)
 
             os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
             myfile = open('gps.txt', 'r')
@@ -235,8 +230,7 @@ class Client:
             message = message[:-1]
 
         else:
-            message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893, \
-                       M,-25.669,M,2.0,0031*4F"
+            message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"
 
         print('[GPS] ' + message)
         self.server_tx('gps:' + message)

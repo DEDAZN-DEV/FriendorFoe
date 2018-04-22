@@ -3,8 +3,6 @@
 import json
 import sys
 import traceback
-
-@
 import gps_ops as gps
 import matplotlib.pyplot as plt
 import requests
@@ -19,7 +17,7 @@ class CarData:
     Data structure for drone metrics
     """
 
-    def __init__(self, debug, drone_id):
+    def __init__(self, debug):
         self.LAT = 0.0
         self.LONG = 0.0
         self.XPOS = 50
@@ -32,7 +30,6 @@ class CarData:
         self.TURNANGLE = 0.0
         self.SPEED = 0.0
         self.DIST_TRAVELED = 0.0
-        self.ID = drone_id
         self.INTERVAL_TIMER = 1e-6
         if debug:
             print("******INITIALIZED CARDATA*******")
@@ -42,25 +39,24 @@ class CarData:
 
 
 class Drone:
-    def __init__(self, plot_points, debug, drone_number, transport):
+    def __init__(self, plot_points, debug, transport):
         if debug:
             print("\n******BEGINNING INITIALIZATION******")
         self.debug = debug
         self.plot_points = plot_points
-        self.drone_id = drone_number
         self.connection = CarConnection(debug, transport)
         self.turning = Turning(debug)
         self.message_passing = ServerMessagePassing(debug)
         if self.plot_points:
             self.plotting = Plotting(debug)
         self.gps_calculations = gps.GPSCalculations(debug)
-        self.cardata = CarData(debug, self.drone_id)
+        self.cardata = CarData(debug)
         self.HEADING = 0
 
         if debug:
             print("******FINISHED INITIALIZATION******")
 
-    def drone(self):
+    def drone(self, drone_id):
         """
         Default drone control algorithm. Uses input from ATE-3 Sim to control
         drones.
@@ -69,15 +65,15 @@ class Drone:
         try:
             if self.debug:
                 print("\n")
-            print("Drone: ", self.drone_id, " executing turn")
+            print("Drone: ", drone_id, " executing turn")
 
             # start_time = timer()
 
             # self.gps_calculations.request_gps_fix(self.connection)
             # self.message_passing.post_gps_data(self.cardata)
-            velocity_vector = self.execute_turn()
+            self.execute_turn(drone_id)
             if self.plot_points:
-                self.plotting.plot_car_path(self.cardata, self.drone_id)
+                self.plotting.plot_car_path(self.cardata, drone_id)
 
             # stop_time = timer()
 
@@ -90,9 +86,9 @@ class Drone:
             self.connection.client_tx('disconnect')
             sys.exit()
 
-    def execute_turn(self):
+    def execute_turn(self, drone_id):
         self.print_cardata()
-        velocity_vector = self.message_passing.get_velocity_data()
+        velocity_vector = self.message_passing.get_velocity_data(drone_id)
         desired_heading = self.turning.calculate_heading_from_velocity(velocity_vector)
         self.turning.find_vehicle_speed(self.cardata, velocity_vector)
         turn_data = self.turning.initialize_turn_data(self.cardata, desired_heading)
@@ -101,7 +97,6 @@ class Drone:
         turn_signal, speed_signal = self.turning.generate_servo_signals(self.cardata)
         self.connection.send_turn_to_car(speed_signal, turn_signal)
         self.print_cardata()
-        return velocity_vector
 
     def print_cardata(self):
         print("\n****CAR VALUES****")
@@ -136,7 +131,7 @@ class ServerMessagePassing:
             print(response.status_code)
             print(response.text)
 
-    def get_velocity_data(self):
+    def get_velocity_data(self, server_id):
         """
         Uses aiohttp to get velocity data for the car from a webserver
         :return:
@@ -153,7 +148,17 @@ class ServerMessagePassing:
         if self.debug:
             print("Decoded Velocity Info: " + str(velocity_info))
 
-        velocity_vector = [velocity_info["xvel"], velocity_info["yvel"]]
+        velocity_info_current_car = {}
+        print("Server id: ", server_id)
+
+        for vector in velocity_info["velocity_info"]:
+            if int(vector["car"]) == server_id:
+                print("Got Here")
+                velocity_info_current_car = vector
+
+        print("Velocity Info For Current Car: ", velocity_info_current_car)
+
+        velocity_vector = [velocity_info_current_car["xvel"], velocity_info_current_car["yvel"]]
         print("Fixed Velocity Vector: ", velocity_vector)
         return velocity_vector
 
@@ -183,7 +188,7 @@ class Plotting:
 
         plt.clf()
         plt.title(dronename)
-        plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
+        # plt.axis([0.0, cfg.LENGTH_X, 0.0, cfg.LENGTH_Y])
         plt.plot(self.xpos, self.ypos, 'k-')
         plt.grid(True)
         if self.debug:

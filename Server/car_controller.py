@@ -33,21 +33,16 @@ class CarController:
 
         servers = []
 
-        for i in range(cfg.NUM_DRONES):
-            # server_coroutine = event_loop.create_server(
-            #     lambda: ServerClientProtocol(debug, plot_points),
-            #     '',
-            #     7878
-            # )
+        print("Num Drones: ", cfg.NUM_DRONES)
+        coroutine = event_loop.create_server(
+            lambda: ServerClientProtocol(debug, plot_points),
+            '',
+            8000
+        )
+        server = event_loop.run_until_complete(coroutine)
+        servers.append(server)
+        print("Serving on : ", server.sockets[0].getsockname(), "\twith server number: ")
 
-            coroutine = event_loop.create_server(
-                lambda: ServerClientProtocol(debug, plot_points),
-                '',
-                8000 + i
-            )
-            server = event_loop.run_until_complete(coroutine)
-            servers.append(server)
-            print("Serving on : ", server.sockets[0].getsockname())
         try:
             event_loop.run_forever()
         except KeyboardInterrupt:
@@ -64,72 +59,63 @@ class ServerClientProtocol(asyncio.Protocol):
         self.drone_instance = None
         self.debug = debug
         self.plot_points = plot_points
-        self.id = None
         self.gps = GPS(debug)
+        self.clients_connected = []
         if self.debug:
             print("******INITIALIZED SERVER******")
 
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
         print('Connection from: ', peername)
-        self.id = peername[1]  # port
+        self.clients_connected.append(peername[1])
+        print("Connected Clients: ", self.clients_connected)
         self.transport = transport
-        self.drone_instance = Drone(self.plot_points, self.debug, self.id, self.transport)
+        self.drone_instance = Drone(self.plot_points, self.debug, self.transport)
 
     def data_received(self, data_stream):
         start = timer()
         data = data_stream.decode()
-        # data = str(data)
-        # data = self.remove_bytes_array_denotors(data)
         data_array = data.split('\\')
 
         with open('/dev/null', 'w') as null:
             print("Received Data: ", data_stream, flush=True, file=null)
 
         if self.debug:
-            # print("Received Data: ")
             print("Data Array: ", data_array)
             print("Array Size: ", len(data_array))
 
-        # data = data_array[len(data_array) - 2]
+        drone_port = data_array[0]
+        drone_id = None
+        counter = 0
+        print("Clients Connected: ", self.clients_connected)
+        for client in self.clients_connected:
+            if int(drone_port) == int(client):
+                drone_id = counter
+            counter += 1
+
+        print("Drone ID: ", drone_id)
+
+        gga_message = data_array[1]
 
         if self.debug:
-            print("\nNew Data")
-            print("Received Data: ", data)
+            print("Received GPS data: ", gga_message)
 
-        data = data.split(':')
+        gps_data = []
+        try:
+            gps_data = self.gps.parse_gps_msg(gga_message)
 
+        except ValueError:
+            if self.debug:
+                print('Invalid GPS Message. Using projected position')
+            self.drone_instance.cardata.XPOS = self.drone_instance.cardata.TGTXPOS
+            self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS
+
+        self.set_position_variables(gps_data)
+        self.drone_instance.turning.update_heading(self.drone_instance.cardata)
+        self.drone_instance.message_passing.post_gps_data(gps_data, drone_id)
         if self.debug:
-            print("Message: ", data)
-            print("Data identifier: ", data[0])
-            print("Data value: ", data[1])
-
-        if data[0] == 'status':
-            print('Vehicle status: ', data[1])
-
-        elif data[0] == 'gps':
-            if self.debug:
-                pass
-                print("Received GPS data: ", data[1])
-
-            gps_data = None
-
-            try:
-                gps_data = self.gps.parse_gps_msg(data[1])
-
-            except ValueError:
-                if self.debug:
-                    print('Invalid GPS Message. Using projected position')
-                # self.drone_instance.connection.client_tx('disconnect')
-                self.drone_instance.cardata.XPOS = self.drone_instance.cardata.TGTXPOS
-                self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS
-
-            self.set_position_variables(gps_data)
-            self.drone_instance.turning.update_heading(self.drone_instance.cardata)
-            self.drone_instance.message_passing.post_gps_data(gps_data, self.id)
-            if self.debug:
-                print('GPS Message: ', gps_data)
-            self.drone_instance.drone()
+            print('GPS Message: ', gps_data)
+        self.drone_instance.drone(drone_id)
         stop = timer()
 
         self.drone_instance.cardata.INTERVAL_TIMER = (stop - start)
@@ -139,8 +125,10 @@ class ServerClientProtocol(asyncio.Protocol):
     def set_position_variables(self, gps_data):
         self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS
         self.drone_instance.cardata.YPOS_PREV = self.drone_instance.cardata.YPOS
-        self.drone_instance.cardata.XPOS = self.drone_instance.cardata.TGTXPOS  # gps_data[0]
-        self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS  # gps_data[1]
+        # self.drone_instance.cardata.XPOS = self.drone_instance.cardata.TGTXPOS
+        # self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS
+        self.drone_instance.cardata.XPOS = gps_data[0]
+        self.drone_instance.cardata.YPOS = gps_data[1]
 
     @staticmethod
     def remove_bytes_array_denotors(data):

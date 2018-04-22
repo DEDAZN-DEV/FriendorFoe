@@ -94,8 +94,13 @@ def init_joystick():
 
             text_print.print(screen, "Number of joysticks: {}".format(joystick_count))
 
+            velocity_vectors = []
+
             # For each joystick:
             for i in range(joystick_count):
+                
+                velocity_vector = []
+
                 joystick = pygame.joystick.Joystick(i)
                 joystick.init()
                 text_print.indent()
@@ -143,6 +148,9 @@ def init_joystick():
                     hat = joystick.get_hat(n)
                     text_print.print(screen, "Hat {} value: {}".format(n, str(hat)))
                 text_print.unindent()
+
+                velocity_vector.append(i)
+                velocity_vectors.append(str(velocity_vector))
 
             if joystick_count == 0:
                 text_print.indent()
@@ -202,9 +210,8 @@ def init_joystick():
                 text_print.print(screen, "Y-Axis: {:>d}".format(y_axis))
                 text_print.print(screen, "Speed factor: {:>6.3f}x".format(speed_factor))
                 text_print.print(screen, "Output Vector: {:>6.3f}, {:>6.3f}".format(velocity_vector[0], velocity_vector[1]))
+
             # Velocity vector input to simulation
-            with open("/var/www/cgi-bin/velocity_vectors", "w") as velocity_vector_file:
-                velocity_vector_file.write(str(velocity_vector))
 
             # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
 
@@ -213,6 +220,14 @@ def init_joystick():
 
             # Limit to 20 frames per second
             clock.tick(120)
+
+
+            with open("/var/www/cgi-bin/velocity_vectors", "w") as velocity_vector_file:
+                velocity_vector_file.write("")
+
+            with open("/var/www/cgi-bin/velocity_vectors", "a") as velocity_vector_file:
+                for vector in velocity_vectors:
+                    velocity_vector_file.write(str(vector) + "\n")
 
     except KeyboardInterrupt:
         # Close the window and quit.
