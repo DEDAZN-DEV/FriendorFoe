@@ -120,7 +120,7 @@ class ServerClientProtocol(asyncio.Protocol):
             except ValueError:
                 if self.debug:
                     print('Invalid GPS Message. Using projected position')
-                self.drone_instance.connection.client_tx('disconnect')
+                # self.drone_instance.connection.client_tx('disconnect')
                 self.drone_instance.cardata.XPOS = self.drone_instance.cardata.TGTXPOS
                 self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS
 
