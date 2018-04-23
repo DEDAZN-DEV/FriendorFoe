@@ -119,7 +119,7 @@ class ServerClientProtocol(asyncio.Protocol):
             self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS
 
         self.set_position_variables(gps_data)
-        self.drone_instance.turning.update_heading(self.drone_instance.cardata)
+        # self.drone_instance.turning.update_heading(self.drone_instance.cardata)
         self.drone_instance.message_passing.post_gps_data(gps_data, drone_id)
         if self.debug:
             print('GPS Message: ', gps_data)

@@ -253,7 +253,7 @@ class Turning:
 #               and cardata.YPOS - cardata.YPOS_PREV >= 0.0001\
         if abs(new_heading - cardata.TGTHEADING) < 25:
             cardata.HEADING = new_heading
-            if self.debug:
+            if self.deHEADINGbug:
                 pass
         print("Updated heading: ", new_heading)
 
