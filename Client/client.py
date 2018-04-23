@@ -141,8 +141,8 @@ class Client:
         :return: <Int> 0 on success
         """
 
-        self.servo.set_acceleration(cfg.STEERING, 50)
-        self.servo.set_acceleration(cfg.ESC, 100)
+        self.servo.set_acceleration(cfg.STEERING, 0)
+        self.servo.set_acceleration(cfg.ESC, 1)
 
         self.servo.set_target(servo_num, val)
         if self.debug:
