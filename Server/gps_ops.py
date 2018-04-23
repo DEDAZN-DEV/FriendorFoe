@@ -24,7 +24,7 @@ class GPSCalculations:
         :param message: <String> the GGA message that is to be parsed, a string
         :return: <Array> a two element array that contains the lat and long
         """
-        message = '$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,,230394,003.1,W*6A'
+        # message = '$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,,230394,003.1,W*6A'
 
         separator = []
 
@@ -92,7 +92,7 @@ class GPSCalculations:
 
 #       data = [xposition, yposition]
 
-        print(data, heading)
+        print("GPS Data: ", data, heading)
         return data, heading
 
     @staticmethod
