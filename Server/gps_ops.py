@@ -215,7 +215,3 @@ class GPSCalculations:
     @staticmethod
     def request_gps_fix(connection):
         connection.client_tx('gps')
-
-
-test = GPSCalculations(True)
-test.parse_gps_msg('')
