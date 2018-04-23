@@ -89,6 +89,7 @@ class Drone:
     def execute_turn(self, drone_id):
         if self.debug:
             self.print_cardata()
+        self.turning.update_heading(self.cardata)
         velocity_vector = self.message_passing.get_velocity_data(drone_id)
         desired_heading = self.turning.calculate_heading_from_velocity(velocity_vector)
         self.turning.find_vehicle_speed(self.cardata, velocity_vector)
@@ -141,7 +142,7 @@ class ServerMessagePassing:
         response = requests.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
         if self.debug:
             print(response.status_code)
-            print("New velocity vector: ", response.text)
+        print("New velocity vector: ", response.text)
         velocity_info = str(response.text)
 
         if self.debug:
@@ -223,8 +224,9 @@ class CarConnection:
 
     def send_turn_to_car(self, speed_signal, turn_signal):
         if self.debug:
-            print("ABOUT TO SEND TURN SIGNAL: " + str(cfg.STEERING) + str(turn_signal))
-            print("AND SPEED SIGNAL: " + str(cfg.ESC) + str(speed_signal))
+            pass
+        print("ABOUT TO SEND TURN SIGNAL: " + str(cfg.STEERING) + str(turn_signal))
+        print("AND SPEED SIGNAL: " + str(cfg.ESC) + str(speed_signal))
         self.client_tx(str(cfg.STEERING) + str(turn_signal))
         self.client_tx(str(cfg.ESC) + str(speed_signal))
 

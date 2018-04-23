@@ -215,6 +215,10 @@ class Turning:
         car_data = self.find_advanced_position(car_data)
         self.find_distance_travelled(car_data)
 
+        print("Turn Values")
+        print(car_data["turning_angle"])
+        print(car_data["speed"])
+
         return car_data
 
     def generate_servo_signals(self, cardata):
@@ -235,15 +239,23 @@ class Turning:
         cardata.SPEED = turn_data["speed"]
         cardata.TGTXPOS = turn_data["advanced_x_position"]
         cardata.TGTYPOS = turn_data["advanced_y_position"]
+        cardata.TGTHEADING = turn_data["desired_heading"]
 
     def update_heading(self, cardata):
         new_heading = self.calculate_heading_from_velocity(
             [cardata.XPOS - cardata.XPOS_PREV, cardata.YPOS - cardata.YPOS_PREV]
         )
-        if cardata.XPOS - cardata.XPOS_PREV != 0 and cardata.YPOS - cardata.YPOS_PREV != 0:
+
+        if new_heading < 0:
+            new_heading += 360
+
+#       if cardata.XPOS - cardata.XPOS_PREV >= 0.0001 \
+#               and cardata.YPOS - cardata.YPOS_PREV >= 0.0001\
+        if abs(new_heading - cardata.TGTHEADING) < 25:
             cardata.HEADING = new_heading
             if self.debug:
-                print("Updated heading: ", new_heading)
+                pass
+        print("Updated heading: ", new_heading)
 
     @staticmethod
     def find_vehicle_speed(cardata, velocity_vector):
@@ -260,6 +272,8 @@ class Turning:
             "initial_y_position": cardata.YPOS,
             "time_step": cardata.INTERVAL_TIMER
         }
+        print("Turn Data:")
+        pprint.pprint(turn_data)
         return turn_data
 
     def calculate_heading_from_velocity(self, velocity_vector):
