@@ -1,7 +1,8 @@
 import math
-# import random
 
 import server_cfg as cfg
+
+# import random
 
 BASE_X = 0
 BASE_Y = 0
@@ -23,6 +24,8 @@ class GPSCalculations:
         :param message: <String> the GGA message that is to be parsed, a string
         :return: <Array> a two element array that contains the lat and long
         """
+        message = '$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,,230394,003.1,W*6A'
+
         separator = []
 
         for char in range(0, len(message)):
@@ -36,13 +39,14 @@ class GPSCalculations:
         mlat = ''
         dlong = ''
         mlong = ''
+        headingstr = ''
 
         # bytes 17 - 26
         if self.debug:
             print("GPS Message: ", message)
-        for i in range(separator[1] + 1, separator[1] + 3):
+        for i in range(separator[2] + 1, separator[2] + 3):
             dlat = dlat + message[i]
-        for j in range(separator[1] + 3, separator[2]):
+        for j in range(separator[2] + 3, separator[3]):
             mlat = mlat + message[j]
 
         dlat = int(dlat)
@@ -50,16 +54,16 @@ class GPSCalculations:
         mlat = mlat / 60
         latitude = dlat + mlat
 
-        if message[separator[2] + 1] == 'S':
+        if message[separator[3] + 1] == 'S':
             latitude = -latitude
 
         if self.debug:
             print("Latitude: ", latitude)
 
         # bytes 30 - 40
-        for k in range(separator[3] + 1, separator[3] + 4):
+        for k in range(separator[4] + 1, separator[4] + 4):
             dlong = dlong + message[k]
-        for n in range(separator[3] + 4, separator[4]):
+        for n in range(separator[4] + 4, separator[5]):
             mlong = mlong + message[n]
 
         dlong = int(dlong)
@@ -67,7 +71,7 @@ class GPSCalculations:
         mlong = mlong / 60
         longitude = dlong + mlong
 
-        if message[separator[4] + 1] == 'W':
+        if message[separator[5] + 1] == 'W':
             longitude = -longitude
 
         if self.debug:
@@ -75,12 +79,21 @@ class GPSCalculations:
 
         data = self.scale_xy(self.gps_to_xy(latitude, longitude))
 
+        if separator[7] + 1 == separator[8]:
+            headingstr = '999'
+        else:
+            for l in range(separator[7] + 1, separator[7] + 5):
+                headingstr = headingstr + message[l]
+
+        heading = float(headingstr)
+
 #       xposition = random.randint(0, cfg.LENGTH_X)
 #       yposition = random.randint(0, cfg.LENGTH_Y)
 
 #       data = [xposition, yposition]
 
-        return data
+        print(data, heading)
+        return data, heading
 
     @staticmethod
     def gps_to_xy(lat, lon):
@@ -202,3 +215,7 @@ class GPSCalculations:
     @staticmethod
     def request_gps_fix(connection):
         connection.client_tx('gps')
+
+
+test = GPSCalculations(True)
+test.parse_gps_msg('')

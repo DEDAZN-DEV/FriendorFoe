@@ -3,6 +3,7 @@
 import json
 import sys
 import traceback
+
 import gps_ops as gps
 import matplotlib.pyplot as plt
 import requests
@@ -89,7 +90,7 @@ class Drone:
     def execute_turn(self, drone_id):
         if self.debug:
             self.print_cardata()
-        self.turning.update_heading(self.cardata)
+        # self.turning.update_heading(self.cardata)
         velocity_vector = self.message_passing.get_velocity_data(drone_id)
         desired_heading = self.turning.calculate_heading_from_velocity(velocity_vector)
         self.turning.find_vehicle_speed(self.cardata, velocity_vector)

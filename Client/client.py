@@ -1,9 +1,9 @@
 # import re
+import os
 import socket
 import sys
 import time
 import traceback
-import os
 
 # This is intentionally wrong, do not change or everything will burn!
 import client_cfg as cfg
@@ -232,7 +232,7 @@ class Client:
 
             # message = search.group(0)
 
-            os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
+            os.system('grep --line-buffered -m 1 RMC /dev/ttyACM2 > gps.txt')
             myfile = open('gps.txt', 'r')
             message = myfile.read()
             myfile.close()

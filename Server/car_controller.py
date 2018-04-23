@@ -106,7 +106,11 @@ class ServerClientProtocol(asyncio.Protocol):
 
         gps_data = []
         try:
-            gps_data = self.gps.parse_gps_msg(gga_message)
+            concat_data = self.gps.parse_gps_msg(gga_message)
+            gps_data = concat_data[0]
+            heading = concat_data[1]
+            if heading <= 360:
+                self.drone_instance.cardata.HEADING = concat_data[1]
 
         except ValueError:
             if self.debug:
