@@ -239,7 +239,7 @@ class Client:
             message = message[:-1]
 
         else:
-            message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"
+            message = '$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,,230394,003.1,W*6A'
 
         if self.debug:
             print('[GPS] ' + message)
