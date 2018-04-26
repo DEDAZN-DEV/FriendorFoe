@@ -1,5 +1,5 @@
 # import re
-import os
+# import os
 import socket
 import sys
 import time
@@ -7,7 +7,7 @@ import traceback
 
 # This is intentionally wrong, do not change or everything will burn!
 import client_cfg as cfg
-import maestro as maestro
+# import maestro as maestro
 
 
 class Client:
@@ -18,7 +18,8 @@ class Client:
         self.connect_to_server()
         print("Connected to host. Ready to receive data.")
         if servo_attached:
-            self.servo = maestro.Device()
+            pass
+            # self.servo = maestro.Device()
         self.debug = debug
         self.servo_attached = servo_attached
 
@@ -101,27 +102,27 @@ class Client:
         Initial arming and testing of Maestro servo Device.
         :return: <Int> 0 on success
         """
-        servo = maestro.Device()
+        # servo = maestro.Device()
         print('[SERVO] SERVO CONNECTION ESTABLISHED....')
 
         # 3 ESC, 5 STEERING
 
-        servo.set_acceleration(cfg.STEERING, 50)
-        servo.set_acceleration(cfg.ESC, 100)
+        # servo.set_acceleration(cfg.STEERING, 50)
+        # servo.set_acceleration(cfg.ESC, 100)
 
         print('[SERVO] SENT SIGNAL....')
-        servo.set_target(cfg.STEERING, cfg.MAX_RIGHT)
+        # servo.set_target(cfg.STEERING, cfg.MAX_RIGHT)
         time.sleep(1)
-        servo.set_target(cfg.STEERING, cfg.MAX_LEFT)
+        # servo.set_target(cfg.STEERING, cfg.MAX_LEFT)
         time.sleep(1)
-        servo.set_target(cfg.STEERING, cfg.MAX_RIGHT)
+        # servo.set_target(cfg.STEERING, cfg.MAX_RIGHT)
         time.sleep(1)
-        servo.set_target(cfg.STEERING, cfg.CENTER)
+        # servo.set_target(cfg.STEERING, cfg.CENTER)
         print('[SERVO] STEERING ARMED....')
         time.sleep(1)
 
-        servo.set_target(cfg.ESC, cfg.MAX_SPEED)
-        servo.set_target(cfg.ESC, cfg.NEUTRAL)
+        # servo.set_target(cfg.ESC, cfg.MAX_SPEED)
+        # servo.set_target(cfg.ESC, cfg.NEUTRAL)
         print('[SERVO] MOTOR ARMED....')
         time.sleep(1)
 
@@ -141,10 +142,10 @@ class Client:
         :return: <Int> 0 on success
         """
 
-        self.servo.set_acceleration(cfg.STEERING, 50)
-        self.servo.set_acceleration(cfg.ESC, 100)
+        # self.servo.set_acceleration(cfg.STEERING, 50)
+        # self.servo.set_acceleration(cfg.ESC, 100)
 
-        self.servo.set_target(servo_num, val)
+        # self.servo.set_target(servo_num, val)
         if self.debug:
             print('[DEBUG] Exiting servo_ctl function')
 
@@ -232,7 +233,7 @@ class Client:
 
             # message = search.group(0)
 
-            os.system('grep --line-buffered -m 1 RMC /dev/ttyACM2 > gps.txt')
+            # os.system('grep --line-buffered -m 1 RMC /dev/ttyACM0 > gps.txt')
             myfile = open('gps.txt', 'r')
             message = myfile.read()
             myfile.close()

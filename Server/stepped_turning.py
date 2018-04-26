@@ -253,7 +253,7 @@ class Turning:
 #               and cardata.YPOS - cardata.YPOS_PREV >= 0.0001\
         if abs(new_heading - cardata.TGTHEADING) < 25:
             cardata.HEADING = new_heading
-            if self.deHEADINGbug:
+            if self.debug:
                 pass
         print("Updated heading: ", new_heading)
 
@@ -279,7 +279,7 @@ class Turning:
     def calculate_heading_from_velocity(self, velocity_vector):
         self.fix_negative_zeros(velocity_vector)
 
-        output_heading = math.degrees(math.atan2(velocity_vector[0], velocity_vector[1]))
+        output_heading = math.degrees(math.atan2(velocity_vector[1], velocity_vector[0]))
         if self.debug:
             print('Velocity vector: ', velocity_vector)
             print('Desired Angle Orientation: ', output_heading)
