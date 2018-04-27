@@ -4,7 +4,6 @@ import json
 import sys
 import traceback
 
-@
 import gps_ops as gps
 import matplotlib.pyplot as plt
 import requests
@@ -111,7 +110,7 @@ class Drone:
         print("Previous Y Position: ", self.cardata.YPOS_PREV)
         print("Heading: ", self.cardata.HEADING)
         print("Turn Angle: ", self.cardata.TURNANGLE)
-        print("Speed: ", self.cardata.SPEED)
+        # print("Speed: ", self.cardata.SPEED)
 
 
 class ServerMessagePassing:
@@ -133,8 +132,9 @@ class ServerMessagePassing:
         #           with session.post(
         response = requests.post(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_POST_ADDRESS, json=gps_data_dict)
         if self.debug:
-            print(response.status_code)
-            print(response.text)
+            pass
+            # print(response.status_code)
+            # print(response.text)
 
     def get_velocity_data(self):
         """
@@ -143,18 +143,19 @@ class ServerMessagePassing:
         """
         response = requests.get(cfg.SERVER_BASE_ADDRESS + cfg.SERVER_GET_ADDRESS)
         if self.debug:
-            print(response.status_code)
+            # print(response.status_code)
             print("New velocity vector: ", response.text)
         velocity_info = str(response.text)
 
         # if self.debug:
-        print("New Velocity Info: " + velocity_info)
+        # print("New Velocity Info: " + velocity_info)
         velocity_info = json.loads(velocity_info)
         if self.debug:
-            print("Decoded Velocity Info: " + str(velocity_info))
+            pass
+            # print("Decoded Velocity Info: " + str(velocity_info))
 
-        velocity_vector = [velocity_info["xvel"], velocity_info["yvel"]]
-        print("Fixed Velocity Vector: ", velocity_vector)
+        velocity_vector = [velocity_info["velocity_info"][0]["xvel"], velocity_info["velocity_info"][0]["yvel"]]
+        # print("Fixed Velocity Vector: ", velocity_vector)
         return velocity_vector
 
 
@@ -171,15 +172,16 @@ class Plotting:
     def plot_car_path(self, cardata, dronename):
         pause_interval = 1e-6
         if self.debug:
-            print("Pause Interval: " + str(pause_interval))
+            pass
+            # print("Pause Interval: " + str(pause_interval))
         if len(self.xpos) > BUFFERSIZE:
             self.xpos.pop(0)
             self.ypos.pop(0)
         self.xpos.append(cardata.XPOS)
         self.ypos.append(cardata.YPOS)
 
-        print("xpos: ", self.xpos)
-        print("ypos: ", self.ypos)
+        # print("xpos: ", self.xpos)
+        # print("ypos: ", self.ypos)
 
         plt.clf()
         plt.title(dronename)
@@ -187,10 +189,11 @@ class Plotting:
         plt.plot(self.xpos, self.ypos, 'k-')
         plt.grid(True)
         if self.debug:
-            print('Calculated Tgt Pos: ', cardata.TGTXPOS, cardata.TGTYPOS)
-            print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
+            pass
+            # print('Calculated Tgt Pos: ', cardata.TGTXPOS, cardata.TGTYPOS)
+            # print('Calculated XY Pos: ', cardata.XPOS, cardata.YPOS)
             # print('Interval Time: ', interval_time)
-            print('')
+            # print('')
         plt.pause(pause_interval)
 
 
@@ -203,7 +206,8 @@ class CarConnection:
 
     def client_tx(self, data):
         if self.debug:
-            print("ABOUT TO SEND: ", data)
+            pass
+            # print("ABOUT TO SEND: ", data)
         try:
             self.transport.write(bytearray(data + "\\", 'utf-8'))
             print("SENT: ", data)
@@ -212,8 +216,9 @@ class CarConnection:
 
     def send_turn_to_car(self, speed_signal, turn_signal):
         if self.debug:
-            print("ABOUT TO SEND TURN SIGNAL: " + str(cfg.STEERING) + str(turn_signal))
-            print("AND SPEED SIGNAL: " + str(cfg.ESC) + str(speed_signal))
+            pass
+            # print("ABOUT TO SEND TURN SIGNAL: " + str(cfg.STEERING) + str(turn_signal))
+            # print("AND SPEED SIGNAL: " + str(cfg.ESC) + str(speed_signal))
         self.client_tx(str(cfg.STEERING) + str(turn_signal))
         self.client_tx(str(cfg.ESC) + str(speed_signal))
 

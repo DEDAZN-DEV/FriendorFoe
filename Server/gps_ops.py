@@ -30,7 +30,8 @@ class GPSCalculations:
                 separator.append(char)
 
         if self.debug:
-            print("Separator: ", separator)
+            pass
+            # print("Separator: ", separator)
 
         dlat = ''
         mlat = ''
@@ -39,7 +40,8 @@ class GPSCalculations:
 
         # bytes 17 - 26
         if self.debug:
-            print("GPS Message: ", message)
+            pass
+            # print("GPS Message: ", message)
         for i in range(separator[1] + 1, separator[1] + 3):
             dlat = dlat + message[i]
         for j in range(separator[1] + 3, separator[2]):
@@ -54,7 +56,8 @@ class GPSCalculations:
             latitude = -latitude
 
         if self.debug:
-            print("Latitude: ", latitude)
+            pass
+            # print("Latitude: ", latitude)
 
         # bytes 30 - 40
         for k in range(separator[3] + 1, separator[3] + 4):
@@ -71,7 +74,8 @@ class GPSCalculations:
             longitude = -longitude
 
         if self.debug:
-            print("Longitude: ", longitude)
+            pass
+            # print("Longitude: ", longitude)
 
         data = self.scale_xy(self.gps_to_xy(latitude, longitude))
 

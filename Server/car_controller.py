@@ -87,22 +87,25 @@ class ServerClientProtocol(asyncio.Protocol):
             print("Received Data: ", data_stream, flush=True, file=null)
 
         if self.debug:
+            pass
             # print("Received Data: ")
-            print("Data Array: ", data_array)
-            print("Array Size: ", len(data_array))
+            # print("Data Array: ", data_array)
+            # print("Array Size: ", len(data_array))
 
         # data = data_array[len(data_array) - 2]
 
         if self.debug:
-            print("\nNew Data")
-            print("Received Data: ", data)
+            pass
+            # print("\nNew Data")
+            # print("Received Data: ", data)
 
         data = data.split(':')
 
         if self.debug:
-            print("Message: ", data)
-            print("Data identifier: ", data[0])
-            print("Data value: ", data[1])
+            pass
+            # print("Message: ", data)
+            # print("Data identifier: ", data[0])
+            # print("Data value: ", data[1])
 
         if data[0] == 'status':
             print('Vehicle status: ', data[1])
@@ -124,17 +127,17 @@ class ServerClientProtocol(asyncio.Protocol):
                 self.drone_instance.cardata.XPOS = self.drone_instance.cardata.TGTXPOS
                 self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS
 
-            self.set_position_variables(gps_data)
-            self.drone_instance.turning.update_heading(self.drone_instance.cardata)
             self.drone_instance.message_passing.post_gps_data(gps_data, self.id)
             if self.debug:
                 print('GPS Message: ', gps_data)
             self.drone_instance.drone()
+            self.set_position_variables(gps_data)
+            self.drone_instance.turning.update_heading(self.drone_instance.cardata)
         stop = timer()
 
         self.drone_instance.cardata.INTERVAL_TIMER = (stop - start)
 
-        print('[TIME] ' + str(self.drone_instance.cardata.INTERVAL_TIMER))
+        # print('[TIME] ' + str(self.drone_instance.cardata.INTERVAL_TIMER))
 
     def set_position_variables(self, gps_data):
         self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS

@@ -94,14 +94,21 @@ class Turning:
             print("TURN ANGLE CHECK [OK]")
 
         if self.check_if_within_heading(current_heading, desired_heading, tolerance):
+            print("Within Tolerance")
             turn_angle = half_circle_difference
             speed_coefficient = (25 - abs(turn_angle)) / 25
         elif half_circle_difference > 0:
+            print("Less than 0 degrees")
             turn_angle = 20
             speed_coefficient = 0.1
-        else:
+        elif half_circle_difference < 0:
+            print("More than 0 degrees")
             turn_angle = -20
             speed_coefficient = 0.1
+        else:
+            print("HOW?")
+            turn_angle = 0
+            speed_coefficient = 1
 
         return turn_angle, speed_coefficient
 
@@ -157,6 +164,8 @@ class Turning:
 
         if angle_sum < 0:
             angle_sum += 360
+        elif angle_sum > 360:
+            angle_sum -= 360
 
         print("Corrected Angle Sum: ", angle_sum)
         return angle_sum
@@ -204,15 +213,15 @@ class Turning:
         :return:
         """
         no_turn = 0
-        if not self.check_if_within_heading(car_data["speed"], car_data["desired_heading"], tolerance=0.1):
-            print("Current Heading: ", car_data["current_heading"])
-            print("Desired Heading: ", car_data["desired_heading"])
+        # if not self.check_if_within_heading(car_data["speed"], car_data["desired_heading"], tolerance=0.1):
+        print("Current Heading: ", car_data["current_heading"])
+        print("Desired Heading: ", car_data["desired_heading"])
 
-            car_data["turning_angle"], speed_coefficient = self.choose_wheel_turn_angle_and_direction(
-                car_data["current_heading"], car_data["desired_heading"])
-        else:
-            car_data["turning_angle"] = no_turn
-            speed_coefficient = 1
+        car_data["turning_angle"], speed_coefficient = self.choose_wheel_turn_angle_and_direction(
+            car_data["current_heading"], car_data["desired_heading"])
+        # else:
+        #    car_data["turning_angle"] = no_turn
+        #    speed_coefficient = 1
 
         car_data["speed"] *= speed_coefficient
         car_data = self.find_advanced_position(car_data)
@@ -240,10 +249,18 @@ class Turning:
         cardata.TGTYPOS = turn_data["advanced_y_position"]
 
     def update_heading(self, cardata):
-        new_heading = self.calculate_heading_from_velocity(
-            [cardata.XPOS - cardata.XPOS_PREV, cardata.YPOS - cardata.YPOS_PREV]
-        )
-        if cardata.XPOS - cardata.XPOS_PREV != 0 and cardata.YPOS - cardata.YPOS_PREV != 0:
+        print("XPOS: ", cardata.XPOS)
+        print("XPOS_PREV: ", cardata.XPOS_PREV)
+        print("YPOS: ", cardata.YPOS)
+        print("YPOS_PREV: ", cardata.YPOS_PREV)
+        new_heading = None
+
+        velocity_vector = [cardata.XPOS - cardata.XPOS_PREV, cardata.YPOS - cardata.YPOS_PREV]
+
+        if velocity_vector[0] != 0 or velocity_vector[1] != 0:
+            new_heading = cardata.HEADING + cardata.TURNANGLE  # self.calculate_heading_from_velocity(velocity_vector)
+
+        if cardata.XPOS - cardata.XPOS_PREV != 0 or cardata.YPOS - cardata.YPOS_PREV != 0:
             cardata.HEADING = new_heading
             print("Updated heading: ", new_heading)
 
@@ -267,10 +284,15 @@ class Turning:
     def calculate_heading_from_velocity(self, velocity_vector):
         self.fix_negative_zeros(velocity_vector)
 
-        output_heading = math.degrees(math.atan2(velocity_vector[0], velocity_vector[1]))
+        print("Velocity Vector: ", velocity_vector)
+        output_heading = math.degrees(math.atan2(velocity_vector[1], velocity_vector[0]))
+
+        if output_heading < 0:
+            output_heading += 360
+
         if self.debug:
             print('Velocity vector: ', velocity_vector)
-            print('Desired Angle Orientation: ', output_heading)
+            print('Output Heading: ', output_heading)
         return output_heading
 
     @staticmethod
@@ -292,10 +314,10 @@ class Turning:
         if angle < -180 or angle > 180:
             raise ValueError
 
-        if angle < 0:
-            turn_signal = int(round(cfg.CENTER + (abs(angle) * cfg.DEGREE_GRADIENT)))
-        else:
-            turn_signal = int(round(cfg.CENTER - (angle * cfg.DEGREE_GRADIENT)))
+        # if angle < 0:
+        #     turn_signal = int(round(cfg.CENTER + (abs(angle) * cfg.DEGREE_GRADIENT)))
+        # else:
+        turn_signal = int(round(cfg.CENTER + (angle * cfg.DEGREE_GRADIENT)))
 
         if turn_signal > cfg.MAX_LEFT:
             turn_signal = cfg.MAX_LEFT
