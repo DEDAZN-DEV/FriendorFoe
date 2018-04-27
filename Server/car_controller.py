@@ -88,8 +88,8 @@ class ServerClientProtocol(asyncio.Protocol):
 
         if self.debug:
             pass
-            # print("Received Data: ")
-            # print("Data Array: ", data_array)
+            print("Received Data: ")
+            print("Data Array: ", data_array)
             # print("Array Size: ", len(data_array))
 
         # data = data_array[len(data_array) - 2]
@@ -99,11 +99,11 @@ class ServerClientProtocol(asyncio.Protocol):
             # print("\nNew Data")
             # print("Received Data: ", data)
 
-        data = data.split(':')
+        data = data_array[1].split(':')
 
         if self.debug:
             pass
-            # print("Message: ", data)
+            print("Message: ", data)
             # print("Data identifier: ", data[0])
             # print("Data value: ", data[1])
 
@@ -142,8 +142,10 @@ class ServerClientProtocol(asyncio.Protocol):
     def set_position_variables(self, gps_data):
         self.drone_instance.cardata.XPOS_PREV = self.drone_instance.cardata.XPOS
         self.drone_instance.cardata.YPOS_PREV = self.drone_instance.cardata.YPOS
-        self.drone_instance.cardata.XPOS = self.drone_instance.cardata.TGTXPOS  # gps_data[0]
-        self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS  # gps_data[1]
+        # self.drone_instance.cardata.XPOS = self.drone_instance.cardata.TGTXPOS  # gps_data[0]
+        # self.drone_instance.cardata.YPOS = self.drone_instance.cardata.TGTYPOS  # gps_data[1]
+        self.drone_instance.cardata.XPOS = gps_data[0]
+        self.drone_instance.cardata.YPOS = gps_data[1]
 
     @staticmethod
     def remove_bytes_array_denotors(data):

@@ -92,7 +92,7 @@ class Drone:
     def execute_turn(self):
         self.print_cardata()
         velocity_vector = self.message_passing.get_velocity_data()
-        desired_heading = self.turning.calculate_heading_from_velocity(velocity_vector)
+        desired_heading = self.turning.calculate_heading_from_velocity(velocity_vector, self.cardata.HEADING)
         self.turning.find_vehicle_speed(self.cardata, velocity_vector)
         turn_data = self.turning.initialize_turn_data(self.cardata, desired_heading)
         turn_data = self.turning.stepped_turning_algorithm(turn_data)

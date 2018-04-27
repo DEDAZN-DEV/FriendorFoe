@@ -281,14 +281,17 @@ class Turning:
         }
         return turn_data
 
-    def calculate_heading_from_velocity(self, velocity_vector):
+    def calculate_heading_from_velocity(self, velocity_vector, prev_heading):
         self.fix_negative_zeros(velocity_vector)
 
         print("Velocity Vector: ", velocity_vector)
-        output_heading = math.degrees(math.atan2(velocity_vector[1], velocity_vector[0]))
+        output_heading = math.degrees(math.atan2(velocity_vector[0], velocity_vector[1]))
 
         if output_heading < 0:
             output_heading += 360
+
+        if velocity_vector[0] == 0 and velocity_vector[1] == 0:
+            output_heading = prev_heading
 
         if self.debug:
             print('Velocity vector: ', velocity_vector)
@@ -317,7 +320,7 @@ class Turning:
         # if angle < 0:
         #     turn_signal = int(round(cfg.CENTER + (abs(angle) * cfg.DEGREE_GRADIENT)))
         # else:
-        turn_signal = int(round(cfg.CENTER + (angle * cfg.DEGREE_GRADIENT)))
+        turn_signal = int(round(cfg.CENTER - (angle * cfg.DEGREE_GRADIENT)))
 
         if turn_signal > cfg.MAX_LEFT:
             turn_signal = cfg.MAX_LEFT
