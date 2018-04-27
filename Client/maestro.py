@@ -57,7 +57,7 @@ def log(*msgline):
 
 
 class Device(object):
-    def __init__(self, con_port="/dev/ttyACM1", ser_port="/dev/ttyACM0",
+    def __init__(self, con_port="/dev/ttyACM1", ser_port="/dev/ttyACM2",
                  timeout=1):  # /dev/ttyACM0  and   /dev/ttyACM1  for Linux
         ############################
         # lets introduce and init the main variables

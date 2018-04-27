@@ -1,9 +1,9 @@
 # import re
+import os
 import socket
 import sys
 import time
 import traceback
-import os
 
 # This is intentionally wrong, do not change or everything will burn!
 import client_cfg as cfg
@@ -217,26 +217,25 @@ class Client:
         """
 
         if self.gps_attached:
-            #print('********************')
-            #file_buffer = open('/dev/ttyACM2', 'r')
+            # print('********************')
+            # file_buffer = open('/dev/ttyACM2', 'r')
 
-            #search = re.match('.GPGGA.\S*', file_buffer.readline())
+            # search = re.match('.GPGGA.\S*', file_buffer.readline())
 
-            #while not search:
+            # while not search:
             #    search = re.match('.GPGGA.\S*', file_buffer.readline())
             #    print('test')
 
-            #message = search.group(0)
+            # message = search.group(0)
 
-            os.system('grep --line-buffered -m 1 GGA /dev/ttyACM2 > gps.txt')
+            os.system('grep --line-buffered -m 1 GGA /dev/ttyACM0 > gps.txt')
             myfile = open('gps.txt', 'r')
             message = myfile.read()
             myfile.close()
             message = message[:-1]
 
         else:
-            message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893, \
-                       M,-25.669,M,2.0,0031*4F"
+            message = "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0,0031*4F"
 
         print('[GPS] ' + message)
         self.server_tx('gps:' + message)
